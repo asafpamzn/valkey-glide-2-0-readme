@@ -32,4 +32,8 @@ type ScriptingAndFunctionBaseCommands interface {
 	InvokeScript(script options.Script) (any, error)
 
 	InvokeScriptWithOptions(script options.Script, scriptOptions options.ScriptOptions) (any, error)
+
+	ScriptFlush() (string, error)
+
+	ScriptFlushWithMode(mode options.FlushMode) (string, error)
 }

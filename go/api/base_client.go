@@ -7947,3 +7947,42 @@ func (client *baseClient) FunctionKill() (string, error) {
 	}
 	return handleStringResponse(result)
 }
+
+// ScriptFlush removes all the scripts from the script cache.
+//
+// See [valkey.io] for details.
+//
+// Return value:
+//
+//	OK on success.
+//
+// [valkey.io]: https://valkey.io/commands/script-flush/
+func (client *baseClient) ScriptFlush() (string, error) {
+	result, err := client.executeCommand(C.ScriptFlush, []string{})
+	if err != nil {
+		return DefaultStringResponse, err
+	}
+	return handleStringResponse(result)
+}
+
+// ScriptFlushWithMode removes all the scripts from the script cache with the specified flush mode.
+// The mode can be either SYNC or ASYNC.
+//
+// See [valkey.io] for details.
+//
+// Parameters:
+//
+//	mode - The flush mode (SYNC or ASYNC).
+//
+// Return value:
+//
+//	OK on success.
+//
+// [valkey.io]: https://valkey.io/commands/script-flush/
+func (client *baseClient) ScriptFlushWithMode(mode options.FlushMode) (string, error) {
+	result, err := client.executeCommand(C.ScriptFlush, []string{string(mode)})
+	if err != nil {
+		return DefaultStringResponse, err
+	}
+	return handleStringResponse(result)
+}

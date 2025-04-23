@@ -49,4 +49,12 @@ type ScriptingAndFunctionClusterCommands interface {
 		script options.Script,
 		clusterScriptOptions options.ClusterScriptOptions,
 	) (ClusterValue[any], error)
+	
+	ScriptFlush() (string, error)
+	
+	ScriptFlushWithRoute(route options.RouteOption) (string, error)
+	
+	ScriptFlushWithMode(mode options.FlushMode) (string, error)
+	
+	ScriptFlushWithModeWithRoute(mode options.FlushMode, route options.RouteOption) (string, error)
 }
