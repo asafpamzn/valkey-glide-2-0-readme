@@ -291,3 +291,20 @@ type XInfoGroupInfo struct {
 	// Included in the response only on valkey 7.0.0 and above.
 	Lag Result[int64]
 }
+
+type LCSMatch struct {
+	MatchString string
+	Matches     []LCSMatchedPosition
+	Len         int64
+}
+
+type LCSMatchedPosition struct {
+	Key1     LCSPosition
+	Key2     LCSPosition
+	MatchLen int64
+}
+
+type LCSPosition struct {
+	Start int64
+	End   int64
+}
