@@ -120,6 +120,7 @@
 * Go: Modify blocking commands to use type `time.Duration` for timeouts ([#4086](https://github.com/valkey-io/valkey-glide/pull/4086))
 * Go: Modify most commands to use type `time.Duration` (check PR for list of commands modified) ([#4105](https://github.com/valkey-io/valkey-glide/pull/4105))
 * Go: Update return type for `XAdd` without optional arguments ([#4141](https://github.com/valkey-io/valkey-glide/pull/4141))
+* Go: Update return type for LCS commands ([#4187](https://github.com/valkey-io/valkey-glide/pull/4187))
 
 #### Fixes
 

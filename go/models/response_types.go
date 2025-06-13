@@ -292,6 +292,14 @@ type XInfoGroupInfo struct {
 	Lag Result[int64]
 }
 
+type LCSResponseType int
+
+const (
+	SimpleLCSString LCSResponseType = iota
+	SimpleLCSLength
+	ComplexLCSMatch
+)
+
 type LCSMatch struct {
 	MatchString string
 	Matches     []LCSMatchedPosition
