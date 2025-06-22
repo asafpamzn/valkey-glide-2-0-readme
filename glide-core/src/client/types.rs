@@ -174,7 +174,7 @@ impl From<protobuf::ConnectionRequest> for ConnectionRequest {
                     exponent_base: strategy.exponent_base,
                     factor: strategy.factor,
                     number_of_retries: strategy.number_of_retries,
-                    jitter_percent: strategy.jitter_percent,
+                    jitter_percent: Some(strategy.jitter_percent),
                 });
         let periodic_checks = value
             .periodic_checks
@@ -240,7 +240,8 @@ impl From<protobuf::ConnectionRequest> for ConnectionRequest {
             periodic_checks,
             pubsub_subscriptions,
             inflight_requests_limit,
-            lazy_connect,
+            otel_endpoint,
+            otel_span_flush_interval_ms: Some(otel_span_flush_interval_ms),
         }
     }
 }

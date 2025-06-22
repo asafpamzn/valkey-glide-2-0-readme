@@ -53,6 +53,12 @@ message PubSubSubscriptions
     map<uint32, PubSubChannelsOrPatterns> channels_or_patterns_by_type = 1;
 }
 
+message OpenTelemetryConfig
+{
+    string collector_end_point = 1;
+    uint64 span_flush_interval= 2;
+}
+
 // IMPORTANT - if you add fields here, you probably need to add them also in client/mod.rs:`sanitized_request_string`.
 message ConnectionRequest {
     repeated NodeAddress addresses = 1;
@@ -80,5 +86,5 @@ message ConnectionRetryStrategy {
     uint32 number_of_retries = 1;
     uint32 factor = 2;
     uint32 exponent_base = 3;
-    optional uint32 jitter_percent = 4;
+    uint32 jitter_percent = 4;
 }

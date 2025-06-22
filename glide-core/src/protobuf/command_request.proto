@@ -487,8 +487,8 @@ message Command {
 // Used for script requests with large keys or args vectors
 message ScriptInvocationPointers {
     string hash = 1;
-    optional uint64 keys_pointer = 2;
-    optional uint64 args_pointer = 3;
+    uint64 keys_pointer = 2;
+    uint64 args_pointer = 3;
 }
 
 message ScriptInvocation {
@@ -500,22 +500,22 @@ message ScriptInvocation {
 message Batch {
     bool is_atomic = 1;
     repeated Command commands = 2;
-    optional bool raise_on_error = 3;
-    optional uint32 timeout = 4;
-    optional bool retry_server_error = 5;
-    optional bool retry_connection_error = 6;
+    bool raise_on_error = 3;
+    uint32 timeout = 4;
+    bool retry_server_error = 5;
+    bool retry_connection_error = 6;
 }
 
 message ClusterScan {
     string cursor = 1;
-    optional bytes match_pattern = 2;
-    optional int64 count = 3;
-    optional string object_type = 4;
+    bytes match_pattern = 2;
+    int64 count = 3;
+    string object_type = 4;
     bool allow_non_covered_slots = 5;
 }
 
 message UpdateConnectionPassword {
-    optional string password = 1;
+    string password = 1;
     bool immediate_auth = 2;
 }
 
