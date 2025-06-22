@@ -240,8 +240,9 @@ impl From<protobuf::ConnectionRequest> for ConnectionRequest {
             periodic_checks,
             pubsub_subscriptions,
             inflight_requests_limit,
-            otel_endpoint,
-            otel_span_flush_interval_ms: Some(otel_span_flush_interval_ms),
+            lazy_connect,
+           // otel_endpoint,
+            //otel_span_flush_interval_ms: Some(otel_span_flush_interval_ms),
         }
     }
 }
