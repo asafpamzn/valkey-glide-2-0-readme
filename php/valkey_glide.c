@@ -24,7 +24,8 @@
 
 #include "valkey_glide_commands_common.h"
 #include "php_valkey_glide.h"
-#include "valkey_glide_arginfo.h" // Include generated arginfo header
+#include "valkey_glide_arginfo.h"         // Include generated arginfo header
+#include "valkey_glide_cluster_arginfo.h" // Include generated arginfo header
 
 /* Enum support includes - must be BEFORE arginfo includes */
 #if PHP_VERSION_ID >= 80100
@@ -64,6 +65,8 @@ zend_class_entry *get_valkey_glide_cluster_ce(void)
 {
     return valkey_glide_cluster_ce;
 }
+PHP_METHOD(ValkeyGlide, __construct);
+PHP_METHOD(ValkeyGlideCluster, __construct);
 
 const zend_function_entry valkey_glide_methods[] = {
     PHP_ME(ValkeyGlide, __construct, arginfo_class_ValkeyGlide___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)

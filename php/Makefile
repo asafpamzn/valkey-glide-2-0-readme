@@ -9,7 +9,7 @@ CONFIGURE_OPTIONS = '--enable-valkey-glide'
 SHLIB_SUFFIX_NAME = dylib
 SHLIB_DL_SUFFIX_NAME = so
 AWK = awk
-shared_objects_valkey_glide = valkey_glide.lo valkey_glide_cluster.lo command_response.lo valkey_glide_commands.lo valkey_glide_commands_2.lo valkey_glide_commands_3.lo valkey_glide_core_commands.lo valkey_glide_core_common.lo valkey_glide_config.lo valkey_glide_expire_commands.lo valkey_glide_geo_commands.lo valkey_glide_geo_common.lo valkey_glide_hash_common.lo valkey_glide_list_common.lo valkey_glide_s_common.lo valkey_glide_str_commands.lo valkey_glide_x_commands.lo valkey_glide_x_common.lo valkey_glide_z.lo valkey_glide_z_common.lo valkey_z_php_methods.lo
+shared_objects_valkey_glide = valkey_glide.lo valkey_glide_cluster.lo command_response.lo valkey_glide_commands.lo valkey_glide_commands_2.lo valkey_glide_commands_3.lo valkey_glide_core_commands.lo valkey_glide_core_common.lo valkey_glide_expire_commands.lo valkey_glide_geo_commands.lo valkey_glide_geo_common.lo valkey_glide_hash_common.lo valkey_glide_list_common.lo valkey_glide_s_common.lo valkey_glide_str_commands.lo valkey_glide_x_commands.lo valkey_glide_x_common.lo valkey_glide_z.lo valkey_glide_z_common.lo valkey_z_php_methods.lo src/command_request.lo src/connection_request.lo src/response.lo
 PHP_PECL_EXTENSION = valkey_glide
 PROTOC =
 PROTO_SRC_DIR =
@@ -257,12 +257,10 @@ build-modules-pre:
 build-modules: build-modules-pre $(PHP_MODULES) $(PHP_ZEND_EX)
 
 valkey_glide_arginfo.h: valkey_glide.stub.php
-	@echo "Generating arginfo from valkey_glide.stub.php"
-	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide.stub.php
+	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
 
 valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
-	@echo "Generating arginfo from valkey_glide_cluster.stub.php"
-	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide_cluster.stub.php
+	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
 
 ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
 
@@ -291,9 +289,6 @@ valkey_glide_core_commands.lo: /Users/asafp/work/valkey-glide-php/php/valkey_gli
 -include valkey_glide_core_common.dep
 valkey_glide_core_common.lo: /Users/asafp/work/valkey-glide-php/php/valkey_glide_core_common.c
 	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/valkey_glide_core_common.c -o valkey_glide_core_common.lo  -MMD -MF valkey_glide_core_common.dep -MT valkey_glide_core_common.lo
--include valkey_glide_config.dep
-valkey_glide_config.lo: /Users/asafp/work/valkey-glide-php/php/valkey_glide_config.c
-	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/valkey_glide_config.c -o valkey_glide_config.lo  -MMD -MF valkey_glide_config.dep -MT valkey_glide_config.lo
 -include valkey_glide_expire_commands.dep
 valkey_glide_expire_commands.lo: /Users/asafp/work/valkey-glide-php/php/valkey_glide_expire_commands.c
 	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/valkey_glide_expire_commands.c -o valkey_glide_expire_commands.lo  -MMD -MF valkey_glide_expire_commands.dep -MT valkey_glide_expire_commands.lo
@@ -330,6 +325,15 @@ valkey_glide_z_common.lo: /Users/asafp/work/valkey-glide-php/php/valkey_glide_z_
 -include valkey_z_php_methods.dep
 valkey_z_php_methods.lo: /Users/asafp/work/valkey-glide-php/php/valkey_z_php_methods.c
 	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/valkey_z_php_methods.c -o valkey_z_php_methods.lo  -MMD -MF valkey_z_php_methods.dep -MT valkey_z_php_methods.lo
+-include src/command_request.dep
+src/command_request.lo: /Users/asafp/work/valkey-glide-php/php/src/command_request.pb-c.c
+	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/src/command_request.pb-c.c -o src/command_request.lo  -MMD -MF src/command_request.dep -MT src/command_request.lo
+-include src/connection_request.dep
+src/connection_request.lo: /Users/asafp/work/valkey-glide-php/php/src/connection_request.pb-c.c
+	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/src/connection_request.pb-c.c -o src/connection_request.lo  -MMD -MF src/connection_request.dep -MT src/connection_request.lo
+-include src/response.dep
+src/response.lo: /Users/asafp/work/valkey-glide-php/php/src/response.pb-c.c
+	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/src/response.pb-c.c -o src/response.lo  -MMD -MF src/response.dep -MT src/response.lo
 $(phplibdir)/valkey_glide.la: ./valkey_glide.la
 	$(LIBTOOL) --tag=CC --mode=install cp ./valkey_glide.la $(phplibdir)
 

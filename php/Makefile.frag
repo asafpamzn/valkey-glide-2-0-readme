@@ -47,12 +47,10 @@ build-modules-pre:
 build-modules: build-modules-pre $(PHP_MODULES) $(PHP_ZEND_EX)
 
 valkey_glide_arginfo.h: valkey_glide.stub.php
-	@echo "Generating arginfo from valkey_glide.stub.php"
-	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide.stub.php
+	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
 
 valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
-	@echo "Generating arginfo from valkey_glide_cluster.stub.php"
-	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide_cluster.stub.php
+	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
 
 ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
 

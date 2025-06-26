@@ -37,10 +37,10 @@
 #include "valkey_glide_hash_common.h" /* Include hash command framework */
 
 #if PHP_VERSION_ID < 80000
-#include "redis_cluster_legacy_arginfo.h"
+#include "valkey_glide_cluster_legacy_arginfo.h"
 #else
 #include "zend_attributes.h"
-#include "redis_cluster_arginfo.h"
+#include "valkey_glide_cluster_arginfo.h"
 #endif
 
 /*f
