@@ -45,3 +45,15 @@ build-modules-pre:
 
 # Wrap the original build-modules
 build-modules: build-modules-pre $(PHP_MODULES) $(PHP_ZEND_EX)
+
+valkey_glide_arginfo.h: valkey_glide.stub.php
+	@echo "Generating arginfo from valkey_glide.stub.php"
+	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide.stub.php
+
+valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
+	@echo "Generating arginfo from valkey_glide_cluster.stub.php"
+	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide_cluster.stub.php
+
+ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
+
+all: $(ARGINFO_HEADERS)

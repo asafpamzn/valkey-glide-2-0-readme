@@ -256,17 +256,17 @@ build-modules-pre:
 # Wrap the original build-modules
 build-modules: build-modules-pre $(PHP_MODULES) $(PHP_ZEND_EX)
 
+valkey_glide_arginfo.h: valkey_glide.stub.php
+	@echo "Generating arginfo from valkey_glide.stub.php"
+	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide.stub.php
 
-%_arginfo.h: %.stub.php
-	@if test -e "$(top_srcdir)/build/gen_stub.php"; then \
-		if test ! -z "$(PHP)"; then \
-			echo Parse $< to generate $@;\
-			$(PHP) $(top_srcdir)/build/gen_stub.php $<; \
-		elif test ! -z "$(PHP_EXECUTABLE)" && test -x "$(PHP_EXECUTABLE)"; then \
-			echo Parse $< to generate $@;\
-			$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php $<; \
-		fi; \
-	fi;
+valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
+	@echo "Generating arginfo from valkey_glide_cluster.stub.php"
+	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide_cluster.stub.php
+
+ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
+
+all: $(ARGINFO_HEADERS)
 -include valkey_glide.dep
 valkey_glide.lo: /Users/asafp/work/valkey-glide-php/php/valkey_glide.c
 	$(LIBTOOL) --tag=CC --mode=compile $(CC) -I. -I/Users/asafp/work/valkey-glide-php/php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)   -DZEND_COMPILE_DL_EXT=1 -c /Users/asafp/work/valkey-glide-php/php/valkey_glide.c -o valkey_glide.lo  -MMD -MF valkey_glide.dep -MT valkey_glide.lo
