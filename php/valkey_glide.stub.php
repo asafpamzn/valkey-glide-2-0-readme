@@ -168,22 +168,22 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The new string length of the key or false on failure.
      *
-     * @see https://redis.io/commands/append
+     * @see https://valkey.io/commands/append
      *
      * @example
-     * $redis->set('foo', 'hello);
-     * $redis->append('foo', 'world');
+     * $valkey_glide->set('foo', 'hello);
+     * $valkey_glide->append('foo', 'world');
      */
     public function append(string $key, mixed $value): ValkeyGlide|int|false;
 
     /**
      * Authenticate a ValkeyGlide connection after its been established.
      *
-     *     $redis->auth('password');
-     *     $redis->auth(['password']);
-     *     $redis->auth(['username', 'password']);
+     *     $valkey_glide->auth('password');
+     *     $valkey_glide->auth(['password']);
+     *     $valkey_glide->auth(['username', 'password']);
      *
-     * @see https://redis.io/commands/auth
+     * @see https://valkey.io/commands/auth
      *
      * @param mixed $credentials A string password, or an array with one or two string elements.
      * @return ValkeyGlide|bool Whether the AUTH was successful.
@@ -196,7 +196,7 @@ class ValkeyGlide {
     /**
      * Count the number of set bits in a ValkeyGlide string.
      *
-     * @see https://redis.io/commands/bitcount/
+     * @see https://valkey.io/commands/bitcount/
      *
      * @param string $key     The key in question (must be a string key)
      * @param int    $start   The index where ValkeyGlide should start counting.  If omitted it
@@ -217,7 +217,7 @@ class ValkeyGlide {
     /**
      * Return the position of the first bit set to 0 or 1 in a string.
      *
-     * @see https://redis.io/commands/bitpos/
+     * @see https://valkey.io/commands/bitpos/
      *
      * @param string $key   The key to check (must be a string)
      * @param bool   $bit   Whether to look for an unset (0) or set (1) bit.
@@ -234,7 +234,7 @@ class ValkeyGlide {
      * Pop an element off the beginning of a ValkeyGlide list or lists, potentially blocking up to a specified
      * timeout.  This method may be called in two distinct ways, of which examples are provided below.
      *
-     * @see https://redis.io/commands/blpop/
+     * @see https://valkey.io/commands/blpop/
      *
      * @param string|array     $key_or_keys    This can either be a string key or an array of one or more
      *                                         keys.
@@ -245,7 +245,7 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|null|false Can return various things depending on command and data in ValkeyGlide.
      *
      * @example
-     * $redis->blPop('list1', 'list2', 'list3', 1.5);
+     * $valkey_glide->blPop('list1', 'list2', 'list3', 1.5);
      * $relay->blPop(['list1', 'list2', 'list3'], 1.5);
      */
     public function blPop(string|array $key_or_keys, string|float|int $timeout_or_key, mixed ...$extra_args): ValkeyGlide|array|null|false;
@@ -254,7 +254,7 @@ class ValkeyGlide {
      * Pop an element off of the end of a ValkeyGlide list or lists, potentially blocking up to a specified timeout.
      * The calling convention is identical to ValkeyGlide::blPop() so see that documentation for more details.
      *
-     * @see https://redis.io/commands/brpop/
+     * @see https://valkey.io/commands/brpop/
      * @see ValkeyGlide::blPop()
      *
      */
@@ -264,7 +264,7 @@ class ValkeyGlide {
      * Pop an element from the end of a ValkeyGlide list, pushing it to the beginning of another ValkeyGlide list,
      * optionally blocking up to a specified timeout.
      *
-     * @see https://redis.io/commands/brpoplpush/
+     * @see https://valkey.io/commands/brpoplpush/
      *
      * @param string    $src     The source list
      * @param string    $dst     The destination list
@@ -283,7 +283,7 @@ class ValkeyGlide {
      * **NOTE**:  We recommend calling this function with an array and a timeout as the other strategy
      *            may be deprecated in future versions of PhpValkeyGlide
      *
-     * @see https://redis.io/commands/bzpopmax
+     * @see https://valkey.io/commands/bzpopmax
      *
      * @param string|array $key_or_keys    Either a string key or an array of one or more keys.
      * @param string|int  $timeout_or_key  If the previous argument was an array, this argument
@@ -295,8 +295,8 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|false The popped elements.
      *
      * @example
-     * $redis->bzPopMax('key1', 'key2', 'key3', 1.5);
-     * $redis->bzPopMax(['key1', 'key2', 'key3'], 1.5);
+     * $valkey_glide->bzPopMax('key1', 'key2', 'key3', 1.5);
+     * $valkey_glide->bzPopMax(['key1', 'key2', 'key3'], 1.5);
      */
     public function bzPopMax(string|array $key, string|int $timeout_or_key, mixed ...$extra_args): ValkeyGlide|array|false;
 
@@ -306,7 +306,7 @@ class ValkeyGlide {
      *
      * This command is identical in semantics to bzPopMax so please see that method for more information.
      *
-     * @see https://redis.io/commands/bzpopmin
+     * @see https://valkey.io/commands/bzpopmin
      * @see ValkeyGlide::bzPopMax()
      *
      */
@@ -334,7 +334,7 @@ class ValkeyGlide {
     /**
      * POP one or more of the highest or lowest scoring elements from one or more sorted sets.
      *
-     * @see https://redis.io/commands/zmpop
+     * @see https://valkey.io/commands/zmpop
      *
      * @param array  $keys  One or more sorted sets
      * @param string $from  The string 'MIN' or 'MAX' (case insensitive) telling ValkeyGlide whether you want to
@@ -349,7 +349,7 @@ class ValkeyGlide {
      * Pop one or more elements from one or more ValkeyGlide LISTs, blocking up to a specified timeout when
      * no elements are available.
      *
-     * @see https://redis.io/commands/blmpop
+     * @see https://valkey.io/commands/blmpop
      *
      * @param float  $timeout The number of seconds ValkeyGlide will block when no elements are available.
      * @param array  $keys    One or more ValkeyGlide LISTs to pop from.
@@ -365,7 +365,7 @@ class ValkeyGlide {
     /**
      * Pop one or more elements off of one or more ValkeyGlide LISTs.
      *
-     * @see https://redis.io/commands/lmpop
+     * @see https://valkey.io/commands/lmpop
      *
      * @param array  $keys  An array with one or more ValkeyGlide LIST key names.
      * @param string $from  The string 'LEFT' or 'RIGHT' (case insensitive), telling ValkeyGlide whether to pop\
@@ -394,13 +394,13 @@ class ValkeyGlide {
      * @param string $operation The CONFIG operation to execute (e.g. GET, SET, REWRITE).
      * @param array|string|null $key_or_settings One or more keys or values.
      * @param string $value The value if this is a `CONFIG SET` operation.
-     * @see https://redis.io/commands/config
+     * @see https://valkey.io/commands/config
      *
      * @example
-     * $redis->config('GET', 'timeout');
-     * $redis->config('GET', ['timeout', 'databases']);
-     * $redis->config('SET', 'timeout', 30);
-     * $redis->config('SET', ['timeout' => 30, 'loglevel' => 'warning']);
+     * $valkey_glide->config('GET', 'timeout');
+     * $valkey_glide->config('GET', ['timeout', 'databases']);
+     * $valkey_glide->config('SET', 'timeout', 30);
+     * $valkey_glide->config('SET', ['timeout' => 30, 'loglevel' => 'warning']);
      */
     public function config(string $operation, array|string|null $key_or_settings = null, ?string $value = null): mixed;
 
@@ -408,7 +408,7 @@ class ValkeyGlide {
     /**
      * Make a copy of a key.
      *
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
      *
      * @param string $src     The key to copy
      * @param string $dst     The name of the new key created from the source key.
@@ -422,10 +422,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the copy was completed and false if not.
      *
-     * @see https://redis.io/commands/copy
+     * @see https://valkey.io/commands/copy
      *
      * @example
-     * $redis->pipeline()
+     * $valkey_glide->pipeline()
      *       ->select(1)
      *       ->del('newkey')
      *       ->select(0)
@@ -433,27 +433,27 @@ class ValkeyGlide {
      *       ->mset(['source1' => 'value1', 'exists' => 'old_value'])
      *       ->exec();
      *
-     * var_dump($redis->copy('source1', 'newkey'));
-     * var_dump($redis->copy('source1', 'newkey', ['db' => 1]));
-     * var_dump($redis->copy('source1', 'exists'));
-     * var_dump($redis->copy('source1', 'exists', ['REPLACE' => true]));
+     * var_dump($valkey_glide->copy('source1', 'newkey'));
+     * var_dump($valkey_glide->copy('source1', 'newkey', ['db' => 1]));
+     * var_dump($valkey_glide->copy('source1', 'exists'));
+     * var_dump($valkey_glide->copy('source1', 'exists', ['REPLACE' => true]));
      */
     public function copy(string $src, string $dst, ?array $options = null): ValkeyGlide|bool;
 
     /**
      * Return the number of keys in the currently selected ValkeyGlide database.
      *
-     * @see https://redis.io/commands/dbsize
+     * @see https://valkey.io/commands/dbsize
      *
      * @return ValkeyGlide|int The number of keys or false on failure.
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
-     * $redis->flushdb();
-     * $redis->set('foo', 'bar');
-     * var_dump($redis->dbsize());
-     * $redis->mset(['a' => 'a', 'b' => 'b', 'c' => 'c', 'd' => 'd']);
-     * var_dump($redis->dbsize());
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide->flushdb();
+     * $valkey_glide->set('foo', 'bar');
+     * var_dump($valkey_glide->dbsize());
+     * $valkey_glide->mset(['a' => 'a', 'b' => 'b', 'c' => 'c', 'd' => 'd']);
+     * var_dump($valkey_glide->dbsize());
      */
     public function dbSize(): ValkeyGlide|int|false;
 
@@ -468,26 +468,26 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The new value of the key or false on failure.
      *
-     * @see https://redis.io/commands/decr
-     * @see https://redis.io/commands/decrby
+     * @see https://valkey.io/commands/decr
+     * @see https://valkey.io/commands/decrby
      *
-     * @example $redis->decr('counter');
-     * @example $redis->decr('counter', 2);
+     * @example $valkey_glide->decr('counter');
+     * @example $valkey_glide->decr('counter', 2);
      */
     public function decr(string $key, int $by = 1): ValkeyGlide|int|false;
 
     /**
-     * Decrement a redis integer by a value
+     * Decrement a valkey integer by a value
      *
      * @param string $key   The integer key to decrement.
      * @param int    $value How much to decrement the key.
      *
      * @return ValkeyGlide|int|false The new value of the key or false on failure.
      *
-     * @see https://redis.io/commands/decrby
+     * @see https://valkey.io/commands/decrby
      *
-     * @example $redis->decrby('counter', 1);
-     * @example $redis->decrby('counter', 2);
+     * @example $valkey_glide->decrby('counter', 1);
+     * @example $valkey_glide->decrby('counter', 2);
      */
     public function decrBy(string $key, int $value): ValkeyGlide|int|false;
 
@@ -504,10 +504,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of keys that were deleted
      *
-     * @see https://redis.io/commands/del
+     * @see https://valkey.io/commands/del
      *
-     * @example $redis->del('key:0', 'key:1');
-     * @example $redis->del(['key:2', 'key:3', 'key:4']);
+     * @example $valkey_glide->del('key:0', 'key:1');
+     * @example $valkey_glide->del(['key:2', 'key:3', 'key:4']);
      */
     public function del(array|string $key, string ...$other_keys): ValkeyGlide|int|false;
 
@@ -523,8 +523,8 @@ class ValkeyGlide {
      * @return ValkeyGlide|bool  True if we could discard the transaction.
      *
      * @example
-     * $redis->set('foo', 'bar');
-     * $redis->discard();
+     * $valkey_glide->set('foo', 'bar');
+     * $valkey_glide->discard();
      */
     public function discard(): ValkeyGlide|bool;
 
@@ -532,19 +532,19 @@ class ValkeyGlide {
      * Dump ValkeyGlide' internal binary representation of a key.
      *
      * <code>
-     * $redis->zRange('new-zset', 0, -1, true);
+     * $valkey_glide->zRange('new-zset', 0, -1, true);
      * </code>
      *
      * @param string $key The key to dump.
      *
      * @return ValkeyGlide|string A binary string representing the key's value.
      *
-     * @see https://redis.io/commands/dump
+     * @see https://valkey.io/commands/dump
      *
      * @example
-     * $redis->zadd('zset', 0, 'zero', 1, 'one', 2, 'two');
-     * $binary = $redis->dump('zset');
-     * $redis->restore('new-zset', 0, $binary);
+     * $valkey_glide->zadd('zset', 0, 'zero', 1, 'one', 2, 'two');
+     * $binary = $valkey_glide->dump('zset');
+     * $valkey_glide->restore('new-zset', 0, $binary);
      */
     public function dump(string $key): ValkeyGlide|string|false;
 
@@ -555,21 +555,21 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|false The string sent to ValkeyGlide or false on failure.
      *
-     * @see https://redis.io/commands/echo
+     * @see https://valkey.io/commands/echo
      *
-     * @example $redis->echo('Hello, World');
+     * @example $valkey_glide->echo('Hello, World');
      */
     public function echo(string $str): ValkeyGlide|string|false;
 
     /**
-     * Execute a LUA script on the redis server.
+     * Execute a LUA script on the valkey server.
      *
-     * @see https://redis.io/commands/eval/
+     * @see https://valkey.io/commands/eval/
      *
      * @param string $script   A string containing the LUA script
      * @param array  $args     An array of arguments to pass to this script
      * @param int    $num_keys How many of the arguments are keys.  This is needed
-     *                         as redis distinguishes between key name arguments
+     *                         as valkey distinguishes between key name arguments
      *                         and other data.
      *
      * @return mixed LUA scripts may return arbitrary data so this method can return
@@ -579,7 +579,7 @@ class ValkeyGlide {
 
     /**
      * This is simply the read-only variant of eval, meaning the underlying script
-     * may not modify data in redis.
+     * may not modify data in valkey.
      *
      * @see ValkeyGlide::eval_ro()
      */
@@ -598,7 +598,7 @@ class ValkeyGlide {
      *
      * @return mixed Returns whatever the specific script does.
      *
-     * @see https://redis.io/commands/evalsha/
+     * @see https://valkey.io/commands/evalsha/
      * @see ValkeyGlide::eval();
      *
      */
@@ -606,7 +606,7 @@ class ValkeyGlide {
 
     /**
      * This is simply the read-only variant of evalsha, meaning the underlying script
-     * may not modify data in redis.
+     * may not modify data in valkey.
      *
      * @see ValkeyGlide::evalsha()
      */
@@ -617,13 +617,13 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The array of pipeline'd or multi replies or false on failure.
      *
-     * @see https://redis.io/commands/exec
-     * @see https://redis.io/commands/multi
+     * @see https://valkey.io/commands/exec
+     * @see https://valkey.io/commands/multi
      * @see ValkeyGlide::pipeline()
      * @see ValkeyGlide::multi()
      *
      * @example
-     * $res = $redis->multi()
+     * $res = $valkey_glide->multi()
      *              ->set('foo', 'bar')
      *              ->get('foo')
      *              ->del('list')
@@ -641,16 +641,16 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|bool    The number of keys that do exist and false on failure
      *
-     * @see https://redis.io/commands/exists
+     * @see https://valkey.io/commands/exists
      *
-     * @example $redis->exists(['k1', 'k2', 'k3']);
-     * @example $redis->exists('k4', 'k5', 'notakey');
+     * @example $valkey_glide->exists(['k1', 'k2', 'k3']);
+     * @example $valkey_glide->exists('k4', 'k5', 'notakey');
      */
     public function exists(mixed $key, mixed ...$other_keys): ValkeyGlide|int|bool;
 
     /**
      * Sets an expiration in seconds on the key in question.  If connected to
-     * redis-server >= 7.0.0 you may send an additional "mode" argument which
+     * valkey-server >= 7.0.0 you may send an additional "mode" argument which
      * modifies how the command will execute.
      *
      * @param string      $key  The key to set an expiration on.
@@ -665,7 +665,7 @@ class ValkeyGlide {
      *                      </code>
      *
      * @return ValkeyGlide|bool True if an expiration was set and false otherwise.
-     * @see https://redis.io/commands/expire
+     * @see https://valkey.io/commands/expire
      *
      */
     public function expire(string $key, int $timeout, ?string $mode = null): ValkeyGlide|bool;
@@ -690,8 +690,8 @@ class ValkeyGlide {
      * @param string|null $mode An option 'mode' that modifies how the command acts (see {@link ValkeyGlide::expire}).
      * @return ValkeyGlide|bool True if an expiration was set, false if not.
      *
-     * @see https://redis.io/commands/expireat
-     * @see https://redis.io/commands/expire
+     * @see https://valkey.io/commands/expireat
+     * @see https://valkey.io/commands/expire
      * @see ValkeyGlide::expire()
      */
     public function expireAt(string $key, int $timestamp, ?string $mode = null): ValkeyGlide|bool;
@@ -705,18 +705,18 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The timestamp when the key expires, or -1 if the key has no expiry
      *                         and -2 if the key doesn't exist.
      *
-     * @see https://redis.io/commands/expiretime
+     * @see https://valkey.io/commands/expiretime
      *
      * @example
-     * $redis->setEx('mykey', 60, 'myval');
-     * $redis->expiretime('mykey');
+     * $valkey_glide->setEx('mykey', 60, 'myval');
+     * $valkey_glide->expiretime('mykey');
      */
     public function expiretime(string $key): ValkeyGlide|int|false;
 
     /**
      * Get the expiration timestamp of a given ValkeyGlide key but in milliseconds.
      *
-     * @see https://redis.io/commands/pexpiretime
+     * @see https://valkey.io/commands/pexpiretime
      * @see ValkeyGlide::expiretime()
      *
      * @param string $key      The key to check
@@ -736,7 +736,7 @@ class ValkeyGlide {
      * @return mixed        Function may return arbitrary data so this method can return
      *                      strings, arrays, nested arrays, etc.
      *
-     * @see https://redis.io/commands/fcall
+     * @see https://valkey.io/commands/fcall
      */
     public function fcall(string $fn, array $keys = [], array $args = []): mixed;
 
@@ -750,7 +750,7 @@ class ValkeyGlide {
      * @return mixed        Function may return arbitrary data so this method can return
      *                      strings, arrays, nested arrays, etc.
      *
-     * @see https://redis.io/commands/fcall_ro
+     * @see https://valkey.io/commands/fcall_ro
      */
     public function fcall_ro(string $fn, array $keys = [], array $args = []): mixed;
 
@@ -760,7 +760,7 @@ class ValkeyGlide {
      * @param  bool  $sync Whether to perform the task in a blocking or non-blocking way.
      * @return bool
      *
-     * @see https://redis.io/commands/flushall
+     * @see https://valkey.io/commands/flushall
      */
     public function flushAll(?bool $sync = null): ValkeyGlide|bool;
 
@@ -770,7 +770,7 @@ class ValkeyGlide {
      * @param  bool  $sync Whether to perform the task in a blocking or non-blocking way.
      * @return bool
      *
-     * @see https://redis.io/commands/flushdb
+     * @see https://valkey.io/commands/flushdb
      */
     public function flushDB(?bool $sync = null): ValkeyGlide|bool;
 
@@ -790,7 +790,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool|string|array  Depends on subcommand.
      *
-     * @see https://redis.io/commands/function
+     * @see https://valkey.io/commands/function
      */
     public function function(string $operation, mixed ...$args): ValkeyGlide|bool|string|array;
 
@@ -807,10 +807,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The number of added elements is returned.  If the 'CH' option is specified,
      *                         the return value is the number of members *changed*.
      *
-     * @example $redis->geoAdd('cities', -121.8374, 39.7284, 'Chico', -122.03218, 37.322, 'Cupertino');
-     * @example $redis->geoadd('cities', -121.837478, 39.728494, 'Chico', ['XX', 'CH']);
+     * @example $valkey_glide->geoAdd('cities', -121.8374, 39.7284, 'Chico', -122.03218, 37.322, 'Cupertino');
+     * @example $valkey_glide->geoadd('cities', -121.837478, 39.728494, 'Chico', ['XX', 'CH']);
      *
-     * @see https://redis.io/commands/geoadd
+     * @see https://valkey.io/commands/geoadd
      */
 
     public function geoadd(string $key, float $lng, float $lat, string $member, mixed ...$other_triples_and_options): ValkeyGlide|int|false;
@@ -832,9 +832,9 @@ class ValkeyGlide {
      * @return ValkeyGlide|float|false The calculated distance in whichever units were specified or false
      *                           if one or both members did not exist.
      *
-     * @example $redis->geodist('cities', 'Chico', 'Cupertino', 'mi');
+     * @example $valkey_glide->geodist('cities', 'Chico', 'Cupertino', 'mi');
      *
-     * @see https://redis.io/commands/geodist
+     * @see https://valkey.io/commands/geodist
      */
     public function geodist(string $key, string $src, string $dst, ?string $unit = null): ValkeyGlide|float|false;
 
@@ -847,10 +847,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false    An array of GeoHash encoded values.
      *
-     * @see https://redis.io/commands/geohash
+     * @see https://valkey.io/commands/geohash
      * @see https://en.wikipedia.org/wiki/Geohash
      *
-     * @example $redis->geohash('cities', 'Chico', 'Cupertino');
+     * @example $valkey_glide->geohash('cities', 'Chico', 'Cupertino');
      */
     public function geohash(string $key, string $member, string ...$other_members): ValkeyGlide|array|false;
 
@@ -863,9 +863,9 @@ class ValkeyGlide {
      *
      * @return An array of longitude and latitude pairs.
      *
-     * @see https://redis.io/commands/geopos
+     * @see https://valkey.io/commands/geopos
      *
-     * @example $redis->geopos('cities', 'Seattle', 'New York');
+     * @example $valkey_glide->geopos('cities', 'Seattle', 'New York');
      */
     public function geopos(string $key, string $member, string ...$other_members): ValkeyGlide|array|false;
 
@@ -900,9 +900,9 @@ class ValkeyGlide {
      *
      * @return mixed This command can return various things, depending on the options passed.
      *
-     * @see https://redis.io/commands/georadius
+     * @see https://valkey.io/commands/georadius
      *
-     * @example $redis->georadius('cities', 47.608013, -122.335167, 1000, 'km');
+     * @example $valkey_glide->georadius('cities', 47.608013, -122.335167, 1000, 'km');
      */
     public function georadius(string $key, float $lng, float $lat, float $radius, string $unit, array $options = []): mixed;
 
@@ -926,7 +926,7 @@ class ValkeyGlide {
      *
      * @return mixed This command can return various things depending on options.
      *
-     * @example $redis->georadiusbymember('cities', 'Seattle', 200, 'mi');
+     * @example $valkey_glide->georadiusbymember('cities', 'Seattle', 200, 'mi');
      */
     public function georadiusbymember(string $key, string $member, float $radius, string $unit, array $options = []): mixed;
 
@@ -982,9 +982,9 @@ class ValkeyGlide {
      * @param  string  $key The key to query
      * @return mixed   The keys value or false if it did not exist.
      *
-     * @see https://redis.io/commands/get
+     * @see https://valkey.io/commands/get
      *
-     * @example $redis->get('foo');
+     * @example $valkey_glide->get('foo');
      */
     public function get(string $key): mixed;
 
@@ -994,7 +994,7 @@ class ValkeyGlide {
      * @param  string  $key The key to query
      * @return ValkeyGlide|array|false
      *
-     * @example $redis->getWithMeta('foo');
+     * @example $valkey_glide->getWithMeta('foo');
      */
     public function getWithMeta(string $key): ValkeyGlide|array|false;
 
@@ -1013,9 +1013,9 @@ class ValkeyGlide {
      * @param string $key The key to query.
      * @param int    $idx The Nth bit that we want to query.
      *
-     * @example $redis->getbit('bitmap', 1337);
+     * @example $valkey_glide->getbit('bitmap', 1337);
      *
-     * @see https://redis.io/commands/getbit
+     * @see https://valkey.io/commands/getbit
      */
     public function getBit(string $key, int $idx): ValkeyGlide|int|false;
 
@@ -1036,9 +1036,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|bool The key's value or false if it didn't exist.
      *
-     * @see https://redis.io/commands/getex
+     * @see https://valkey.io/commands/getex
      *
-     * @example $redis->getEx('mykey', ['EX' => 60]);
+     * @example $valkey_glide->getEx('mykey', ['EX' => 60]);
      */
     public function getEx(string $key, array $options = []): ValkeyGlide|string|bool;
 
@@ -1049,9 +1049,9 @@ class ValkeyGlide {
      * @param string $key The key to get/delete.
      * @return ValkeyGlide|string|bool The value of the key or false if it didn't exist.
      *
-     * @see https://redis.io/commands/getdel
+     * @see https://valkey.io/commands/getdel
      *
-     * @example $redis->getdel('token:123');
+     * @example $valkey_glide->getdel('token:123');
      */
     public function getDel(string $key): ValkeyGlide|string|bool;
 
@@ -1086,11 +1086,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|false The substring or false on failure.
      *
-     * @see https://redis.io/commands/getrange
+     * @see https://valkey.io/commands/getrange
      *
      * @example
-     * $redis->set('silly-word', 'Supercalifragilisticexpialidocious');
-     * echo $redis->getRange('silly-word', 0, 4) . "\n";
+     * $valkey_glide->set('silly-word', 'Supercalifragilisticexpialidocious');
+     * echo $valkey_glide->getRange('silly-word', 0, 4) . "\n";
      */
     public function getRange(string $key, int $start, int $end): ValkeyGlide|string|false;
 
@@ -1118,12 +1118,12 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|array|int|false Various reply types depending on options.
      *
-     * @see https://redis.io/commands/lcs
+     * @see https://valkey.io/commands/lcs
      *
      * @example
-     * $redis->set('seq1', 'gtaggcccgcacggtctttaatgtatccctgtttaccatgccatacctgagcgcatacgc');
-     * $redis->set('seq2', 'aactcggcgcgagtaccaggccaaggtcgttccagagcaaagactcgtgccccgctgagc');
-     * echo $redis->lcs('seq1', 'seq2') . "\n";
+     * $valkey_glide->set('seq1', 'gtaggcccgcacggtctttaatgtatccctgtttaccatgccatacctgagcgcatacgc');
+     * $valkey_glide->set('seq2', 'aactcggcgcgagtaccaggccaaggtcgttccagagcaaagactcgtgccccgctgagc');
+     * echo $valkey_glide->lcs('seq1', 'seq2') . "\n";
      */
     public function lcs(string $key1, string $key2, ?array $options = null): ValkeyGlide|string|array|int|false;
 
@@ -1136,11 +1136,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|false The old value of the key or false if it didn't exist.
      *
-     * @see https://redis.io/commands/getset
+     * @see https://valkey.io/commands/getset
      *
      * @example
-     * $redis->getset('captain', 'Pike');
-     * $redis->getset('captain', 'Kirk');
+     * $valkey_glide->getset('captain', 'Pike');
+     * $valkey_glide->getset('captain', 'Kirk');
      */
     public function getset(string $key, mixed $value): ValkeyGlide|string|false;
 
@@ -1154,9 +1154,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false     The number of fields actually removed.
      *
-     * @see https://redis.io/commands/hdel
+     * @see https://valkey.io/commands/hdel
      *
-     * @example $redis->hDel('communication', 'Alice', 'Bob');
+     * @example $valkey_glide->hDel('communication', 'Alice', 'Bob');
      */
     public function hDel(string $key, string $field, string ...$other_fields): ValkeyGlide|int|false;
 
@@ -1168,9 +1168,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool   True if it exists, false if not.
      *
-     * @see https://redis.io/commands/hexists
+     * @see https://valkey.io/commands/hexists
      *
-     * @example $redis->hExists('communication', 'Alice');
+     * @example $valkey_glide->hExists('communication', 'Alice');
      */
     public function hExists(string $key, string $field): ValkeyGlide|bool;
 
@@ -1182,9 +1182,9 @@ class ValkeyGlide {
      * @param string $key The hash to query.
      * @return ValkeyGlide|array<string|int, mixed>|false All fields and values or false if the key didn't exist.
      *
-     * @see https://redis.io/commands/hgetall
+     * @see https://valkey.io/commands/hgetall
      *
-     * @example $redis->hgetall('myhash');
+     * @example $valkey_glide->hgetall('myhash');
      */
     public function hGetAll(string $key): ValkeyGlide|array|false;
 
@@ -1197,11 +1197,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The new value of the field.
      *
-     * @see https://redis.io/commands/hincrby
+     * @see https://valkey.io/commands/hincrby
      *
      * @example
-     * $redis->hMSet('player:1', ['name' => 'Alice', 'score' => 0]);
-     * $redis->hincrby('player:1', 'score', 10);
+     * $valkey_glide->hMSet('player:1', ['name' => 'Alice', 'score' => 0]);
+     * $valkey_glide->hincrby('player:1', 'score', 10);
      *
      */
     public function hIncrBy(string $key, string $field, int $value): ValkeyGlide|int|false;
@@ -1214,10 +1214,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|float|false The field value after incremented.
      *
-     * @see https://redis.io/commands/hincrbyfloat
+     * @see https://valkey.io/commands/hincrbyfloat
      *
      * @example
-     * $redis->hincrbyfloat('numbers', 'tau', 2 * 3.1415926);
+     * $valkey_glide->hincrbyfloat('numbers', 'tau', 2 * 3.1415926);
      */
     public function hIncrByFloat(string $key, string $field, float $value): ValkeyGlide|float|false;
 
@@ -1228,22 +1228,22 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|list<string>|false The fields in the hash or false if the hash doesn't exist.
      *
-     * @see https://redis.io/commands/hkeys
+     * @see https://valkey.io/commands/hkeys
      *
-     * @example $redis->hkeys('myhash');
+     * @example $valkey_glide->hkeys('myhash');
      */
     public function hKeys(string $key): ValkeyGlide|array|false;
 
     /**
      * Get the number of fields in a hash.
      *
-     * @see https://redis.io/commands/hlen
+     * @see https://valkey.io/commands/hlen
      *
      * @param string $key The hash to check.
      *
      * @return ValkeyGlide|int|false The number of fields or false if the key didn't exist.
      *
-     * @example $redis->hlen('myhash');
+     * @example $valkey_glide->hlen('myhash');
      */
     public function hLen(string $key): ValkeyGlide|int|false;
 
@@ -1255,9 +1255,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The fields and values or false if the key didn't exist.
      *
-     * @see https://redis.io/commands/hmget
+     * @see https://valkey.io/commands/hmget
      *
-     * @example $redis->hMGet('player:1', ['name', 'score']);
+     * @example $valkey_glide->hMGet('player:1', ['name', 'score']);
      */
     public function hMget(string $key, array $fields): ValkeyGlide|array|false;
 
@@ -1269,9 +1269,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the operation was successful
      *
-     * @see https://redis.io/commands/hmset
+     * @see https://valkey.io/commands/hmset
      *
-     * @example $redis->hmset('updates', ['status' => 'starting', 'elapsed' => 0]);
+     * @example $valkey_glide->hmset('updates', ['status' => 'starting', 'elapsed' => 0]);
      */
     public function hMset(string $key, array $fieldvals): ValkeyGlide|bool;
 
@@ -1290,10 +1290,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|string One or more random fields (and possibly values).
      *
-     * @see https://redis.io/commands/hrandfield
+     * @see https://valkey.io/commands/hrandfield
      *
-     * @example $redis->hrandfield('settings');
-     * @example $redis->hrandfield('settings', ['count' => 2, 'withvalues' => true]);
+     * @example $valkey_glide->hrandfield('settings');
+     * @example $valkey_glide->hrandfield('settings', ['count' => 2, 'withvalues' => true]);
      */
     public function hRandField(string $key, ?array $options = null): ValkeyGlide|string|array|false;
 
@@ -1306,10 +1306,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of fields that were added, or false on failure.
      *
-     * @see https://redis.io/commands/hset/
+     * @see https://valkey.io/commands/hset/
      *
-     * @example $redis->hSet('player:1', 'name', 'Kim', 'score', 78);
-     * @example $redis->hSet('player:1', ['name' => 'Kim', 'score' => 78]);
+     * @example $valkey_glide->hSet('player:1', 'name', 'Kim', 'score', 78);
+     * @example $valkey_glide->hSet('player:1', ['name' => 'Kim', 'score' => 78]);
      */
     public function hSet(string $key, mixed ...$fields_and_vals): ValkeyGlide|int|false;
 
@@ -1321,11 +1321,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the field was set and false if not.
      *
-     * @see https://redis.io/commands/hsetnx
+     * @see https://valkey.io/commands/hsetnx
      *
      * @example
-     * $redis->hsetnx('player:1', 'lock', 'enabled');
-     * $redis->hsetnx('player:1', 'lock', 'enabled');
+     * $valkey_glide->hsetnx('player:1', 'lock', 'enabled');
+     * $valkey_glide->hsetnx('player:1', 'lock', 'enabled');
      */
     public function hSetNx(string $key, string $field, mixed $value): ValkeyGlide|bool;
 
@@ -1338,12 +1338,12 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The string length of the field or false.
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
-     * $redis->del('hash');
-     * $redis->hmset('hash', ['50bytes' => str_repeat('a', 50)]);
-     * $redis->hstrlen('hash', '50bytes');
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide->del('hash');
+     * $valkey_glide->hmset('hash', ['50bytes' => str_repeat('a', 50)]);
+     * $valkey_glide->hstrlen('hash', '50bytes');
      *
-     * @see https://redis.io/commands/hstrlen
+     * @see https://valkey.io/commands/hstrlen
      */
     public function hStrLen(string $key, string $field): ValkeyGlide|int|false;
 
@@ -1354,9 +1354,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|list<mixed>|false The values from the hash.
      *
-     * @see https://redis.io/commands/hvals
+     * @see https://valkey.io/commands/hvals
      *
-     * @example $redis->hvals('player:1');
+     * @example $valkey_glide->hvals('player:1');
      */
     public function hVals(string $key): ValkeyGlide|array|false;
 
@@ -1364,8 +1364,8 @@ class ValkeyGlide {
     /**
      * Iterate over the fields and values of a hash in an incremental fashion.
      *
-     * @see https://redis.io/commands/hscan
-     * @see https://redis.io/commands/scan
+     * @see https://valkey.io/commands/hscan
+     * @see https://valkey.io/commands/scan
      *
      * @param string $key       The hash to query.
      * @param int    $iterator  The scan iterator, which should be initialized to NULL before the first call.
@@ -1377,21 +1377,21 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|bool An array with a subset of fields and values.
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
      *
-     * $redis->del('big-hash');
+     * $valkey_glide->del('big-hash');
      *
      * for ($i = 0; $i < 1000; $i++) {
      *     $fields["field:$i"] = "value:$i";
      * }
      *
-     * $redis->hmset('big-hash', $fields);
+     * $valkey_glide->hmset('big-hash', $fields);
      *
      * $it = null;
      *
      * do {
      *     // Scan the hash but limit it to fields that match '*:1?3'
-     *     $fields = $redis->hscan('big-hash', $it, '*:1?3');
+     *     $fields = $valkey_glide->hscan('big-hash', $it, '*:1?3');
      *
      *     foreach ($fields as $field => $value) {
      *         echo "[$field] => $value\n";
@@ -1425,33 +1425,33 @@ class ValkeyGlide {
     /**
      * Increment a key's value, optionally by a specific amount.
      *
-     * @see https://redis.io/commands/incr
-     * @see https://redis.io/commands/incrby
+     * @see https://valkey.io/commands/incr
+     * @see https://valkey.io/commands/incrby
      *
      * @param string $key The key to increment
      * @param int    $by  An optional amount to increment by.
      *
      * @return ValkeyGlide|int|false  The new value of the key after incremented.
      *
-     * @example $redis->incr('mycounter');
-     * @example $redis->incr('mycounter', 10);
+     * @example $valkey_glide->incr('mycounter');
+     * @example $valkey_glide->incr('mycounter', 10);
      */
     public function incr(string $key, int $by = 1): ValkeyGlide|int|false;
 
     /**
      * Increment a key by a specific integer value
      *
-     * @see https://redis.io/commands/incrby
+     * @see https://valkey.io/commands/incrby
      *
      * @param string $key   The key to increment.
      * @param int    $value The amount to increment.
      *
      * @example
-     * $redis->set('primes', 2);
-     * $redis->incrby('primes', 1);
-     * $redis->incrby('primes', 2);
-     * $redis->incrby('primes', 2);
-     * $redis->incrby('primes', 4);
+     * $valkey_glide->set('primes', 2);
+     * $valkey_glide->incrby('primes', 1);
+     * $valkey_glide->incrby('primes', 2);
+     * $valkey_glide->incrby('primes', 2);
+     * $valkey_glide->incrby('primes', 4);
      */
     public function incrBy(string $key, int $value): ValkeyGlide|int|false;
 
@@ -1464,20 +1464,20 @@ class ValkeyGlide {
      * @return ValkeyGlide|float|false The new value of the key or false if the key didn't contain a string.
      *
      * @example
-     * $redis->incrbyfloat('tau', 3.1415926);
-     * $redis->incrbyfloat('tau', 3.1415926);
+     * $valkey_glide->incrbyfloat('tau', 3.1415926);
+     * $valkey_glide->incrbyfloat('tau', 3.1415926);
      */
     public function incrByFloat(string $key, float $value): ValkeyGlide|float|false;
 
     /**
-     * Retrieve information about the connected redis-server.  If no arguments are passed to
-     * this function, redis will return every info field.  Alternatively you may pass a specific
+     * Retrieve information about the connected valkey-server.  If no arguments are passed to
+     * this function, valkey will return every info field.  Alternatively you may pass a specific
      * section you want returned (e.g. 'server', or 'memory') to receive only information pertaining
      * to that section.
      *
      * If connected to ValkeyGlide server >= 7.0.0 you may pass multiple optional sections.
      *
-     * @see https://redis.io/commands/info/
+     * @see https://valkey.io/commands/info/
      *
      * @param string $sections Optional section(s) you wish ValkeyGlide server to return.
      *
@@ -1518,8 +1518,8 @@ class ValkeyGlide {
      * @return ValkeyGlide|string|false The element removed from the source list.
      *
      * @example
-     * $redis->rPush('numbers', 'one', 'two', 'three');
-     * $redis->lMove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT);
+     * $valkey_glide->rPush('numbers', 'one', 'two', 'three');
+     * $valkey_glide->lMove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT);
      */
     public function lMove(string $src, string $dst, string $wherefrom, string $whereto): ValkeyGlide|string|false;
 
@@ -1537,10 +1537,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|string|false;
      *
      * @example
-     * @redis->lPush('numbers', 'one');
-     * @redis->blmove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT 1.0);
+     * @valkey->lPush('numbers', 'one');
+     * @valkey->blmove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT 1.0);
      * // This call will block, if no additional elements are in 'numbers'
-     * @redis->blmove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT, 1.0);
+     * @valkey->blmove('numbers', 'odds', ValkeyGlide::LEFT, ValkeyGlide::LEFT, 1.0);
      */
     public function blmove(string $src, string $dst, string $wherefrom, string $whereto, float $timeout): ValkeyGlide|string|false;
 
@@ -1552,10 +1552,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|null|bool|int|array Will return the element(s) popped from the list or false/NULL
      *                                   if none was removed.
      *
-     * @see https://redis.io/commands/lpop
+     * @see https://valkey.io/commands/lpop
      *
-     * @example $redis->lpop('mylist');
-     * @example $redis->lpop('mylist', 4);
+     * @example $valkey_glide->lpop('mylist');
+     * @example $valkey_glide->lpop('mylist', 4);
      */
     public function lPop(string $key, int $count = 0): ValkeyGlide|bool|string|array;
 
@@ -1595,9 +1595,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int The new length of the list after prepending.
      *
-     * @see https://redis.io/commands/lpush
+     * @see https://valkey.io/commands/lpush
      *
-     * @example $redis->lPush('mylist', 'cat', 'bear', 'aligator');
+     * @example $valkey_glide->lPush('mylist', 'cat', 'bear', 'aligator');
      */
     public function lPush(string $key, mixed ...$elements): ValkeyGlide|int|false;
 
@@ -1609,9 +1609,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The new length of the list
      *
-     * @see https://redis.io/commands/rpush
+     * @see https://valkey.io/commands/rpush
      *
-     * @example $redis->rPush('mylist', 'xray', 'yankee', 'zebra');
+     * @example $valkey_glide->rPush('mylist', 'xray', 'yankee', 'zebra');
      */
     public function rPush(string $key, mixed ...$elements): ValkeyGlide|int|false;
 
@@ -1646,7 +1646,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the list was modified.
      *
-     * @see https://redis.io/commands/lset
+     * @see https://valkey.io/commands/lset
      */
     public function lSet(string $key, int $index, mixed $value): ValkeyGlide|bool;
 
@@ -1670,8 +1670,8 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The range of elements between the indexes.
      *
-     * @example $redis->lrange('mylist', 0, -1);  // the whole list
-     * @example $redis->lrange('mylist', -2, -1); // the last two elements in the list.
+     * @example $valkey_glide->lrange('mylist', 0, -1);  // the whole list
+     * @example $valkey_glide->lrange('mylist', -2, -1); // the last two elements in the list.
      */
     public function lrange(string $key, int $start , int $end): ValkeyGlide|array|false;
 
@@ -1684,7 +1684,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of elements removed.
      *
-     * @see https://redis.io/commands/lrem
+     * @see https://valkey.io/commands/lrem
      */
     public function lrem(string $key, mixed $value, int $count = 0): ValkeyGlide|int|false;
 
@@ -1697,7 +1697,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool true if the list was trimmed.
      *
-     * @example $redis->ltrim('mylist', 0, 3);  // Keep the first four elements
+     * @example $valkey_glide->ltrim('mylist', 0, 3);  // Keep the first four elements
      */
     public function ltrim(string $key, int $start , int $end): ValkeyGlide|bool;
 
@@ -1707,14 +1707,14 @@ class ValkeyGlide {
      * @param array $keys The keys to retrieve
      * @return ValkeyGlide|array|false an array of keys with their values.
      *
-     * @example $redis->mget(['key1', 'key2']);
+     * @example $valkey_glide->mget(['key1', 'key2']);
      */
     public function mget(array $keys): ValkeyGlide|array|false;
 
    
 
     /**
-     * Move a key to a different database on the same redis instance.
+     * Move a key to a different database on the same valkey instance.
      *
      * @param string $key The key to move
      * @return ValkeyGlide|bool True if the key was moved
@@ -1727,9 +1727,9 @@ class ValkeyGlide {
      * @param array $key_values An array with keys and their values.
      * @return ValkeyGlide|bool True if the keys could be set.
      *
-     * @see https://redis.io/commands/mset
+     * @see https://valkey.io/commands/mset
      *
-     * @example $redis->mSet(['foo' => 'bar', 'baz' => 'bop']);
+     * @example $valkey_glide->mSet(['foo' => 'bar', 'baz' => 'bop']);
      */
     public function mset(array $key_values): ValkeyGlide|bool;
 
@@ -1740,9 +1740,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the keys were set and false if not.
      *
-     * @see https://redis.io/commands/msetnx
+     * @see https://valkey.io/commands/msetnx
      *
-     * @example $redis->msetnx(['foo' => 'bar', 'baz' => 'bop']);
+     * @example $valkey_glide->msetnx(['foo' => 'bar', 'baz' => 'bop']);
      */
     public function msetnx(array $key_values): ValkeyGlide|bool;
 
@@ -1754,13 +1754,13 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the transaction could be started.
      *
-     * @see https://redis.io/commands/multi
+     * @see https://valkey.io/commands/multi
      *
      * @example
-     * $redis->multi();
-     * $redis->set('foo', 'bar');
-     * $redis->get('foo');
-     * $redis->exec();
+     * $valkey_glide->multi();
+     * $valkey_glide->set('foo', 'bar');
+     * $valkey_glide->get('foo');
+     * $valkey_glide->exec();
      */
     public function multi(int $value = ValkeyGlide::MULTI): bool|ValkeyGlide;
 
@@ -1808,7 +1808,7 @@ class ValkeyGlide {
     /**
      * Add one or more elements to a ValkeyGlide HyperLogLog key
      *
-     * @see https://redis.io/commands/pfadd
+     * @see https://valkey.io/commands/pfadd
      *
      * @param string $key      The key in question.
      *
@@ -1821,7 +1821,7 @@ class ValkeyGlide {
     /**
      * Retrieve the cardinality of a ValkeyGlide HyperLogLog key.
      *
-     * @see https://redis.io/commands/pfcount
+     * @see https://valkey.io/commands/pfcount
      *
      * @param string $key_or_keys Either one key or an array of keys
      *
@@ -1832,7 +1832,7 @@ class ValkeyGlide {
     /**
      * Merge one or more source HyperLogLog sets into a destination set.
      *
-     * @see https://redis.io/commands/pfmerge
+     * @see https://valkey.io/commands/pfmerge
      *
      * @param string $dst     The destination key.
      * @param array  $srckeys One or more source keys.
@@ -1842,17 +1842,17 @@ class ValkeyGlide {
     public function pfmerge(string $dst, array $srckeys): ValkeyGlide|bool;
 
     /**
-     * PING the redis server with an optional string argument.
+     * PING the valkey server with an optional string argument.
      *
-     * @see https://redis.io/commands/ping
+     * @see https://valkey.io/commands/ping
      *
      * @param string $message An optional string message that ValkeyGlide will reply with, if passed.
      *
      * @return ValkeyGlide|string|false If passed no message, this command will simply return `true`.
      *                            If a message is passed, it will return the message.
      *
-     * @example $redis->ping();
-     * @example $redis->ping('beep boop');
+     * @example $valkey_glide->ping();
+     * @example $valkey_glide->ping('beep boop');
      */
     public function ping(?string $message = null): ValkeyGlide|string|bool;
 
@@ -1865,10 +1865,10 @@ class ValkeyGlide {
      *
      * NOTE:  That this is shorthand for ValkeyGlide::multi(ValkeyGlide::PIPELINE)
      *
-     * @return ValkeyGlide The redis object is returned, to facilitate method chaining.
+     * @return ValkeyGlide The valkey object is returned, to facilitate method chaining.
      *
      * @example
-     * $redis->pipeline()
+     * $valkey_glide->pipeline()
      *       ->set('foo', 'bar')
      *       ->del('mylist')
      *       ->rpush('mylist', 'a', 'b', 'c')
@@ -1886,7 +1886,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True if the key could be set.
      *
-     * @example $redis->psetex('mykey', 1000, 'myval');
+     * @example $valkey_glide->psetex('mykey', 1000, 'myval');
      */
     public function psetex(string $key, int $expire, mixed $value): ValkeyGlide|bool;
 
@@ -1897,10 +1897,10 @@ class ValkeyGlide {
      * @param callable  $cb       A callback with the following prototype:
      *
      *                            <code>
-     *                            function ($redis, $channel, $message) { }
+     *                            function ($valkey_glide, $channel, $message) { }
      *                            </code>
      *
-     * @see https://redis.io/commands/psubscribe
+     * @see https://valkey.io/commands/psubscribe
      *
      * @return bool True if we were subscribed.
      */
@@ -1917,16 +1917,16 @@ class ValkeyGlide {
      *                         -2 - The key did not exist.
      *                         </code>
      *
-     * @see https://redis.io/commands/pttl
+     * @see https://valkey.io/commands/pttl
      *
-     * @example $redis->pttl('ttl-key');
+     * @example $valkey_glide->pttl('ttl-key');
      */
     public function pttl(string $key): ValkeyGlide|int|false;
 
     /**
      * Publish a message to a pubsub channel
      *
-     * @see https://redis.io/commands/publish
+     * @see https://valkey.io/commands/publish
      *
      * @param string $channel The channel to publish to.
      * @param string $message The message itself.
@@ -1940,8 +1940,8 @@ class ValkeyGlide {
     /**
      * Unsubscribe from one or more channels by pattern
      *
-     * @see https://redis.io/commands/punsubscribe
-     * @see https://redis.io/commands/subscribe
+     * @see https://valkey.io/commands/punsubscribe
+     * @see https://valkey.io/commands/subscribe
      * @see ValkeyGlide::subscribe()
      *
      * @param array $patterns One or more glob-style patterns of channel names.
@@ -1953,23 +1953,23 @@ class ValkeyGlide {
     /**
      * Pop one or more elements from the end of a list.
      *
-     * @param string $key   A redis LIST key name.
+     * @param string $key   A valkey LIST key name.
      * @param int    $count The maximum number of elements to pop at once.
      *                      NOTE:  The `count` argument requires ValkeyGlide >= 6.2.0
      *
      * @return ValkeyGlide|array|string|bool One or more popped elements or false if all were empty.
      *
-     * @see https://redis.io/commands/rpop
+     * @see https://valkey.io/commands/rpop
      *
-     * @example $redis->rPop('mylist');
-     * @example $redis->rPop('mylist', 4);
+     * @example $valkey_glide->rPop('mylist');
+     * @example $valkey_glide->rPop('mylist', 4);
      */
     public function rPop(string $key, int $count = 0): ValkeyGlide|array|string|bool;
 
     /**
      * Return a random key from the current database
      *
-     * @see https://redis.io/commands/randomkey
+     * @see https://valkey.io/commands/randomkey
      *
      * @return ValkeyGlide|string|false A random key name or false if no keys exist
      *
@@ -1984,16 +1984,16 @@ class ValkeyGlide {
      *
      * @return mixed Can return any number of things depending on command executed.
      *
-     * @example $redis->rawCommand('del', 'mystring', 'mylist');
-     * @example $redis->rawCommand('set', 'mystring', 'myvalue');
-     * @example $redis->rawCommand('rpush', 'mylist', 'one', 'two', 'three');
+     * @example $valkey_glide->rawCommand('del', 'mystring', 'mylist');
+     * @example $valkey_glide->rawCommand('set', 'mystring', 'myvalue');
+     * @example $valkey_glide->rawCommand('rpush', 'mylist', 'one', 'two', 'three');
      */
     public function rawcommand(string $command, mixed ...$args): mixed;
 
     /**
      * Unconditionally rename a key from $old_name to $new_name
      *
-     * @see https://redis.io/commands/rename
+     * @see https://valkey.io/commands/rename
      *
      * @param string $old_name The original name of the key
      * @param string $new_name The new name for the key
@@ -2005,7 +2005,7 @@ class ValkeyGlide {
     /**
      * Renames $key_src to $key_dst but only if newkey does not exist.
      *
-     * @see https://redis.io/commands/renamenx
+     * @see https://valkey.io/commands/renamenx
      *
      * @param string $key_src The source key name
      * @param string $key_dst The destination key name.
@@ -2013,11 +2013,11 @@ class ValkeyGlide {
      * @return ValkeyGlide|bool True if the key was renamed, false if not.
      *
      * @example
-     * $redis->set('src', 'src_key');
-     * $redis->set('existing-dst', 'i_exist');
+     * $valkey_glide->set('src', 'src_key');
+     * $valkey_glide->set('existing-dst', 'i_exist');
      *
-     * $redis->renamenx('src', 'dst');
-     * $redis->renamenx('dst', 'existing-dst');
+     * $valkey_glide->renamenx('src', 'dst');
+     * $valkey_glide->renamenx('dst', 'existing-dst');
      */
     public function renameNx(string $key_src, string $key_dst): ValkeyGlide|bool;
 
@@ -2054,15 +2054,15 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool     True if the key was stored, false if not.
      *
-     * @see https://redis.io/commands/restore
-     * @see https://redis.io/commands/dump
+     * @see https://valkey.io/commands/restore
+     * @see https://valkey.io/commands/dump
      * @see ValkeyGlide::dump()
      *
      * @example
-     * $redis->sAdd('captains', 'Janeway', 'Picard', 'Sisko', 'Kirk', 'Archer');
-     * $serialized = $redis->dump('captains');
+     * $valkey_glide->sAdd('captains', 'Janeway', 'Picard', 'Sisko', 'Kirk', 'Archer');
+     * $serialized = $valkey_glide->dump('captains');
      *
-     * $redis->restore('captains-backup', 0, $serialized);
+     * $valkey_glide->restore('captains-backup', 0, $serialized);
      */
     public function restore(string $key, int $ttl, string $value, ?array $options = null): ValkeyGlide|bool;
 
@@ -2083,16 +2083,16 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|false The popped element or false if the source key was empty.
      *
-     * @see https://redis.io/commands/rpoplpush
+     * @see https://valkey.io/commands/rpoplpush
      *
      * @example
-     * $redis->pipeline()
+     * $valkey_glide->pipeline()
      *       ->del('list1', 'list2')
      *       ->rpush('list1', 'list1-1', 'list1-2')
      *       ->rpush('list2', 'list2-1', 'list2-2')
      *       ->exec();
      *
-     * $redis->rpoplpush('list2', 'list1');
+     * $valkey_glide->rpoplpush('list2', 'list1');
      */
     public function rpoplpush(string $srckey, string $dstkey): ValkeyGlide|string|false;
 
@@ -2105,13 +2105,13 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of values added to the set.
      *
-     * @see https://redis.io/commands/sadd
+     * @see https://valkey.io/commands/sadd
      *
      * @example
-     * $redis->del('myset');
+     * $valkey_glide->del('myset');
      *
-     * $redis->sadd('myset', 'foo', 'bar', 'baz');
-     * $redis->sadd('myset', 'foo', 'new');
+     * $valkey_glide->sadd('myset', 'foo', 'bar', 'baz');
+     * $valkey_glide->sadd('myset', 'foo', 'new');
      */
     public function sAdd(string $key, mixed $value, mixed ...$other_values): ValkeyGlide|int|false;
 
@@ -2119,7 +2119,7 @@ class ValkeyGlide {
      * Add one or more values to a ValkeyGlide SET key.  This is an alternative to ValkeyGlide::sadd() but
      * instead of being variadic, takes a single array of values.
      *
-     * @see https://redis.io/commands/sadd
+     * @see https://valkey.io/commands/sadd
      * @see ValkeyGlide::sadd()
      *
      * @param string $key       The set to add values to.
@@ -2127,10 +2127,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false  The number of members added to the set.
      *
      * @example
-     * $redis->del('myset');
+     * $valkey_glide->del('myset');
      *
-     * $redis->sAddArray('myset', ['foo', 'bar', 'baz']);
-     * $redis->sAddArray('myset', ['foo', 'new']);
+     * $valkey_glide->sAddArray('myset', ['foo', 'bar', 'baz']);
+     * $valkey_glide->sAddArray('myset', ['foo', 'new']);
      */
     public function sAddArray(string $key, array $values): int;
 
@@ -2144,17 +2144,17 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|false Returns the elements from keys 2..N that don't exist in the
      *                           first sorted set, or false on failure.
      *
-     * @see https://redis.io/commands/sdiff
+     * @see https://valkey.io/commands/sdiff
      *
      * @example
-     * $redis->pipeline()
+     * $valkey_glide->pipeline()
      *       ->del('set1', 'set2', 'set3')
      *       ->sadd('set1', 'apple', 'banana', 'carrot', 'date')
      *       ->sadd('set2', 'carrot')
      *       ->sadd('set3', 'apple', 'carrot', 'eggplant')
      *       ->exec();
      *
-     * $redis->sdiff('set1', 'set2', 'set3');
+     * $valkey_glide->sdiff('set1', 'set2', 'set3');
      */
     public function sDiff(string $key, string ...$other_keys): ValkeyGlide|array|false;
 
@@ -2162,7 +2162,7 @@ class ValkeyGlide {
      * This method performs the same operation as SDIFF except it stores the resulting diff
      * values in a specified destination key.
      *
-     * @see https://redis.io/commands/sdiffstore
+     * @see https://valkey.io/commands/sdiffstore
      * @see ValkeyGlide::sdiff()
      *
      * @param string $dst The key where to store the result
@@ -2177,21 +2177,21 @@ class ValkeyGlide {
      * Given one or more ValkeyGlide SET keys, this command will return all of the elements that are
      * in every one.
      *
-     * @see https://redis.io/commands/sinter
+     * @see https://valkey.io/commands/sinter
      *
      * @param string $key        The first SET key to intersect.
      * @param string $other_keys One or more ValkeyGlide SET keys.
      *
      * @example
      * <code>
-     * $redis->pipeline()
+     * $valkey_glide->pipeline()
      *       ->del('alice_likes', 'bob_likes', 'bill_likes')
      *       ->sadd('alice_likes', 'asparagus', 'broccoli', 'carrot', 'potato')
      *       ->sadd('bob_likes', 'asparagus', 'carrot', 'potato')
      *       ->sadd('bill_likes', 'broccoli', 'potato')
      *       ->exec();
      *
-     * var_dump($redis->sinter('alice_likes', 'bob_likes', 'bill_likes'));
+     * var_dump($valkey_glide->sinter('alice_likes', 'bob_likes', 'bill_likes'));
      * </code>
      */
     public function sInter(array|string $key, string ...$other_keys): ValkeyGlide|array|false;
@@ -2205,15 +2205,15 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The
      *
-     * @see https://redis.io/commands/sintercard
+     * @see https://valkey.io/commands/sintercard
      *
      * @example
      * <code>
-     * $redis->sAdd('set1', 'apple', 'pear', 'banana', 'carrot');
-     * $redis->sAdd('set2', 'apple',         'banana');
-     * $redis->sAdd('set3',          'pear', 'banana');
+     * $valkey_glide->sAdd('set1', 'apple', 'pear', 'banana', 'carrot');
+     * $valkey_glide->sAdd('set2', 'apple',         'banana');
+     * $valkey_glide->sAdd('set3',          'pear', 'banana');
      *
-     * $redis->sInterCard(['set1', 'set2', 'set3']);
+     * $valkey_glide->sInterCard(['set1', 'set2', 'set3']);
      * </code>
      */
     public function sintercard(array $keys, int $limit = -1): ValkeyGlide|int|false;
@@ -2230,11 +2230,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false          The number of values stored in the destination key or false on failure.
      *
-     * @see https://redis.io/commands/sinterstore
+     * @see https://valkey.io/commands/sinterstore
      * @see ValkeyGlide::sinter()
      * <code>
-     * @example $redis->sInterStore(['dst', 'src1', 'src2', 'src3']);
-     * @example $redis->sInterStore('dst', 'src1', 'src'2', 'src3');
+     * @example $valkey_glide->sInterStore(['dst', 'src1', 'src2', 'src3']);
+     * @example $valkey_glide->sInterStore('dst', 'src1', 'src'2', 'src3');
      * </code>
      */
     public function sInterStore(array|string $key, string ...$other_keys): ValkeyGlide|int|false;
@@ -2246,19 +2246,19 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false Every element in the set or false on failure.
      *
-     * @see https://redis.io/commands/smembers
+     * @see https://valkey.io/commands/smembers
      *
      * @example
-     * $redis->sAdd('tng-crew', ...['Picard', 'Riker', 'Data', 'Worf', 'La Forge', 'Troi', 'Crusher', 'Broccoli']);
-     * $redis->sMembers('tng-crew');
+     * $valkey_glide->sAdd('tng-crew', ...['Picard', 'Riker', 'Data', 'Worf', 'La Forge', 'Troi', 'Crusher', 'Broccoli']);
+     * $valkey_glide->sMembers('tng-crew');
      */
     public function sMembers(string $key): ValkeyGlide|array|false;
 
     /**
      * Check if one or more values are members of a set.
      *
-     * @see https://redis.io/commands/smismember
-     * @see https://redis.io/commands/smember
+     * @see https://valkey.io/commands/smismember
+     * @see https://valkey.io/commands/smember
      * @see ValkeyGlide::smember()
      *
      * @param string $key           The set to query.
@@ -2269,8 +2269,8 @@ class ValkeyGlide {
      *                           was a member of the set.
      *
      * @example
-     * $redis->sAdd('ds9-crew', ...["Sisko", "Kira", "Dax", "Worf", "Bashir", "O'Brien"]);
-     * $members = $redis->sMIsMember('ds9-crew', ...['Sisko', 'Picard', 'Data', 'Worf']);
+     * $valkey_glide->sAdd('ds9-crew', ...["Sisko", "Kira", "Dax", "Worf", "Bashir", "O'Brien"]);
+     * $members = $valkey_glide->sMIsMember('ds9-crew', ...['Sisko', 'Picard', 'Data', 'Worf']);
      */
     public function sMisMember(string $key, string $member, string ...$other_members): ValkeyGlide|array|false;
 
@@ -2278,7 +2278,7 @@ class ValkeyGlide {
      * Pop a member from one set and push it onto another.  This command will create the
      * destination set if it does not currently exist.
      *
-     * @see https://redis.io/commands/smove
+     * @see https://valkey.io/commands/smove
      *
      * @param string $src   The source set.
      * @param string $dst   The destination set.
@@ -2287,26 +2287,26 @@ class ValkeyGlide {
      * @return ValkeyGlide|bool   True if the member was moved, and false if it wasn't in the set.
      *
      * @example
-     * $redis->sAdd('numbers', 'zero', 'one', 'two', 'three', 'four');
-     * $redis->sMove('numbers', 'evens', 'zero');
-     * $redis->sMove('numbers', 'evens', 'two');
-     * $redis->sMove('numbers', 'evens', 'four');
+     * $valkey_glide->sAdd('numbers', 'zero', 'one', 'two', 'three', 'four');
+     * $valkey_glide->sMove('numbers', 'evens', 'zero');
+     * $valkey_glide->sMove('numbers', 'evens', 'two');
+     * $valkey_glide->sMove('numbers', 'evens', 'four');
      */
     public function sMove(string $src, string $dst, mixed $value): ValkeyGlide|bool;
 
     /**
      * Remove one or more elements from a set.
      *
-     * @see https://redis.io/commands/spop
+     * @see https://valkey.io/commands/spop
      *
      * @param string $key    The set in question.
      * @param int    $count  An optional number of members to pop.   This defaults to
      *                       removing one element.
      *
      * @example
-     * $redis->del('numbers', 'evens');
-     * $redis->sAdd('numbers', 'zero', 'one', 'two', 'three', 'four');
-     * $redis->sPop('numbers');
+     * $valkey_glide->del('numbers', 'evens');
+     * $valkey_glide->sAdd('numbers', 'zero', 'one', 'two', 'three', 'four');
+     * $valkey_glide->sPop('numbers');
      */
     public function sPop(string $key, int $count = 0): ValkeyGlide|string|array|false;
 
@@ -2325,32 +2325,32 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|string|false One or more random members or false on failure.
      *
-     * @see https://redis.io/commands/srandmember
+     * @see https://valkey.io/commands/srandmember
      *
-     * @example $redis->sRandMember('myset');
-     * @example $redis->sRandMember('myset', 10);
-     * @example $redis->sRandMember('myset', -10);
+     * @example $valkey_glide->sRandMember('myset');
+     * @example $valkey_glide->sRandMember('myset', 10);
+     * @example $valkey_glide->sRandMember('myset', -10);
      */
     public function sRandMember(string $key, int $count = 0): mixed;
 
     /**
      * Returns the union of one or more ValkeyGlide SET keys.
      *
-     * @see https://redis.io/commands/sunion
+     * @see https://valkey.io/commands/sunion
      *
      * @param string $key         The first SET to do a union with
      * @param string $other_keys  One or more subsequent keys
      *
      * @return ValkeyGlide|array|false  The union of the one or more input sets or false on failure.
      *
-     * @example $redis->sunion('set1', 'set2');
+     * @example $valkey_glide->sunion('set1', 'set2');
      */
     public function sUnion(string $key, string ...$other_keys): ValkeyGlide|array|false;
 
     /**
      * Perform a union of one or more ValkeyGlide SET keys and store the result in a new set
      *
-     * @see https://redis.io/commands/sunionstore
+     * @see https://valkey.io/commands/sunionstore
      * @see ValkeyGlide::sunion()
      *
      * @param string $dst        The destination key
@@ -2381,7 +2381,7 @@ class ValkeyGlide {
      * @param string|null $pattern An optional glob-style pattern for matching key names.  If passed as
      *                         NULL, it is the equivalent of sending '*' (match every key).
      *
-     * @param int    $count    A hint to redis that tells it how many keys to return in a single
+     * @param int    $count    A hint to valkey that tells it how many keys to return in a single
      *                         call to SCAN.  The larger the number, the longer ValkeyGlide may block
      *                         clients while iterating the key space.
      *
@@ -2394,30 +2394,30 @@ class ValkeyGlide {
      *                         should instead continue to SCAN until the iterator reference is
      *                         returned to zero.
      *
-     * @see https://redis.io/commands/scan
+     * @see https://valkey.io/commands/scan
      * @see ValkeyGlide::setOption()
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
      *
-     * $redis->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
+     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
      *
      * $it = null;
      *
      * do {
-     *     $keys = $redis->scan($it, '*zorg*');
+     *     $keys = $valkey_glide->scan($it, '*zorg*');
      *     foreach ($keys as $key) {
      *         echo "KEY: $key\n";
      *     }
      * } while ($it != 0);
      *
-     * $redis->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
+     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
      *
      * $it = null;
      *
      * // When ValkeyGlide::SCAN_RETRY is enabled, we can use simpler logic, as we will never receive an
      * // empty array of keys when the iterator is nonzero.
-     * while ($keys = $redis->scan($it, '*zorg*')) {
+     * while ($keys = $valkey_glide->scan($it, '*zorg*')) {
      *     foreach ($keys as $key) {
      *         echo "KEY: $key\n";
      *     }
@@ -2432,24 +2432,24 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The cardinality of the set or false on failure.
      *
-     * @see https://redis.io/commands/scard
+     * @see https://valkey.io/commands/scard
      *
-     * @example $redis->scard('set');
+     * @example $valkey_glide->scard('set');
      */
     public function scard(string $key): ValkeyGlide|int|false;
 
     /**
      * An administrative command used to interact with LUA scripts stored on the server.
      *
-     * @see https://redis.io/commands/script
+     * @see https://valkey.io/commands/script
      *
      * @param string $command The script suboperation to execute.
      * @param mixed  $args    One or more additional argument
      *
      * @return mixed This command returns various things depending on the specific operation executed.
      *
-     * @example $redis->script('load', 'return 1');
-     * @example $redis->script('exists', sha1('return 1'));
+     * @example $valkey_glide->script('load', 'return 1');
+     * @example $valkey_glide->script('exists', sha1('return 1'));
      */
     public function script(string $command, mixed ...$args): mixed;
 
@@ -2460,9 +2460,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool true on success and false on failure
      *
-     * @see https://redis.io/commands/select
+     * @see https://valkey.io/commands/select
      *
-     * @example $redis->select(1);
+     * @example $valkey_glide->select(1);
      */
     public function select(int $db): ValkeyGlide|bool;
 
@@ -2489,18 +2489,18 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|bool True if the key was set or false on failure.
      *
-     * @see https://redis.io/commands/set
-     * @see https://redis.io/commands/setex
+     * @see https://valkey.io/commands/set
+     * @see https://valkey.io/commands/setex
      *
-     * @example $redis->set('key', 'value');
-     * @example $redis->set('key', 'expires_in_60_seconds', 60);
+     * @example $valkey_glide->set('key', 'value');
+     * @example $valkey_glide->set('key', 'expires_in_60_seconds', 60);
      */
     public function set(string $key, mixed $value, mixed $options = null): ValkeyGlide|string|bool;
 
     /**
      * Set a specific bit in a ValkeyGlide string to zero or one
      *
-     * @see https://redis.io/commands/setbit
+     * @see https://valkey.io/commands/setbit
      *
      * @param string $key    The ValkeyGlide STRING key to modify
      * @param bool   $value  Whether to set the bit to zero or one.
@@ -2508,15 +2508,15 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The original value of the bit or false on failure.
      *
      * @example
-     * $redis->set('foo', 'bar');
-     * $redis->setbit('foo', 7, 1);
+     * $valkey_glide->set('foo', 'bar');
+     * $valkey_glide->setbit('foo', 7, 1);
      */
     public function setBit(string $key, int $idx, bool $value): ValkeyGlide|int|false;
 
     /**
      * Update or append to a ValkeyGlide string at a specific starting index
      *
-     * @see https://redis.io/commands/setrange
+     * @see https://valkey.io/commands/setrange
      *
      * @param string $key    The key to update
      * @param int    $index  Where to insert the provided value
@@ -2525,8 +2525,8 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The new length of the string or false on failure
      *
      * @example
-     * $redis->set('message', 'Hello World');
-     * $redis->setRange('message', 6, 'ValkeyGlide');
+     * $valkey_glide->set('message', 'Hello World');
+     * $valkey_glide->setRange('message', 6, 'ValkeyGlide');
      */
     public function setRange(string $key, int $index, string $value): ValkeyGlide|int|false;
 
@@ -2541,34 +2541,34 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool True on success or false on failure.
      *
-     * @example $redis->setex('60s-ttl', 60, 'some-value');
+     * @example $valkey_glide->setex('60s-ttl', 60, 'some-value');
      */
     public function setex(string $key, int $expire, mixed $value);
 
     /**
      * Set a key to a value, but only if that key does not already exist.
      *
-     * @see https://redis.io/commands/setnx
+     * @see https://valkey.io/commands/setnx
      *
      * @param string $key   The key name to set.
      * @param mixed  $value What to set the key to.
      *
      * @return ValkeyGlide|bool Returns true if the key was set and false otherwise.
      *
-     * @example $redis->setnx('existing-key', 'existing-value');
-     * @example $redis->setnx('new-key', 'new-value');
+     * @example $valkey_glide->setnx('existing-key', 'existing-value');
+     * @example $valkey_glide->setnx('new-key', 'new-value');
      */
     public function setnx(string $key, mixed $value): ValkeyGlide|bool;
 
     /**
      * Check whether a given value is the member of a ValkeyGlide SET.
      *
-     * @param string $key   The redis set to check.
+     * @param string $key   The valkey set to check.
      * @param mixed  $value The value to test.
      *
      * @return ValkeyGlide|bool True if the member exists and false if not.
      *
-     * @example $redis->sismember('myset', 'mem1', 'mem2');
+     * @example $valkey_glide->sismember('myset', 'mem1', 'mem2');
      */
     public function sismember(string $key, mixed $value): ValkeyGlide|bool;
 
@@ -2579,7 +2579,7 @@ class ValkeyGlide {
     /**
      * Update one or more keys last modified metadata.
      *
-     * @see https://redis.io/commands/touch/
+     * @see https://valkey.io/commands/touch/
      *
      * @param array|string $key    Either the first key or if passed as the only argument
      *                             an array of keys.
@@ -2595,7 +2595,7 @@ class ValkeyGlide {
     /**
      * Sort the contents of a ValkeyGlide key in various ways.
      *
-     * @see https://redis.io/commands/sort/
+     * @see https://valkey.io/commands/sort/
      *
      * @param string $key     The key you wish to sort
      * @param array  $options Various options controlling how you would like the
@@ -2651,7 +2651,7 @@ class ValkeyGlide {
     /**
      * Remove one or more values from a ValkeyGlide SET key.
      *
-     * @see https://redis.io/commands/srem
+     * @see https://valkey.io/commands/srem
      *
      * @param string $key         The ValkeyGlide SET key in question.
      * @param mixed  $value       The first value to remove.
@@ -2659,15 +2659,15 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false    The number of values removed from the set or false on failure.
      *
-     * @example $redis->sRem('set1', 'mem1', 'mem2', 'not-in-set');
+     * @example $valkey_glide->sRem('set1', 'mem1', 'mem2', 'not-in-set');
      */
     public function srem(string $key, mixed $value, mixed ...$other_values): ValkeyGlide|int|false;
 
     /**
-     * Scan the members of a redis SET key.
+     * Scan the members of a valkey SET key.
      *
-     * @see https://redis.io/commands/sscan
-     * @see https://redis.io/commands/scan
+     * @see https://valkey.io/commands/sscan
+     * @see https://valkey.io/commands/scan
      * @see ValkeyGlide::setOption()
      *
      * @param string $key       The ValkeyGlide SET key in question.
@@ -2681,13 +2681,13 @@ class ValkeyGlide {
      *                          before returning members for that iteration.
      *
      * @example
-     * $redis->del('myset');
+     * $valkey_glide->del('myset');
      * for ($i = 0; $i < 10000; $i++) {
-     *     $redis->sAdd('myset', "member:$i");
+     *     $valkey_glide->sAdd('myset', "member:$i");
      * }
-     * $redis->sadd('myset', 'foofoo');
+     * $valkey_glide->sadd('myset', 'foofoo');
      *
-     * $redis->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
+     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
      *
      * $scanned = 0;
      * $it = null;
@@ -2696,7 +2696,7 @@ class ValkeyGlide {
      * // a nonzero iterator.
      * do {
      *     // Scan members containing '5'
-     *     $members = $redis->sscan('myset', $it, '*5*');
+     *     $members = $valkey_glide->sscan('myset', $it, '*5*');
      *     foreach ($members as $member) {
      *          echo "NORETRY: $member\n";
      *          $scanned++;
@@ -2704,14 +2704,14 @@ class ValkeyGlide {
      * } while ($it != 0);
      * echo "TOTAL: $scanned\n";
      *
-     * $redis->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
+     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
      *
      * $scanned = 0;
      * $it = null;
      *
      * // With ValkeyGlide::SCAN_RETRY PhpValkeyGlide will never return an empty array
      * // when the cursor is non-zero
-     * while (($members = $redis->sscan('myset', $it, '*5*'))) {
+     * while (($members = $valkey_glide->sscan('myset', $it, '*5*'))) {
      *     foreach ($members as $member) {
      *         echo "RETRY: $member\n";
      *         $scanned++;
@@ -2730,18 +2730,18 @@ class ValkeyGlide {
      * @return bool True on success, false on faiilure.  Note that this command will block the
      *              client in a subscribe loop, waiting for messages to arrive.
      *
-     * @see https://redis.io/commands/ssubscribe
+     * @see https://valkey.io/commands/ssubscribe
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
      *
-     * $redis->ssubscribe(['channel-1', 'channel-2'], function ($redis, $channel, $message) {
+     * $valkey_glide->ssubscribe(['channel-1', 'channel-2'], function ($valkey_glide, $channel, $message) {
      *     echo "[$channel]: $message\n";
      *
      *     // Unsubscribe from the message channel when we read 'quit'
      *     if ($message == 'quit') {
      *         echo "Unsubscribing from '$channel'\n";
-     *         $redis->sunsubscribe([$channel]);
+     *         $valkey_glide->sunsubscribe([$channel]);
      *     }
      * });
      *
@@ -2759,9 +2759,9 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The length of the string key if it exists, zero if it does not, and
      *                         false on failure.
      *
-     * @see https://redis.io/commands/strlen
+     * @see https://valkey.io/commands/strlen
      *
-     * @example $redis->strlen('mykey');
+     * @example $valkey_glide->strlen('mykey');
      */
     public function strlen(string $key): ValkeyGlide|int|false;
 
@@ -2775,18 +2775,18 @@ class ValkeyGlide {
      * @return bool True on success, false on faiilure.  Note that this command will block the
      *              client in a subscribe loop, waiting for messages to arrive.
      *
-     * @see https://redis.io/commands/subscribe
+     * @see https://valkey.io/commands/subscribe
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
      *
-     * $redis->subscribe(['channel-1', 'channel-2'], function ($redis, $channel, $message) {
+     * $valkey_glide->subscribe(['channel-1', 'channel-2'], function ($valkey_glide, $channel, $message) {
      *     echo "[$channel]: $message\n";
      *
      *     // Unsubscribe from the message channel when we read 'quit'
      *     if ($message == 'quit') {
      *         echo "Unsubscribing from '$channel'\n";
-     *         $redis->unsubscribe([$channel]);
+     *         $valkey_glide->unsubscribe([$channel]);
      *     }
      * });
      *
@@ -2803,14 +2803,14 @@ class ValkeyGlide {
      * @param array $channels One or more channels to unsubscribe from.
      * @return ValkeyGlide|array|bool The array of unsubscribed channels.
      *
-     * @see https://redis.io/commands/sunsubscribe
+     * @see https://valkey.io/commands/sunsubscribe
      * @see ValkeyGlide::ssubscribe()
      *
      * @example
-     * $redis->ssubscribe(['channel-1', 'channel-2'], function ($redis, $channel, $message) {
+     * $valkey_glide->ssubscribe(['channel-1', 'channel-2'], function ($valkey_glide, $channel, $message) {
      *     if ($message == 'quit') {
      *         echo "$channel => 'quit' detected, unsubscribing!\n";
-     *         $redis->sunsubscribe([$channel]);
+     *         $valkey_glide->sunsubscribe([$channel]);
      *     } else {
      *         echo "$channel => $message\n";
      *     }
@@ -2832,26 +2832,26 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|bool Success if the databases could be swapped and false on failure.
      *
-     * @see https://redis.io/commands/swapdb
+     * @see https://valkey.io/commands/swapdb
      * @see ValkeyGlide::del()
      *
      * @example
-     * $redis->select(0);
-     * $redis->set('db0-key', 'db0-value');
-     * $redis->swapdb(0, 1);
-     * $redis->get('db0-key');
+     * $valkey_glide->select(0);
+     * $valkey_glide->set('db0-key', 'db0-value');
+     * $valkey_glide->swapdb(0, 1);
+     * $valkey_glide->get('db0-key');
      */
     public function swapdb(int $src, int $dst): ValkeyGlide|bool;
 
     /**
      * Retrieve the server time from the connected ValkeyGlide instance.
      *
-     * @see https://redis.io/commands/time
+     * @see https://valkey.io/commands/time
      *
      * @return A two element array consisting of a Unix Timestamp and the number of microseconds
      *         elapsed since the second.
      *
-     * @example $redis->time();
+     * @example $valkey_glide->time();
      */
     public function time(): ValkeyGlide|array;
 
@@ -2863,16 +2863,16 @@ class ValkeyGlide {
      *                         no expiration, and -2 if the key does not exist.  In the event of an
      *                         error, this command will return false.
      *
-     * @see https://redis.io/commands/ttl
+     * @see https://valkey.io/commands/ttl
      *
-     * @example $redis->ttl('mykey');
+     * @example $valkey_glide->ttl('mykey');
      */
     public function ttl(string $key): ValkeyGlide|int|false;
 
     /**
      * Get the type of a given ValkeyGlide key.
      *
-     * @see https://redis.io/commands/type
+     * @see https://valkey.io/commands/type
      *
      * @param  string $key     The key to check
      * @return ValkeyGlide|int|false The ValkeyGlide type constant or false on failure.
@@ -2888,8 +2888,8 @@ class ValkeyGlide {
      *     ValkeyGlide::VALKEY_GLIDE_STREAM
      *
      * @example
-     * foreach ($redis->keys('*') as $key) {
-     *     echo "$key => " . $redis->type($key) . "\n";
+     * foreach ($valkey_glide->keys('*') as $key) {
+     *     echo "$key => " . $valkey_glide->type($key) . "\n";
      * }
      */
     public function type(string $key): ValkeyGlide|int|false;
@@ -2906,12 +2906,12 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of keys deleted or false on failure.
      *
-     * @see https://redis.io/commands/unlink
-     * @see https://redis.io/commands/del
+     * @see https://valkey.io/commands/unlink
+     * @see https://valkey.io/commands/del
      * @see ValkeyGlide::del()
      *
-     * @example $redis->unlink('key1', 'key2', 'key3');
-     * @example $redis->unlink(['key1', 'key2', 'key3']);
+     * @example $valkey_glide->unlink('key1', 'key2', 'key3');
+     * @example $valkey_glide->unlink(['key1', 'key2', 'key3']);
      */
     public function unlink(array|string $key, string ...$other_keys): ValkeyGlide|int|false;
 
@@ -2921,14 +2921,14 @@ class ValkeyGlide {
      * @param array $channels One or more channels to unsubscribe from.
      * @return ValkeyGlide|array|bool The array of unsubscribed channels.
      *
-     * @see https://redis.io/commands/unsubscribe
+     * @see https://valkey.io/commands/unsubscribe
      * @see ValkeyGlide::subscribe()
      *
      * @example
-     * $redis->subscribe(['channel-1', 'channel-2'], function ($redis, $channel, $message) {
+     * $valkey_glide->subscribe(['channel-1', 'channel-2'], function ($valkey_glide, $channel, $message) {
      *     if ($message == 'quit') {
      *         echo "$channel => 'quit' detected, unsubscribing!\n";
-     *         $redis->unsubscribe([$channel]);
+     *         $valkey_glide->unsubscribe([$channel]);
      *     } else {
      *         echo "$channel => $message\n";
      *     }
@@ -2941,8 +2941,8 @@ class ValkeyGlide {
     /**
      * Remove any previously WATCH'ed keys in a transaction.
      *
-     * @see https://redis.io/commands/unwatch
-     * @see https://redis.io/commands/unwatch
+     * @see https://valkey.io/commands/unwatch
+     * @see https://valkey.io/commands/unwatch
      * @see ValkeyGlide::watch()
      *
      * @return True on success and false on failure.
@@ -2958,31 +2958,31 @@ class ValkeyGlide {
      * @return ValkeyGlide|bool
      *
      *
-     * @see https://redis.io/commands/watch
-     * @see https://redis.io/commands/unwatch
+     * @see https://valkey.io/commands/watch
+     * @see https://valkey.io/commands/unwatch
      *
      * @example
-     * $redis1 = new ValkeyGlide(['host' => 'localhost']);
-     * $redis2 = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide1 = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide2 = new ValkeyGlide(['host' => 'localhost']);
      *
      * // Start watching 'incr-key'
-     * $redis1->watch('incr-key');
+     * $valkey_glide1->watch('incr-key');
      *
      * // Retrieve its value.
-     * $val = $redis1->get('incr-key');
+     * $val = $valkey_glide1->get('incr-key');
      *
      * // A second client modifies 'incr-key' after we read it.
-     * $redis2->set('incr-key', 0);
+     * $valkey_glide2->set('incr-key', 0);
      *
      * // Because another client changed the value of 'incr-key' after we read it, this
      * // is no longer a proper increment operation, but because we are `WATCH`ing the
      * // key, this transaction will fail and we can try again.
      * //
-     * // If were to comment out the above `$redis2->set('incr-key', 0)` line the
+     * // If were to comment out the above `$valkey_glide2->set('incr-key', 0)` line the
      * // transaction would succeed.
-     * $redis1->multi();
-     * $redis1->set('incr-key', $val + 1);
-     * $res = $redis1->exec();
+     * $valkey_glide1->multi();
+     * $valkey_glide1->set('incr-key', $val + 1);
+     * $res = $valkey_glide1->exec();
      *
      * // bool(false)
      * var_dump($res);
@@ -2993,7 +2993,7 @@ class ValkeyGlide {
      * Block the client up to the provided timeout until a certain number of replicas have confirmed
      * receiving them.
      *
-     * @see https://redis.io/commands/wait
+     * @see https://valkey.io/commands/wait
      *
      * @param int $numreplicas The number of replicas we want to confirm write operations
      * @param int $timeout     How long to wait (zero meaning forever).
@@ -3013,33 +3013,33 @@ class ValkeyGlide {
      *
      * @return int|false The number of acknowledged messages
      *
-     * @see https://redis.io/commands/xack
-     * @see https://redis.io/commands/xreadgroup
+     * @see https://valkey.io/commands/xack
+     * @see https://valkey.io/commands/xreadgroup
      * @see ValkeyGlide::xack()
      *
      * @example
-     * $redis->xAdd('ships', '*', ['name' => 'Enterprise']);
-     * $redis->xAdd('ships', '*', ['name' => 'Defiant']);
+     * $valkey_glide->xAdd('ships', '*', ['name' => 'Enterprise']);
+     * $valkey_glide->xAdd('ships', '*', ['name' => 'Defiant']);
      *
-     * $redis->xGroup('CREATE', 'ships', 'Federation', '0-0');
+     * $valkey_glide->xGroup('CREATE', 'ships', 'Federation', '0-0');
      *
      * // Consume a single message with the consumer group 'Federation'
-     * $ship = $redis->xReadGroup('Federation', 'Picard', ['ships' => '>'], 1);
+     * $ship = $valkey_glide->xReadGroup('Federation', 'Picard', ['ships' => '>'], 1);
      *
      * /* Retrieve the ID of the message we read.
      * assert(isset($ship['ships']));
      * $id = key($ship['ships']);
      *
      * // The message we just read is now pending.
-     * $res = $redis->xPending('ships', 'Federation'));
+     * $res = $valkey_glide->xPending('ships', 'Federation'));
      * var_dump($res);
      *
      * // We can tell ValkeyGlide we were able to process the message by using XACK
-     * $res = $redis->xAck('ships', 'Federation', [$id]);
+     * $res = $valkey_glide->xAck('ships', 'Federation', [$id]);
      * assert($res === 1);
      *
      * // The message should no longer be pending.
-     * $res = $redis->xPending('ships', 'Federation');
+     * $res = $valkey_glide->xPending('ships', 'Federation');
      * var_dump($res);
      */
     public function xack(string $key, string $group, array $ids): int|false;
@@ -3060,10 +3060,10 @@ class ValkeyGlide {
      *                           `$maxlen` values.
      * @param bool   $nomkstream If passed as `TRUE`, the stream must exist for ValkeyGlide to append the message.
      *
-     * @see https://redis.io/commands/xadd
+     * @see https://valkey.io/commands/xadd
      *
-     * @example $redis->xAdd('ds9-season-1', '1-1', ['title' => 'Emissary Part 1']);
-     * @example $redis->xAdd('ds9-season-1', '1-2', ['title' => 'A Man Alone']);
+     * @example $valkey_glide->xAdd('ds9-season-1', '1-1', ['title' => 'Emissary Part 1']);
+     * @example $valkey_glide->xAdd('ds9-season-1', '1-2', ['title' => 'A Man Alone']);
      */
     public function xadd(string $key, string $id, array $values, int $maxlen = 0, bool $approx = false, bool $nomkstream = false): ValkeyGlide|string|false;
 
@@ -3071,9 +3071,9 @@ class ValkeyGlide {
      * This command allows a consumer to claim pending messages that have been idle for a specified period of time.
      * Its purpose is to provide a mechanism for picking up messages that may have had a failed consumer.
      *
-     * @see https://redis.io/commands/xautoclaim
-     * @see https://redis.io/commands/xclaim
-     * @see https://redis.io/docs/data-types/streams-tutorial/
+     * @see https://valkey.io/commands/xautoclaim
+     * @see https://valkey.io/commands/xclaim
+     * @see https://valkey.io/docs/data-types/streams-tutorial/
      *
      * @param string $key      The stream to check.
      * @param string $group    The consumer group to query.
@@ -3086,22 +3086,22 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|bool An array of pending IDs or false if there are none, or on failure.
      *
      * @example
-     * $redis->xGroup('CREATE', 'ships', 'combatants', '0-0', true);
+     * $valkey_glide->xGroup('CREATE', 'ships', 'combatants', '0-0', true);
      *
-     * $redis->xAdd('ships', '1424-74205', ['name' => 'Defiant']);
+     * $valkey_glide->xAdd('ships', '1424-74205', ['name' => 'Defiant']);
      *
      * // Consume the ['name' => 'Defiant'] message
-     * $msgs = $redis->xReadGroup('combatants', "Jem'Hadar", ['ships' => '>'], 1);
+     * $msgs = $valkey_glide->xReadGroup('combatants', "Jem'Hadar", ['ships' => '>'], 1);
      *
      * // The "Jem'Hadar" consumer has the message presently
-     * $pending = $redis->xPending('ships', 'combatants');
+     * $pending = $valkey_glide->xPending('ships', 'combatants');
      * var_dump($pending);
      *
      * // Assume control of the pending message with a different consumer.
-     * $res = $redis->xAutoClaim('ships', 'combatants', 'Sisko', 0, '0-0');
+     * $res = $valkey_glide->xAutoClaim('ships', 'combatants', 'Sisko', 0, '0-0');
      *
      * // Now the 'Sisko' consumer owns the message
-     * $pending = $redis->xPending('ships', 'combatants');
+     * $pending = $valkey_glide->xPending('ships', 'combatants');
      * var_dump($pending);
      */
     public function xautoclaim(string $key, string $group, string $consumer, int $min_idle, string $start, int $count = -1, bool $justid = false): ValkeyGlide|bool|array;
@@ -3110,8 +3110,8 @@ class ValkeyGlide {
      * This method allows a consumer to take ownership of pending stream entries, by ID.  Another
      * command that does much the same thing but does not require passing specific IDs is `ValkeyGlide::xAutoClaim`.
      *
-     * @see https://redis.io/commands/xclaim
-     * @see https://redis.io/commands/xautoclaim.
+     * @see https://valkey.io/commands/xclaim
+     * @see https://valkey.io/commands/xautoclaim.
      *
      * @param string $key            The stream we wish to claim messages for.
      * @param string $group          Our consumer group.
@@ -3140,25 +3140,25 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|bool      An array of claimed messages or false on failure.
      *
      * @example
-     * $redis->xGroup('CREATE', 'ships', 'combatants', '0-0', true);
+     * $valkey_glide->xGroup('CREATE', 'ships', 'combatants', '0-0', true);
      *
-     * $redis->xAdd('ships', '1424-74205', ['name' => 'Defiant']);
+     * $valkey_glide->xAdd('ships', '1424-74205', ['name' => 'Defiant']);
      *
      * // Consume the ['name' => 'Defiant'] message
-     * $msgs = $redis->xReadGroup('combatants', "Jem'Hadar", ['ships' => '>'], 1);
+     * $msgs = $valkey_glide->xReadGroup('combatants', "Jem'Hadar", ['ships' => '>'], 1);
      *
      * // The "Jem'Hadar" consumer has the message presently
-     * $pending = $redis->xPending('ships', 'combatants');
+     * $pending = $valkey_glide->xPending('ships', 'combatants');
      * var_dump($pending);
      *
      * assert($pending && isset($pending[1]));
      *
      * // Claim the message by ID.
-     * $claimed = $redis->xClaim('ships', 'combatants', 'Sisko', 0, [$pending[1]], ['JUSTID']);
+     * $claimed = $valkey_glide->xClaim('ships', 'combatants', 'Sisko', 0, [$pending[1]], ['JUSTID']);
      * var_dump($claimed);
      *
      * // Now the 'Sisko' consumer owns the message
-     * $pending = $redis->xPending('ships', 'combatants');
+     * $pending = $valkey_glide->xPending('ships', 'combatants');
      * var_dump($pending);
      */
     public function xclaim(string $key, string $group, string $consumer, int $min_idle, array $ids, array $options): ValkeyGlide|array|bool;
@@ -3171,7 +3171,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of messages removed or false on failure.
      *
-     * @example $redis->xDel('stream', ['1-1', '2-1', '3-1']);
+     * @example $valkey_glide->xDel('stream', ['1-1', '2-1', '3-1']);
      */
     public function xdel(string $key, array $ids): ValkeyGlide|int|false;
 
@@ -3181,7 +3181,7 @@ class ValkeyGlide {
      * Perform various operation on consumer groups for a particular ValkeyGlide STREAM.  What the command does
      * is primarily based on which operation is passed.
      *
-     * @see https://redis.io/commands/xgroup/
+     * @see https://valkey.io/commands/xgroup/
      *
      * @param string $operation      The subcommand you intend to execute.  Valid options are as follows
      *                               'HELP'           - ValkeyGlide will return information about the command
@@ -3224,11 +3224,11 @@ class ValkeyGlide {
      *
      * @return mixed This command can return different things depending on the operation being called.
      *
-     * @see https://redis.io/commands/xinfo
+     * @see https://valkey.io/commands/xinfo
      *
-     * @example $redis->xInfo('CONSUMERS', 'stream');
-     * @example $redis->xInfo('GROUPS', 'stream');
-     * @example $redis->xInfo('STREAM', 'stream');
+     * @example $valkey_glide->xInfo('CONSUMERS', 'stream');
+     * @example $valkey_glide->xInfo('GROUPS', 'stream');
+     * @example $valkey_glide->xInfo('STREAM', 'stream');
      */
     public function xinfo(string $operation, ?string $arg1 = null, ?string $arg2 = null, int $count = -1): mixed;
 
@@ -3240,9 +3240,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of messages or false on failure.
      *
-     * @see https://redis.io/commands/xlen
+     * @see https://valkey.io/commands/xlen
      *
-     * @example $redis->xLen('stream');
+     * @example $valkey_glide->xLen('stream');
      */
     public function xlen(string $key): ValkeyGlide|int|false;
 
@@ -3250,8 +3250,8 @@ class ValkeyGlide {
      * Interact with stream messages that have been consumed by a consumer group but not yet
      * acknowledged with XACK.
      *
-     * @see https://redis.io/commands/xpending
-     * @see https://redis.io/commands/xreadgroup
+     * @see https://valkey.io/commands/xpending
+     * @see https://valkey.io/commands/xreadgroup
      *
      * @param string $key      The stream to inspect.
      * @param string $group    The user group we want to see pending messages from.
@@ -3275,10 +3275,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|bool The entries in the stream within the requested range or false on failure.
      *
-     * @see https://redis.io/commands/xrange
+     * @see https://valkey.io/commands/xrange
      *
-     * @example $redis->xRange('stream', '0-1', '0-2');
-     * @example $redis->xRange('stream', '-', '+');
+     * @example $valkey_glide->xRange('stream', '0-1', '0-2');
+     * @example $valkey_glide->xRange('stream', '-', '+');
      */
     public function xrange(string $key, string $start, string $end, int $count = -1): ValkeyGlide|array|bool;
 
@@ -3292,17 +3292,17 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|bool An array of read elements or false if there aren't any.
      *
-     * @see https://redis.io/commands/xread
+     * @see https://valkey.io/commands/xread
      *
      * @example
-     * $redis->xAdd('s03', '3-1', ['title' => 'The Search, Part I']);
-     * $redis->xAdd('s03', '3-2', ['title' => 'The Search, Part II']);
-     * $redis->xAdd('s03', '3-3', ['title' => 'The House Of Quark']);
-     * $redis->xAdd('s04', '4-1', ['title' => 'The Way of the Warrior']);
-     * $redis->xAdd('s04', '4-3', ['title' => 'The Visitor']);
-     * $redis->xAdd('s04', '4-4', ['title' => 'Hippocratic Oath']);
+     * $valkey_glide->xAdd('s03', '3-1', ['title' => 'The Search, Part I']);
+     * $valkey_glide->xAdd('s03', '3-2', ['title' => 'The Search, Part II']);
+     * $valkey_glide->xAdd('s03', '3-3', ['title' => 'The House Of Quark']);
+     * $valkey_glide->xAdd('s04', '4-1', ['title' => 'The Way of the Warrior']);
+     * $valkey_glide->xAdd('s04', '4-3', ['title' => 'The Visitor']);
+     * $valkey_glide->xAdd('s04', '4-4', ['title' => 'Hippocratic Oath']);
      *
-     * $redis->xRead(['s03' => '3-2', 's04' => '4-1']);
+     * $valkey_glide->xRead(['s03' => '3-2', 's04' => '4-1']);
      */
     public function xread(array $streams, int $count = -1, int $block = -1): ValkeyGlide|array|bool;
 
@@ -3317,27 +3317,27 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|bool Zero or more unread messages or false on failure.
      *
-     * @see https://redis.io/commands/xreadgroup
+     * @see https://valkey.io/commands/xreadgroup
      *
      * @example
-     * $redis->xGroup('CREATE', 'episodes', 'ds9', '0-0', true);
+     * $valkey_glide->xGroup('CREATE', 'episodes', 'ds9', '0-0', true);
      *
-     * $redis->xAdd('episodes', '1-1', ['title' => 'Emissary: Part 1']);
-     * $redis->xAdd('episodes', '1-2', ['title' => 'A Man Alone']);
+     * $valkey_glide->xAdd('episodes', '1-1', ['title' => 'Emissary: Part 1']);
+     * $valkey_glide->xAdd('episodes', '1-2', ['title' => 'A Man Alone']);
      *
-     * $messages = $redis->xReadGroup('ds9', 'sisko', ['episodes' => '>']);
+     * $messages = $valkey_glide->xReadGroup('ds9', 'sisko', ['episodes' => '>']);
      *
      * // After having read the two messages, add another
-     * $redis->xAdd('episodes', '1-3', ['title' => 'Emissary: Part 2']);
+     * $valkey_glide->xAdd('episodes', '1-3', ['title' => 'Emissary: Part 2']);
      *
      * // Acknowledge the first two read messages
      * foreach ($messages as $stream => $stream_messages) {
      *     $ids = array_keys($stream_messages);
-     *     $redis->xAck('stream', 'ds9', $ids);
+     *     $valkey_glide->xAck('stream', 'ds9', $ids);
      * }
      *
      * // We can now pick up where we left off, and will only get the final message
-     * $msgs = $redis->xReadGroup('ds9', 'sisko', ['episodes' => '>']);
+     * $msgs = $valkey_glide->xReadGroup('ds9', 'sisko', ['episodes' => '>']);
      */
     public function xreadgroup(string $group, string $consumer, array $streams, int $count = 1, int $block = 1): ValkeyGlide|array|bool;
 
@@ -3351,11 +3351,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|bool The entries within the requested range, from newest to oldest.
      *
-     * @see https://redis.io/commands/xrevrange
-     * @see https://redis.io/commands/xrange
+     * @see https://valkey.io/commands/xrevrange
+     * @see https://valkey.io/commands/xrange
      *
-     * @example $redis->xRevRange('stream', '0-2', '0-1');
-     * @example $redis->xRevRange('stream', '+', '-');
+     * @example $valkey_glide->xRevRange('stream', '0-2', '0-1');
+     * @example $valkey_glide->xRevRange('stream', '+', '-');
      */
     public function xrevrange(string $key, string $end, string $start, int $count = -1): ValkeyGlide|array|bool;
 
@@ -3367,17 +3367,17 @@ class ValkeyGlide {
      *                          MAXLEN - An integer describing the maximum desired length of the stream after the command.
      *                          MINID  - An ID that will become the new minimum ID in the stream, as ValkeyGlide will trim all
      *                                   messages older than this ID.
-     * @param bool   $approx    Whether redis is allowed to do an approximate trimming of the stream.  This is
+     * @param bool   $approx    Whether valkey is allowed to do an approximate trimming of the stream.  This is
      *                          more efficient for ValkeyGlide given how streams are stored internally.
      * @param bool   $minid     When set to `true`, users should pass a minimum ID to the `$threshold` argument.
      * @param int    $limit     An optional upper bound on how many entries to trim during the command.
      *
      * @return ValkeyGlide|int|false  The number of entries deleted from the stream.
      *
-     * @see https://redis.io/commands/xtrim
+     * @see https://valkey.io/commands/xtrim
      *
-     * @example $redis->xTrim('stream', 3);
-     * @example $redis->xTrim('stream', '2-1', false, true);
+     * @example $valkey_glide->xTrim('stream', 3);
+     * @example $valkey_glide->xTrim('stream', '2-1', false, true);
      */
     public function xtrim(string $key, string $threshold, bool $approx = false, bool $minid = false, int $limit = -1): ValkeyGlide|int|false;
 
@@ -3415,10 +3415,10 @@ class ValkeyGlide {
      *
      * Following is information about the options that may be passed as the second argument:
      *
-     * @see https://redis.io/commands/zadd
+     * @see https://valkey.io/commands/zadd
      *
-     * @example $redis->zadd('zs', 1, 'first', 2, 'second', 3, 'third');
-     * @example $redis->zAdd('zs', ['XX'], 8, 'second', 99, 'new-element');
+     * @example $valkey_glide->zadd('zs', 1, 'first', 2, 'second', 3, 'third');
+     * @example $valkey_glide->zAdd('zs', ['XX'], 8, 'second', 99, 'new-element');
      */
     public function zAdd(string $key, array|float $score_or_options, mixed ...$more_scores_and_mems): ValkeyGlide|int|float|false;
 
@@ -3429,9 +3429,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of elements in the set or false on failure
      *
-     * @see https://redis.io/commands/zcard
+     * @see https://valkey.io/commands/zcard
      *
-     * @example $redis->zCard('zs');
+     * @example $valkey_glide->zCard('zs');
      */
     public function zCard(string $key): ValkeyGlide|int|false;
 
@@ -3445,11 +3445,11 @@ class ValkeyGlide {
      * NOTE:  In addition to a floating point score you may pass the special values of '-inf' and
      *        '+inf' meaning negative and positive infinity, respectively.
      *
-     * @see https://redis.io/commands/zcount
+     * @see https://valkey.io/commands/zcount
      *
-     * @example $redis->zCount('fruit-rankings', '0', '+inf');
-     * @example $redis->zCount('fruit-rankings', 50, 60);
-     * @example $redis->zCount('fruit-rankings', '-inf', 0);
+     * @example $valkey_glide->zCount('fruit-rankings', '0', '+inf');
+     * @example $valkey_glide->zCount('fruit-rankings', 50, 60);
+     * @example $valkey_glide->zCount('fruit-rankings', '-inf', 0);
      */
     public function zCount(string $key, int|string $start, int|string $end): ValkeyGlide|int|false;
 
@@ -3461,10 +3461,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|float|false The new score of the member or false on failure.
      *
-     * @see https://redis.io/commands/zincrby
+     * @see https://valkey.io/commands/zincrby
      *
-     * @example $redis->zIncrBy('zs', 5.0, 'bananas');
-     * @example $redis->zIncrBy('zs', 2.0, 'eggplants');
+     * @example $valkey_glide->zIncrBy('zs', 5.0, 'bananas');
+     * @example $valkey_glide->zIncrBy('zs', 2.0, 'eggplants');
      */
     public function zIncrBy(string $key, float $value, mixed $member): ValkeyGlide|float|false;
 
@@ -3478,18 +3478,18 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of members that fall within the range or false on failure.
      *
-     * @see https://redis.io/commands/zlexcount
+     * @see https://valkey.io/commands/zlexcount
      *
      * @example
-     * $redis->zAdd('captains', 0, 'Janeway', 0, 'Kirk', 0, 'Picard', 0, 'Sisko', 0, 'Archer');
-     * $redis->zLexCount('captains', '[A', '[S');
+     * $valkey_glide->zAdd('captains', 0, 'Janeway', 0, 'Kirk', 0, 'Picard', 0, 'Sisko', 0, 'Archer');
+     * $valkey_glide->zLexCount('captains', '[A', '[S');
      */
     public function zLexCount(string $key, string $min, string $max): ValkeyGlide|int|false;
 
     /**
      * Retrieve the score of one or more members in a sorted set.
      *
-     * @see https://redis.io/commands/zmscore
+     * @see https://valkey.io/commands/zmscore
      *
      * @param string $key           The sorted set
      * @param mixed  $member        The first member to return the score from
@@ -3498,10 +3498,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|false An array of the scores of the requested elements.
      *
      * @example
-     * $redis->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
+     * $valkey_glide->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
      *
-     * $redis->zMScore('zs', 'zero', 'two');
-     * $redis->zMScore('zs', 'one', 'not-a-member');
+     * $valkey_glide->zMScore('zs', 'zero', 'two');
+     * $valkey_glide->zMScore('zs', 'one', 'not-a-member');
      */
     public function zMscore(string $key, mixed $member, mixed ...$other_members): ValkeyGlide|array|false;
 
@@ -3513,13 +3513,13 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false All of the popped elements with scores or false on failure
      *
-     * @see https://redis.io/commands/zpopmax
+     * @see https://valkey.io/commands/zpopmax
      *
      * @example
-     * $redis->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
+     * $valkey_glide->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
      *
-     * $redis->zPopMax('zs');
-     * $redis->zPopMax('zs', 2);.
+     * $valkey_glide->zPopMax('zs');
+     * $valkey_glide->zPopMax('zs', 2);.
      */
     public function zPopMax(string $key, ?int $count = null): ValkeyGlide|array|false;
 
@@ -3531,13 +3531,13 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The popped elements with their scores or false on failure.
      *
-     * @see https://redis.io/commands/zpopmin
+     * @see https://valkey.io/commands/zpopmin
      *
      * @example
-     * $redis->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
+     * $valkey_glide->zAdd('zs', 0, 'zero', 1, 'one', 2, 'two', 3, 'three');
      *
-     * $redis->zPopMin('zs');
-     * $redis->zPopMin('zs', 2);
+     * $valkey_glide->zPopMin('zs');
+     * $valkey_glide->zPopMin('zs', 2);
      */
     public function zPopMin(string $key, ?int $count = null): ValkeyGlide|array|false;
 
@@ -3568,11 +3568,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false  An array with matching elements or false on failure.
      *
-     * @see https://redis.io/commands/zrange/
+     * @see https://valkey.io/commands/zrange/
      * @category zset
      *
-     * @example $redis->zRange('zset', 0, -1);
-     * @example $redis->zRange('zset', '-inf', 'inf', ['byscore']);
+     * @example $valkey_glide->zRange('zset', 0, -1);
+     * @example $valkey_glide->zRange('zset', '-inf', 'inf', ['byscore']);
      */
     public function zRange(string $key, string|int $start, string|int $end, array|bool|null $options = null): ValkeyGlide|array|false;
 
@@ -3587,14 +3587,14 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false An array of matching elements or false on failure.
      *
-     * @see https://redis.io/commands/zrangebylex
+     * @see https://valkey.io/commands/zrangebylex
      *
      * @example
-     * $redis = new ValkeyGlide(['host' => 'localhost']);
-     * $redis->zAdd('captains', 0, 'Janeway', 0, 'Kirk', 0, 'Picard', 0, 'Sisko', 0, 'Archer');
+     * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
+     * $valkey_glide->zAdd('captains', 0, 'Janeway', 0, 'Kirk', 0, 'Picard', 0, 'Sisko', 0, 'Archer');
      *
-     * $redis->zRangeByLex('captains', '[A', '[S');
-     * $redis->zRangeByLex('captains', '[A', '[S', 2, 2);
+     * $valkey_glide->zRangeByLex('captains', '[A', '[S');
+     * $valkey_glide->zRangeByLex('captains', '[A', '[S', 2, 2);
      */
     public function zRangeByLex(string $key, string $min, string $max, int $offset = -1, int $count = -1): ValkeyGlide|array|false;
 
@@ -3612,10 +3612,10 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The number of matching elements or false on failure.
      *
-     * @see https://redis.io/commands/zrangebyscore
+     * @see https://valkey.io/commands/zrangebyscore
      *
-     * @example $redis->zRangeByScore('zs', 20, 30, ['WITHSCORES' => true]);
-     * @example $redis->zRangeByScore('zs', 20, 30, ['WITHSCORES' => true, 'LIMIT' => [5, 5]]);
+     * @example $valkey_glide->zRangeByScore('zs', 20, 30, ['WITHSCORES' => true]);
+     * @example $valkey_glide->zRangeByScore('zs', 20, 30, ['WITHSCORES' => true, 'LIMIT' => [5, 5]]);
      */
     public function zRangeByScore(string $key, string $start, string $end, array $options = []): ValkeyGlide|array|false;
 
@@ -3631,7 +3631,7 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of elements stored in $dstkey or false on failure.
      *
-     * @see https://redis.io/commands/zrange/
+     * @see https://valkey.io/commands/zrange/
      * @see ValkeyGlide::zRange
      * @category zset
      *
@@ -3652,9 +3652,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|string|array One or more random elements.
      *
-     * @see https://redis.io/commands/zrandmember
+     * @see https://valkey.io/commands/zrandmember
      *
-     * @example $redis->zRandMember('zs', ['COUNT' => 2, 'WITHSCORES' => true]);
+     * @example $valkey_glide->zRandMember('zs', ['COUNT' => 2, 'WITHSCORES' => true]);
      */
     public function zRandMember(string $key, ?array $options = null): ValkeyGlide|string|array;
 
@@ -3665,10 +3665,10 @@ class ValkeyGlide {
      * @param mixed  $member The member to test.
      *
      * @return ValkeyGlide|int|false The rank of the requested member.
-     * @see https://redis.io/commands/zrank
+     * @see https://valkey.io/commands/zrank
      *
-     * @example $redis->zRank('zs', 'zero');
-     * @example $redis->zRank('zs', 'three');
+     * @example $valkey_glide->zRank('zs', 'zero');
+     * @example $valkey_glide->zRank('zs', 'three');
      */
     public function zRank(string $key, mixed $member): ValkeyGlide|int|false;
 
@@ -3681,9 +3681,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of members that were actually removed or false on failure.
      *
-     * @see https://redis.io/commands/zrem
+     * @see https://valkey.io/commands/zrem
      *
-     * @example $redis->zRem('zs', 'mem:0', 'mem:1', 'mem:2', 'mem:6', 'mem:7', 'mem:8', 'mem:9');
+     * @example $valkey_glide->zRem('zs', 'mem:0', 'mem:1', 'mem:2', 'mem:6', 'mem:7', 'mem:8', 'mem:9');
      */
     public function zRem(mixed $key, mixed $member, mixed ...$other_members): ValkeyGlide|int|false;
 
@@ -3696,11 +3696,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of elements removed from the set or false on failure.
      *
-     * @see https://redis.io/commands/zremrangebylex
+     * @see https://valkey.io/commands/zremrangebylex
      * @see ValkeyGlide::zrangebylex()
      *
-     * @example $redis->zRemRangeByLex('zs', '[a', '(b');
-     * @example $redis->zRemRangeByLex('zs', '(banana', '(eggplant');
+     * @example $valkey_glide->zRemRangeByLex('zs', '[a', '(b');
+     * @example $valkey_glide->zRemRangeByLex('zs', '(banana', '(eggplant');
      */
     public function zRemRangeByLex(string $key, string $min, string $max): ValkeyGlide|int|false;
 
@@ -3713,9 +3713,9 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of members removed from the set or false on failure.
      *
-     * @see https://redis.io/commands/zremrangebyrank
+     * @see https://valkey.io/commands/zremrangebyrank
      *
-     * @example $redis->zRemRangeByRank('zs', 0, 3);
+     * @example $valkey_glide->zRemRangeByRank('zs', 0, 3);
      */
     public function zRemRangeByRank(string $key, int $start, int $end): ValkeyGlide|int|false;
 
@@ -3728,11 +3728,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of members removed from the set or false on failure.
      *
-     * @see https://redis.io/commands/zremrangebyrank
+     * @see https://valkey.io/commands/zremrangebyrank
      *
      * @example
-     * $redis->zAdd('zs', 2, 'two', 4, 'four', 6, 'six');
-     * $redis->zRemRangeByScore('zs', 2, 4);
+     * $valkey_glide->zAdd('zs', 2, 'two', 4, 'four', 6, 'six');
+     * $valkey_glide->zRemRangeByScore('zs', 2, 4);
      */
     public function zRemRangeByScore(string $key, string $start, string $end): ValkeyGlide|int|false;
 
@@ -3748,12 +3748,12 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|false The members (and possibly scores) of the matching elements or false
      *                           on failure.
      *
-     * @see https://redis.io/commands/zrevrange
+     * @see https://valkey.io/commands/zrevrange
      *
-     * @example $redis->zRevRange('zs', 0, -1);
-     * @example $redis->zRevRange('zs', 2, 3);
-     * @example $redis->zRevRange('zs', 0, -1, true);
-     * @example $redis->zRevRange('zs', 0, -1, ['withscores' => true]);
+     * @example $valkey_glide->zRevRange('zs', 0, -1);
+     * @example $valkey_glide->zRevRange('zs', 2, 3);
+     * @example $valkey_glide->zRevRange('zs', 0, -1, true);
+     * @example $valkey_glide->zRevRange('zs', 0, -1, ['withscores' => true]);
      */
     public function zRevRange(string $key, int $start, int $end, mixed $scores = null): ValkeyGlide|array|false;
 
@@ -3768,11 +3768,11 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The matching members or false on failure.
      *
-     * @see https://redis.io/commands/zrevrangebylex
+     * @see https://valkey.io/commands/zrevrangebylex
      * @see ValkeyGlide::zrangebylex()
      *
-     * @example $redis->zRevRangeByLex('captains', '[Q', '[J');
-     * @example $redis->zRevRangeByLex('captains', '[Q', '[J', 1, 2);
+     * @example $valkey_glide->zRevRangeByLex('captains', '[Q', '[J');
+     * @example $valkey_glide->zRevRangeByLex('captains', '[Q', '[J', 1, 2);
      */
     public function zRevRangeByLex(string $key, string $max, string $min, int $offset = -1, int $count = -1): ValkeyGlide|array|false;
 
@@ -3796,18 +3796,18 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false The matching members in reverse order of score or false on failure.
      *
-     * @see https://redis.io/commands/zrevrangebyscore
+     * @see https://valkey.io/commands/zrevrangebyscore
      *
      * @example
-     * $redis->zadd('oldest-people', 122.4493, 'Jeanne Calment', 119.2932, 'Kane Tanaka',
+     * $valkey_glide->zadd('oldest-people', 122.4493, 'Jeanne Calment', 119.2932, 'Kane Tanaka',
      *                               119.2658, 'Sarah Knauss',   118.7205, 'Lucile Randon',
      *                               117.7123, 'Nabi Tajima',    117.6301, 'Marie-Louise Meilleur',
      *                               117.5178, 'Violet Brown',   117.3753, 'Emma Morano',
      *                               117.2219, 'Chiyo Miyako',   117.0740, 'Misao Okawa');
      *
-     * $redis->zRevRangeByScore('oldest-people', 122, 119);
-     * $redis->zRevRangeByScore('oldest-people', 'inf', 118);
-     * $redis->zRevRangeByScore('oldest-people', '117.5', '-inf', ['LIMIT' => [0, 1]]);
+     * $valkey_glide->zRevRangeByScore('oldest-people', 122, 119);
+     * $valkey_glide->zRevRangeByScore('oldest-people', 'inf', 118);
+     * $valkey_glide->zRevRangeByScore('oldest-people', '117.5', '-inf', ['LIMIT' => [0, 1]]);
      */
     public function zRevRangeByScore(string $key, string $max, string $min, array|bool $options = []): ValkeyGlide|array|false;
 
@@ -3819,13 +3819,13 @@ class ValkeyGlide {
     *
     * @return ValkeyGlide|int|false The reverse rank (the rank if counted high to low) of the member or
     *                         false on failure.
-    * @see https://redis.io/commands/zrevrank
+    * @see https://valkey.io/commands/zrevrank
     *
     * @example
-    * $redis->zAdd('ds9-characters', 10, 'Sisko', 9, 'Garak', 8, 'Dax', 7, 'Odo');
+    * $valkey_glide->zAdd('ds9-characters', 10, 'Sisko', 9, 'Garak', 8, 'Dax', 7, 'Odo');
     *
-    * $redis->zrevrank('ds9-characters', 'Sisko');
-    * $redis->zrevrank('ds9-characters', 'Garak');
+    * $valkey_glide->zrevrank('ds9-characters', 'Sisko');
+    * $valkey_glide->zrevrank('ds9-characters', 'Garak');
     */
     public function zRevRank(string $key, mixed $member): ValkeyGlide|int|false;
 
@@ -3837,11 +3837,11 @@ class ValkeyGlide {
      *
      * @return The score of the requested element or false if it is not found.
      *
-     * @see https://redis.io/commands/zscore
+     * @see https://valkey.io/commands/zscore
      *
      * @example
-     * $redis->zAdd('telescopes', 11.9, 'LBT', 10.4, 'GTC', 10, 'HET');
-     * $redis->zScore('telescopes', 'LBT');
+     * $valkey_glide->zAdd('telescopes', 11.9, 'LBT', 10.4, 'GTC', 10, 'HET');
+     * $valkey_glide->zScore('telescopes', 'LBT');
      */
     public function zScore(string $key, mixed $member): ValkeyGlide|float|false;
 
@@ -3855,14 +3855,14 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false An array of members or false on failure.
      *
-     * @see https://redis.io/commands/zdiff
+     * @see https://valkey.io/commands/zdiff
      *
      * @example
-     * $redis->zAdd('primes', 1, 'one', 3, 'three', 5, 'five');
-     * $redis->zAdd('evens', 2, 'two', 4, 'four');
-     * $redis->zAdd('mod3', 3, 'three', 6, 'six');
+     * $valkey_glide->zAdd('primes', 1, 'one', 3, 'three', 5, 'five');
+     * $valkey_glide->zAdd('evens', 2, 'two', 4, 'four');
+     * $valkey_glide->zAdd('mod3', 3, 'three', 6, 'six');
      *
-     * $redis->zDiff(['primes', 'evens', 'mod3']);
+     * $valkey_glide->zDiff(['primes', 'evens', 'mod3']);
      */
     public function zdiff(array $keys, ?array $options = null): ValkeyGlide|array|false;
 
@@ -3877,7 +3877,7 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The number of elements stored in the destination set or false on
      *                         failure.
      *
-     * @see https://redis.io/commands/zdiff
+     * @see https://valkey.io/commands/zdiff
      * @see ValkeyGlide::zdiff()
      */
     public function zdiffstore(string $dst, array $keys): ValkeyGlide|int|false;
@@ -3893,15 +3893,15 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false All of the members that exist in every set.
      *
-     * @see https://redis.io/commands/zinter
+     * @see https://valkey.io/commands/zinter
      *
      * @example
-     * $redis->zAdd('TNG', 2, 'Worf', 2.5, 'Data', 4.0, 'Picard');
-     * $redis->zAdd('DS9', 2.5, 'Worf', 3.0, 'Kira', 4.0, 'Sisko');
+     * $valkey_glide->zAdd('TNG', 2, 'Worf', 2.5, 'Data', 4.0, 'Picard');
+     * $valkey_glide->zAdd('DS9', 2.5, 'Worf', 3.0, 'Kira', 4.0, 'Sisko');
      *
-     * $redis->zInter(['TNG', 'DS9']);
-     * $redis->zInter(['TNG', 'DS9'], NULL, ['withscores' => true]);
-     * $redis->zInter(['TNG', 'DS9'], NULL, ['withscores' => true, 'aggregate' => 'max']);
+     * $valkey_glide->zInter(['TNG', 'DS9']);
+     * $valkey_glide->zInter(['TNG', 'DS9'], NULL, ['withscores' => true]);
+     * $valkey_glide->zInter(['TNG', 'DS9'], NULL, ['withscores' => true, 'aggregate' => 'max']);
      */
     public function zinter(array $keys, ?array $weights = null, ?array $options = null): ValkeyGlide|array|false;
 
@@ -3909,8 +3909,8 @@ class ValkeyGlide {
      * Similar to ZINTER but instead of returning the intersected values, this command returns the
      * cardinality of the intersected set.
      *
-     * @see https://redis.io/commands/zintercard
-     * @see https://redis.io/commands/zinter
+     * @see https://valkey.io/commands/zintercard
+     * @see https://valkey.io/commands/zinter
      * @see ValkeyGlide::zinter()
      *
      * @param array $keys   One or more sorted set key names.
@@ -3921,10 +3921,10 @@ class ValkeyGlide {
      * @return ValkeyGlide|int|false The cardinality of the intersection or false on failure.
      *
      * @example
-     * $redis->zAdd('zs1', 1, 'one', 2, 'two', 3, 'three', 4, 'four');
-     * $redis->zAdd('zs2', 2, 'two', 4, 'four');
+     * $valkey_glide->zAdd('zs1', 1, 'one', 2, 'two', 3, 'three', 4, 'four');
+     * $valkey_glide->zAdd('zs2', 2, 'two', 4, 'four');
      *
-     * $redis->zInterCard(['zs1', 'zs2']);
+     * $valkey_glide->zInterCard(['zs1', 'zs2']);
      */
     public function zintercard(array $keys, int $limit = -1): ValkeyGlide|int|false;
 
@@ -3942,16 +3942,16 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false  The total number of members writtern to the destination set or false on failure.
      *
-     * @see https://redis.io/commands/zinterstore
-     * @see https://redis.io/commands/zinter
+     * @see https://valkey.io/commands/zinterstore
+     * @see https://valkey.io/commands/zinter
      *
      * @example
-     * $redis->zAdd('zs1', 3, 'apples', 2, 'pears');
-     * $redis->zAdd('zs2', 4, 'pears', 3, 'bananas');
-     * $redis->zAdd('zs3', 2, 'figs', 3, 'pears');
+     * $valkey_glide->zAdd('zs1', 3, 'apples', 2, 'pears');
+     * $valkey_glide->zAdd('zs2', 4, 'pears', 3, 'bananas');
+     * $valkey_glide->zAdd('zs3', 2, 'figs', 3, 'pears');
      *
-     * $redis->zInterStore('fruit-sum', ['zs1', 'zs2', 'zs3']);
-     * $redis->zInterStore('fruit-max', ['zs1', 'zs2', 'zs3'], NULL, 'MAX');
+     * $valkey_glide->zInterStore('fruit-sum', ['zs1', 'zs2', 'zs3']);
+     * $valkey_glide->zInterStore('fruit-max', ['zs1', 'zs2', 'zs3'], NULL, 'MAX');
      */
     public function zinterstore(string $dst, array $keys, ?array $weights = null, ?string $aggregate = null): ValkeyGlide|int|false;
 
@@ -3970,8 +3970,8 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|array|false An array of elements or false on failure.
      *
-     * @see https://redis.io/commands/zscan
-     * @see https://redis.io/commands/scan
+     * @see https://valkey.io/commands/zscan
+     * @see https://valkey.io/commands/scan
      * @see ValkeyGlide::scan()
      *
      * NOTE:  See ValkeyGlide::scan() for detailed example code on how to call SCAN like commands.
@@ -4003,14 +4003,14 @@ class ValkeyGlide {
      * @return ValkeyGlide|array|false The union of each sorted set or false on failure
      *
      * @example
-     * $redis->del('store1', 'store2', 'store3');
-     * $redis->zAdd('store1', 1, 'apples', 3, 'pears', 6, 'bananas');
-     * $redis->zAdd('store2', 3, 'apples', 5, 'coconuts', 2, 'bananas');
-     * $redis->zAdd('store3', 2, 'bananas', 6, 'apples', 4, 'figs');
+     * $valkey_glide->del('store1', 'store2', 'store3');
+     * $valkey_glide->zAdd('store1', 1, 'apples', 3, 'pears', 6, 'bananas');
+     * $valkey_glide->zAdd('store2', 3, 'apples', 5, 'coconuts', 2, 'bananas');
+     * $valkey_glide->zAdd('store3', 2, 'bananas', 6, 'apples', 4, 'figs');
      *
-     * $redis->zUnion(['store1', 'store2', 'store3'], NULL, ['withscores' => true]);
-     * $redis->zUnion(['store1', 'store3'], [2, .5], ['withscores' => true]);
-     * $redis->zUnion(['store1', 'store3'], [2, .5], ['withscores' => true, 'aggregate' => 'MIN']);
+     * $valkey_glide->zUnion(['store1', 'store2', 'store3'], NULL, ['withscores' => true]);
+     * $valkey_glide->zUnion(['store1', 'store3'], [2, .5], ['withscores' => true]);
+     * $valkey_glide->zUnion(['store1', 'store3'], [2, .5], ['withscores' => true, 'aggregate' => 'MIN']);
      */
     public function zunion(array $keys, ?array $weights = null, ?array $options = null): ValkeyGlide|array|false;
 
@@ -4025,15 +4025,15 @@ class ValkeyGlide {
      *
      * @return ValkeyGlide|int|false The number of members stored in the destination set or false on failure.
      *
-     * @see https://redis.io/commands/zunionstore
+     * @see https://valkey.io/commands/zunionstore
      * @see ValkeyGlide::zunion()
      *
      * @example
-     * $redis->zAdd('zs1', 1, 'one', 3, 'three');
-     * $redis->zAdd('zs1', 2, 'two', 4, 'four');
-     * $redis->zadd('zs3', 1, 'one', 7, 'five');
+     * $valkey_glide->zAdd('zs1', 1, 'one', 3, 'three');
+     * $valkey_glide->zAdd('zs1', 2, 'two', 4, 'four');
+     * $valkey_glide->zadd('zs3', 1, 'one', 7, 'five');
      *
-     * $redis->zUnionStore('dst', ['zs1', 'zs2', 'zs3']);
+     * $valkey_glide->zUnionStore('dst', ['zs1', 'zs2', 'zs3']);
      */
     public function zunionstore(string $dst, array $keys, ?array $weights = null, ?string $aggregate = null): ValkeyGlide|int|false;
 }

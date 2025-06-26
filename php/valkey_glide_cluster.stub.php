@@ -72,7 +72,7 @@ class ValkeyGlideCluster {
     /**
      * Return the position of the first bit set to 0 or 1 in a string.
      *
-     * @see https://https://redis.io/commands/bitpos/
+     * @see https://https://valkey.io/commands/bitpos/
      *
      * @param string $key   The key to check (must be a string)
      * @param bool   $bit   Whether to look for an unset (0) or set (1) bit.
@@ -165,7 +165,7 @@ class ValkeyGlideCluster {
     public function dbSize(mixed $route): ValkeyGlideCluster|int;
 
     /**
-     * @see https://redis.io/commands/copy
+     * @see https://valkey.io/commands/copy
      */
     public function copy(string $src, string $dst, ?array $options = null): ValkeyGlideCluster|bool;
 
@@ -306,12 +306,12 @@ class ValkeyGlideCluster {
     public function georadiusbymember_ro(string $key, string $member, float $radius, string $unit, array $options = []): mixed;
 
     /**
-     * @see https://redis.io/commands/geosearch
+     * @see https://valkey.io/commands/geosearch
      */
     public function geosearch(string $key, array|string $position, array|int|float $shape, string $unit, array $options = []): ValkeyGlideCluster|array;
 
     /**
-     * @see https://redis.io/commands/geosearchstore
+     * @see https://valkey.io/commands/geosearchstore
      */
     public function geosearchstore(string $dst, string $src, array|string $position, array|int|float $shape, string $unit, array $options = []): ValkeyGlideCluster|array|int|false;
 
@@ -423,7 +423,7 @@ class ValkeyGlideCluster {
     public function expirememberat(string $key, string $field, int $timestamp): ValkeyGlide|int|false;
 
     /**
-     * @see https://redis.io/commands/hrandfield
+     * @see https://valkey.io/commands/hrandfield
      */
     public function hRandField(string $key, ?array $options = null): ValkeyGlideCluster|string|array;
 
@@ -463,14 +463,14 @@ class ValkeyGlideCluster {
     public function incrByFloat(string $key, float $value): ValkeyGlideCluster|float|false;
 
     /**
-     * Retrieve information about the connected redis-server.  If no arguments are passed to
-     * this function, redis will return every info field.  Alternatively you may pass a specific
+     * Retrieve information about the connected valkey-server.  If no arguments are passed to
+     * this function, valkey will return every info field.  Alternatively you may pass a specific
      * section you want returned (e.g. 'server', or 'memory') to receive only information pertaining
      * to that section.
      *
      * If connected to ValkeyGlide server >= 7.0.0 you may pass multiple optional sections.
      *
-     * @see https://redis.io/commands/info/
+     * @see https://valkey.io/commands/info/
      *
      * @param mixed $route         The routing configuration that determines which node(s) to send the 
      *                             command to. Can be:
@@ -605,7 +605,7 @@ class ValkeyGlideCluster {
     public function pfmerge(string $key, array $keys): ValkeyGlideCluster|bool;
 
     /**
-     * PING an instance in the redis cluster.
+     * PING an instance in the valkey cluster.
      *
      * @see ValkeyGlide::ping()
      *
@@ -742,7 +742,7 @@ class ValkeyGlideCluster {
     public function sDiffStore(string $dst, string $key, string ...$other_keys): ValkeyGlideCluster|int|false;
 
     /**
-     * @see https://redis.io/commands/set
+     * @see https://valkey.io/commands/set
      */
     public function set(string $key, mixed $value, mixed $options = null): ValkeyGlideCluster|string|bool;
 
@@ -1015,7 +1015,7 @@ class ValkeyGlideCluster {
                                 array|bool|null $options = null): ValkeyGlideCluster|int|false;
 
     /**
-     * @see https://redis.io/commands/zrandmember
+     * @see https://valkey.io/commands/zrandmember
      */
     public function zRandMember(string $key, ?array $options = null): ValkeyGlideCluster|string|array;
 
@@ -1085,7 +1085,7 @@ class ValkeyGlideCluster {
     public function zScore(string $key, mixed $member): ValkeyGlideCluster|float|false;
 
     /**
-     * @see https://redis.io/commands/zmscore
+     * @see https://valkey.io/commands/zmscore
      */
     public function zMscore(string $key, mixed $member, mixed ...$other_members): ValkeyGlide|array|false;
 
@@ -1095,22 +1095,22 @@ class ValkeyGlideCluster {
     public function zunionstore(string $dst, array $keys, ?array $weights = null, ?string $aggregate = null): ValkeyGlideCluster|int|false;
 
     /**
-     * @see https://redis.io/commands/zinter
+     * @see https://valkey.io/commands/zinter
      */
     public function zinter(array $keys, ?array $weights = null, ?array $options = null): ValkeyGlideCluster|array|false;
 
     /**
-     * @see https://redis.io/commands/zdiffstore
+     * @see https://valkey.io/commands/zdiffstore
      */
     public function zdiffstore(string $dst, array $keys): ValkeyGlideCluster|int|false;
 
     /**
-     * @see https://redis.io/commands/zunion
+     * @see https://valkey.io/commands/zunion
      */
     public function zunion(array $keys, ?array $weights = null, ?array $options = null): ValkeyGlideCluster|array|false;
 
     /**
-     * @see https://redis.io/commands/zdiff
+     * @see https://valkey.io/commands/zdiff
      */
     public function zdiff(array $keys, ?array $options = null): ValkeyGlideCluster|array|false;
 }
