@@ -68,9 +68,10 @@ zend_class_entry *get_valkey_glide_cluster_ce(void)
 PHP_METHOD(ValkeyGlide, __construct);
 PHP_METHOD(ValkeyGlideCluster, __construct);
 
-const zend_function_entry valkey_glide_methods[] = {
-    PHP_ME(ValkeyGlide, __construct, arginfo_class_ValkeyGlide___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END};
+// Use the generated method table from arginfo header
+// const zend_function_entry valkey_glide_methods[] = {
+//     PHP_ME(ValkeyGlide, __construct, arginfo_class_ValkeyGlide___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+//         PHP_FE_END};
 
 const zend_function_entry valkey_glide_cluster_methods[] = {
     PHP_ME(ValkeyGlideCluster, __construct, arginfo_class_ValkeyGlideCluster___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
@@ -84,10 +85,10 @@ PHP_MINIT_FUNCTION(valkey_glide)
     /* ValkeyGlide class */
     zend_class_entry ce;
 
-    INIT_CLASS_ENTRY(ce, "ValkeyGlide", valkey_glide_methods);
+    INIT_CLASS_ENTRY(ce, "ValkeyGlide", class_ValkeyGlide_methods);
     valkey_glide_ce = zend_register_internal_class(&ce);
 
-    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", valkey_glide_cluster_methods);
+    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", class_ValkeyGlideCluster_methods);
     valkey_glide_cluster_ce = zend_register_internal_class(&ce);
 
     /* ValkeyGlideException class */
