@@ -45,9 +45,6 @@ zend_class_entry *valkey_glide_exception_ce;
 
 zend_class_entry *valkey_glide_cluster_ce;
 
-/* Exception handler */
-zend_class_entry *valkey_glide_cluster_exception_ce;
-
 /* Handlers for ValkeyGlideCluster */
 zend_object_handlers valkey_glide_cluster_object_handlers;
 
@@ -66,14 +63,21 @@ zend_class_entry *get_valkey_glide_cluster_ce(void)
     return valkey_glide_cluster_ce;
 }
 
-zend_class_entry *get_valkey_glide_cluster_exception_ce(void)
-{
-    return valkey_glide_cluster_exception_ce;
-}
+zend_module_entry valkey_glide_module_entry = {
+    STANDARD_MODULE_HEADER,
+    "valkey_glide",
+    NULL,
+    PHP_MINIT(valkey_glide),
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    PHP_VALKEY_GLIDE_VERSION,
+    STANDARD_MODULE_PROPERTIES};
 
-static zend_function_entry valkey_glide_cluster_methods[] = {
-    PHP_ME(ValkeyGlideCluster, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END};
+#ifdef COMPILE_DL_VALKEY_GLIDE
+ZEND_GET_MODULE(valkey_glide)
+#endif
 
 zend_object_handlers valkey_glide_object_handlers;
 
@@ -89,7 +93,7 @@ void free_valkey_glide_object(zend_object *object)
     }
 }
 
-zend_object *create_valkey_glide_object(zend_class_entry *ce)
+zend_object *create_valkey_glide_object(zend_class_entry *ce) // TODO can be removed
 {
 
     valkey_glide_object *valkey_glide = ecalloc(1, sizeof(valkey_glide_object) + zend_object_properties_size(ce));
@@ -105,7 +109,7 @@ zend_object *create_valkey_glide_object(zend_class_entry *ce)
     return &valkey_glide->std;
 }
 
-zend_object *create_valkey_glide_cluster_object(zend_class_entry *ce)
+zend_object *create_valkey_glide_cluster_object(zend_class_entry *ce) // TODO can b remoed
 {
     valkey_glide_object *valkey_glide = ecalloc(1, sizeof(valkey_glide_object) + zend_object_properties_size(ce));
 
@@ -123,36 +127,36 @@ zend_object *create_valkey_glide_cluster_object(zend_class_entry *ce)
 /**
  * PHP_MINIT_FUNCTION
  */
-PHP_MINIT_FUNCTION(redis)
+PHP_MINIT_FUNCTION(valkey_glide)
 {
     /* ValkeyGlide class */
+    zend_class_entry ce;
 
-    valkey_glide_ce = register_class_ValkeyGlide();
-    valkey_glide_ce->create_object = create_valkey_glide_object;
+    INIT_CLASS_ENTRY(ce, "ValkeyGlide", valkey_glide_methods);
+    valkey_glide_ce = zend_register_internal_class(&ce);
+
+    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", valkey_glide_cluster_methods);
+    valkey_glide_cluster_ce = zend_register_internal_class(&ce);
 
     /* ValkeyGlideException class */
-    valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
+    // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
 
-    valkey_glide_cluster_ce = register_class_ValkeyGlideCluster();
-
-    valkey_glide_cluster_exception_ce = register_class_ValkeyGlideClusterException(spl_ce_RuntimeException);
-
-    valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
+    // valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
 
     return SUCCESS;
 }
 
 /**
  * PHP_MINFO_FUNCTION
- */
+
 PHP_MINFO_FUNCTION(redis)
 {
     php_info_print_table_start();
     php_info_print_table_header(2, "Valkey Glide Support", "enabled");
     php_info_print_table_row(2, "Valkey Glide Version", VALKEY_GLIDE_PHP_VERSION);
     php_info_print_table_end();
-}
-
+} TODO
+*/
 /* {{{ proto ValkeyGlide ValkeyGlide::__construct(array $addresses, bool $use_tls, ?array $credentials, ValkeyGlideReadFrom $read_from, ?int $request_timeout, ?array $reconnect_strategy, ?int $database_id, ?string $client_name, ?int $inflight_requests_limit, ?string $client_az, ?array $advanced_config, ?bool $lazy_connect)
     Public constructor */
 PHP_METHOD(ValkeyGlide, __construct)
@@ -199,7 +203,7 @@ PHP_METHOD(ValkeyGlide, __construct)
     /* Validate addresses array */
     if (!addresses || zend_hash_num_elements(Z_ARRVAL_P(addresses)) == 0)
     {
-        zend_throw_exception(valkey_glide_exception_ce, "Addresses array cannot be empty", 0);
+        // TODO zend_throw_exception(valkey_glide_exception_ce, "Addresses array cannot be empty", 0);
         return;
     }
 
@@ -287,7 +291,7 @@ PHP_METHOD(ValkeyGlide, __construct)
             {
                 /* Invalid address format */
                 efree(client_config.base.addresses);
-                zend_throw_exception(valkey_glide_exception_ce, "Invalid address format. Expected array with 'host' and 'port' keys", 0);
+                // TODO zend_throw_exception(valkey_glide_exception_ce, "Invalid address format. Expected array with 'host' and 'port' keys", 0);
                 return;
             }
         }
@@ -424,24 +428,13 @@ PHP_METHOD(ValkeyGlide, __construct)
     /* Validate database_id range */
     if (client_config.database_id != -1 && (client_config.database_id < 0 || client_config.database_id > 15))
     {
-        zend_throw_exception(valkey_glide_exception_ce, "Database ID must be between 0 and 15", 0);
+        // TODO zend_throw_exception(valkey_glide_exception_ce, "Database ID must be between 0 and 15", 0);
         return;
     }
 
     valkey_glide->glide_client = create_glide_client(&client_config, false);
-
-    if (!valkey_glide->glide_client)
-    {
-
-        zend_throw_exception(valkey_glide_exception_ce, "Failed to create Valkey Glide client", 0);
-        return;
-    }
 }
 /* }}} */
-
-static zend_function_entry valkey_glide_methods[] = {
-    PHP_ME(ValkeyGlide, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END};
 
 /* {{{ proto ValkeyGlide ValkeyGlide::__destruct()
     Public Destructor
