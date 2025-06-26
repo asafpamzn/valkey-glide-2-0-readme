@@ -23,6 +23,8 @@
 #endif
 
 #include "valkey_glide_commands_common.h"
+#include "php_valkey_glide.h"
+#include "valkey_glide_arginfo.h" // Include generated arginfo header
 
 /* Enum support includes - must be BEFORE arginfo includes */
 #if PHP_VERSION_ID >= 80100
@@ -61,6 +63,36 @@ zend_class_entry *get_valkey_glide_exception_ce(void)
 zend_class_entry *get_valkey_glide_cluster_ce(void)
 {
     return valkey_glide_cluster_ce;
+}
+
+const zend_function_entry valkey_glide_methods[] = {
+    PHP_ME(ValkeyGlide, __construct, arginfo_class_ValkeyGlide___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+        PHP_FE_END};
+
+const zend_function_entry valkey_glide_cluster_methods[] = {
+    PHP_ME(ValkeyGlideCluster, __construct, arginfo_class_ValkeyGlideCluster___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+        PHP_FE_END};
+
+/**
+ * PHP_MINIT_FUNCTION
+ */
+PHP_MINIT_FUNCTION(valkey_glide)
+{
+    /* ValkeyGlide class */
+    zend_class_entry ce;
+
+    INIT_CLASS_ENTRY(ce, "ValkeyGlide", valkey_glide_methods);
+    valkey_glide_ce = zend_register_internal_class(&ce);
+
+    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", valkey_glide_cluster_methods);
+    valkey_glide_cluster_ce = zend_register_internal_class(&ce);
+
+    /* ValkeyGlideException class */
+    // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
+
+    // valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
+
+    return SUCCESS;
 }
 
 zend_module_entry valkey_glide_module_entry = {
@@ -122,28 +154,6 @@ zend_object *create_valkey_glide_cluster_object(zend_class_entry *ce) // TODO ca
     valkey_glide->std.handlers = &valkey_glide_cluster_object_handlers;
 
     return &valkey_glide->std;
-}
-
-/**
- * PHP_MINIT_FUNCTION
- */
-PHP_MINIT_FUNCTION(valkey_glide)
-{
-    /* ValkeyGlide class */
-    zend_class_entry ce;
-
-    INIT_CLASS_ENTRY(ce, "ValkeyGlide", valkey_glide_methods);
-    valkey_glide_ce = zend_register_internal_class(&ce);
-
-    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", valkey_glide_cluster_methods);
-    valkey_glide_cluster_ce = zend_register_internal_class(&ce);
-
-    /* ValkeyGlideException class */
-    // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
-
-    // valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
-
-    return SUCCESS;
 }
 
 /**
