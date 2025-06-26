@@ -218,7 +218,7 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         }
     }
 
-    public function testInfo111() {
+    public function testInfo() {
         $fields = [
             "redis_version", "arch_bits", "uptime_in_seconds", "uptime_in_days",
             "connected_clients", "connected_slaves", "used_memory",
