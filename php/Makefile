@@ -208,6 +208,7 @@ prof-use:
 
 .PHONY: all clean install distclean test prof-gen prof-clean prof-use
 .NOEXPORT:
+INCLUDES += -I/opt/homebrew/include
 PROTOC = protoc
 PROTOC_C_PLUGIN := protoc-c
 PROTO_SRC_DIR = ../glide-core/src/protobuf
