@@ -82,14 +82,12 @@ const zend_function_entry valkey_glide_cluster_methods[] = {
  */
 PHP_MINIT_FUNCTION(valkey_glide)
 {
-    /* ValkeyGlide class */
-    zend_class_entry ce;
+    /* ValkeyGlide class - use generated registration function */
+    valkey_glide_ce = register_class_ValkeyGlide();
 
-    INIT_CLASS_ENTRY(ce, "ValkeyGlide", class_ValkeyGlide_methods);
-    valkey_glide_ce = zend_register_internal_class(&ce);
+    /* ValkeyGlideCluster class - manual registration for now */
 
-    INIT_CLASS_ENTRY(ce, "ValkeyGlideCluster", class_ValkeyGlideCluster_methods);
-    valkey_glide_cluster_ce = zend_register_internal_class(&ce);
+    valkey_glide_cluster_ce = register_class_ValkeyGlideCluster();
 
     /* ValkeyGlideException class */
     // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);

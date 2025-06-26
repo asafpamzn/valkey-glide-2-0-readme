@@ -5245,7 +5245,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testScanPrefix() {
-         $this->markTestSkipped(); // TODO
+        $this->markTestSkipped(); // TODO
         $keyid = uniqid();
 
         /* Set some keys with different prefixes */
@@ -5427,7 +5427,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
     /* Make sure we capture errors when scanning */
     public function testScanErrors() {
-         $this->markTestSkipped(); // TODO
+        $this->markTestSkipped(); // TODO
         $this->valkey_glide->set('scankey', 'simplekey');
 
         foreach (['sScan', 'hScan', 'zScan'] as $method) {
