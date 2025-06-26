@@ -4,6 +4,7 @@ PROTOC_C_PLUGIN := protoc-c
 PROTO_SRC_DIR = ../glide-core/src/protobuf
 GEN_INCLUDE_DIR = include/glide
 GEN_SRC_DIR = src
+VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lSystem
 
 PROTO_FILES = connection_request.proto command_request.proto response.proto
 
@@ -53,5 +54,3 @@ valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
 	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
 
 ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
-
-all: $(ARGINFO_HEADERS)

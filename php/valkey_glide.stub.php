@@ -189,7 +189,7 @@ class ValkeyGlide {
      * @return ValkeyGlide|bool Whether the AUTH was successful.
      *
      */
-    public function auth(#[\SensitiveParameter] mixed $credentials): ValkeyGlide|bool;
+    public function auth( mixed $credentials): ValkeyGlide|bool;
 
 
 
