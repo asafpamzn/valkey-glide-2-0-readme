@@ -905,14 +905,15 @@ int execute_pfadd_command(zval *object, int argc, zval *return_value, zend_class
     args.arg_count = 1;
 
     long result;
-    int success = execute_core_command(&args, &result, process_core_int_result);
-    if (success)
-        result_value = (int)result;
-
-    if (success)
+    if (execute_core_command(&args, &result, process_core_bool_result))
     {
-        ZVAL_LONG(return_value, result_value);
+        ZVAL_LONG(return_value, 1);
         return 1;
+    }
+    else
+    {
+        ZVAL_LONG(return_value, 0);
+        return 0;
     }
 
     return 0;
