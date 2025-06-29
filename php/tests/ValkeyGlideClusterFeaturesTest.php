@@ -229,7 +229,7 @@ class ValkeyGlide_Cluster_Features_Test extends ValkeyGlideClusterBaseTest {
             null,
             $reconnectStrategy
         );
-        
+
         $this->assertTrue($valkey_glide->ping(['type' => 'primarySlotKey', 'key' => 'test']));
         $valkey_glide->close();
     }
@@ -240,8 +240,7 @@ class ValkeyGlide_Cluster_Features_Test extends ValkeyGlideClusterBaseTest {
 
     public function testConstructorWithClientName() {
         // Test with custom client name
-        $clientName = 'test-cluster-client-' . uniqid();
-        
+           
         $valkey_glide = new ValkeyGlideCluster(
             [['host' => '127.0.0.1', 'port' => 7001]],
             false,
@@ -249,10 +248,10 @@ class ValkeyGlide_Cluster_Features_Test extends ValkeyGlideClusterBaseTest {
             ValkeyGlide::READ_FROM_PRIMARY,
             null,
             null,
-            $clientName
+            "test-cluster-client-"
         );
         
-        $this->assertTrue($valkey_glide->ping(['type' => 'primarySlotKey', 'key' => 'test']));
+        $this->assertTrue($valkey_glide->ping(['type' => 'primarySlotKey', 'key' => 'test'])); 
         $valkey_glide->close();
     }
 

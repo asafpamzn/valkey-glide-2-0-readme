@@ -50,6 +50,7 @@ zend_class_entry *valkey_glide_cluster_ce;
 
 /* Handlers for ValkeyGlideCluster */
 zend_object_handlers valkey_glide_cluster_object_handlers;
+zend_object_handlers valkey_glide_object_handlers;
 
 zend_class_entry *get_valkey_glide_ce(void)
 {
@@ -65,6 +66,8 @@ zend_class_entry *get_valkey_glide_cluster_ce(void)
 {
     return valkey_glide_cluster_ce;
 }
+void free_valkey_glide_object(zend_object *object);
+void free_valkey_glide_cluster_object(zend_object *object);
 PHP_METHOD(ValkeyGlide, __construct);
 PHP_METHOD(ValkeyGlideCluster, __construct);
 
@@ -72,64 +75,8 @@ PHP_METHOD(ValkeyGlideCluster, __construct);
 // const zend_function_entry valkey_glide_methods[] = {
 //     PHP_ME(ValkeyGlide, __construct, arginfo_class_ValkeyGlide___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
 //         PHP_FE_END};
-
-const zend_function_entry valkey_glide_cluster_methods[] = {
-    PHP_ME(ValkeyGlideCluster, __construct, arginfo_class_ValkeyGlideCluster___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END};
-
-/**
- * PHP_MINIT_FUNCTION
- */
-PHP_MINIT_FUNCTION(valkey_glide)
+zend_object *create_valkey_glide_object(zend_class_entry *ce)
 {
-    /* ValkeyGlide class - use generated registration function */
-    valkey_glide_ce = register_class_ValkeyGlide();
-
-    /* ValkeyGlideCluster class - manual registration for now */
-
-    valkey_glide_cluster_ce = register_class_ValkeyGlideCluster();
-
-    /* ValkeyGlideException class */
-    // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
-
-    // valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
-
-    return SUCCESS;
-}
-
-zend_module_entry valkey_glide_module_entry = {
-    STANDARD_MODULE_HEADER,
-    "valkey_glide",
-    NULL,
-    PHP_MINIT(valkey_glide),
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    PHP_VALKEY_GLIDE_VERSION,
-    STANDARD_MODULE_PROPERTIES};
-
-#ifdef COMPILE_DL_VALKEY_GLIDE
-ZEND_GET_MODULE(valkey_glide)
-#endif
-
-zend_object_handlers valkey_glide_object_handlers;
-
-void free_valkey_glide_object(zend_object *object)
-{
-    valkey_glide_object *valkey_glide = VALKEY_GLIDE_PHP_GET_OBJECT(valkey_glide_object, object);
-
-    /* Free the Valkey Glide client if it exists */
-    if (valkey_glide->glide_client)
-    {
-        close_glide_client(valkey_glide->glide_client);
-        valkey_glide->glide_client = NULL;
-    }
-}
-
-zend_object *create_valkey_glide_object(zend_class_entry *ce) // TODO can be removed
-{
-
     valkey_glide_object *valkey_glide = ecalloc(1, sizeof(valkey_glide_object) + zend_object_properties_size(ce));
 
     zend_object_std_init(&valkey_glide->std, ce);
@@ -156,6 +103,58 @@ zend_object *create_valkey_glide_cluster_object(zend_class_entry *ce) // TODO ca
     valkey_glide->std.handlers = &valkey_glide_cluster_object_handlers;
 
     return &valkey_glide->std;
+}
+
+const zend_function_entry valkey_glide_cluster_methods[] = {
+    PHP_ME(ValkeyGlideCluster, __construct, arginfo_class_ValkeyGlideCluster___construct, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+        PHP_FE_END};
+
+/**
+ * PHP_MINIT_FUNCTION
+ */
+PHP_MINIT_FUNCTION(valkey_glide)
+{
+    /* ValkeyGlide class - use generated registration function */
+    valkey_glide_ce = register_class_ValkeyGlide();
+
+    /* ValkeyGlideCluster class - manual registration for now */
+
+    valkey_glide_cluster_ce = register_class_ValkeyGlideCluster();
+
+    /* ValkeyGlideException class */
+    // TODO   valkey_glide_exception_ce = register_class_ValkeyGlideException(spl_ce_RuntimeException);
+    valkey_glide_ce->create_object = create_valkey_glide_object;
+    valkey_glide_cluster_ce->create_object = create_valkey_glide_cluster_object;
+
+    return SUCCESS;
+}
+
+zend_module_entry valkey_glide_module_entry = {
+    STANDARD_MODULE_HEADER,
+    "valkey_glide",
+    NULL,
+    PHP_MINIT(valkey_glide),
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    PHP_VALKEY_GLIDE_VERSION,
+    STANDARD_MODULE_PROPERTIES};
+
+#ifdef COMPILE_DL_VALKEY_GLIDE
+ZEND_GET_MODULE(valkey_glide)
+#endif
+
+void free_valkey_glide_object(zend_object *object)
+{
+    valkey_glide_object *valkey_glide = VALKEY_GLIDE_PHP_GET_OBJECT(valkey_glide_object, object);
+
+    /* Free the Valkey Glide client if it exists */
+    if (valkey_glide->glide_client)
+    {
+        close_glide_client(valkey_glide->glide_client);
+        valkey_glide->glide_client = NULL;
+    }
 }
 
 /**

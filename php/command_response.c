@@ -209,6 +209,14 @@ uint8_t *create_route_bytes_from_route(cluster_route_t *route, size_t *route_byt
     CommandRequest__Routes routes = COMMAND_REQUEST__ROUTES__INIT;
     uint8_t *route_bytes = NULL;
 
+    /* Validate input parameters */
+    if (!route || !route_bytes_len)
+    {
+        if (route_bytes_len)
+            *route_bytes_len = 0;
+        return NULL;
+    }
+
     /* Declare protobuf structures outside switch to keep them in scope */
     CommandRequest__SlotKeyRoute slot_key_route = COMMAND_REQUEST__SLOT_KEY_ROUTE__INIT;
     CommandRequest__ByAddressRoute by_address_route = COMMAND_REQUEST__BY_ADDRESS_ROUTE__INIT;
@@ -217,7 +225,14 @@ uint8_t *create_route_bytes_from_route(cluster_route_t *route, size_t *route_byt
     switch (route->type)
     {
     case ROUTE_TYPE_KEY:
-        // printf("Creating route by key: %s\n", route->data.key_route.key);
+        /* Validate key data */
+        if (!route->data.key_route.key || route->data.key_route.key_len == 0)
+        {
+            printf("Error: Invalid key data for route\n");
+            *route_bytes_len = 0;
+            return NULL;
+        }
+
         /* Configure slot key route */
         slot_key_route.slot_type = COMMAND_REQUEST__SLOT_TYPES__Primary;
         slot_key_route.slot_key = route->data.key_route.key;
@@ -248,23 +263,39 @@ uint8_t *create_route_bytes_from_route(cluster_route_t *route, size_t *route_byt
 
     default:
         /* Unknown route type */
+        printf("Error: Unknown route type: %d\n", route->type);
         *route_bytes_len = 0;
         return NULL;
     }
 
     /* Get serialized size and allocate buffer */
     *route_bytes_len = command_request__routes__get_packed_size(&routes);
+    if (*route_bytes_len == 0)
+    {
+        printf("Error: Failed to get packed size for route\n");
+        return NULL;
+    }
+
     route_bytes = (uint8_t *)emalloc(*route_bytes_len);
 
     if (!route_bytes)
     {
+        printf("Error: Failed to allocate memory for route bytes\n");
         *route_bytes_len = 0;
         return NULL;
     }
 
     /* Serialize the routes */
-    command_request__routes__pack(&routes, route_bytes);
+    size_t packed_size = command_request__routes__pack(&routes, route_bytes);
+    if (packed_size != *route_bytes_len)
+    {
+        printf("Error: Packed size mismatch: expected %zu, got %zu\n", *route_bytes_len, packed_size);
+        efree(route_bytes);
+        *route_bytes_len = 0;
+        return NULL;
+    }
 
+    // printf("Successfully created route bytes: %zu bytes\n", *route_bytes_len);
     return route_bytes;
 }
 
@@ -277,9 +308,18 @@ CommandResult *execute_command_with_route(
     const unsigned long *args_len,
     zval *arg_route)
 {
+
     /* Check if client is valid */
     if (!glide_client)
     {
+        printf("Error: glide_client is NULL\n");
+        return NULL;
+    }
+
+    /* Validate route parameter */
+    if (!arg_route)
+    {
+        printf("Error: arg_route is NULL\n");
         return NULL;
     }
 
@@ -289,12 +329,53 @@ CommandResult *execute_command_with_route(
     if (!parse_cluster_route(arg_route, &route))
     {
         /* Failed to parse the route */
-        return 0;
+        printf("Error: Failed to parse cluster route\n");
+        return NULL;
     }
 
     /* Create serialized route bytes */
     size_t route_bytes_len = 0;
     uint8_t *route_bytes = create_route_bytes_from_route(&route, &route_bytes_len);
+    if (!route_bytes)
+    {
+        printf("Error: Failed to create route bytes\n");
+        /* Free dynamically allocated key if needed before returning */
+        if (route.type == ROUTE_TYPE_KEY && route.data.key_route.key_allocated)
+        {
+            efree(route.data.key_route.key);
+        }
+        return NULL;
+    }
+
+    /* Validate all parameters before FFI call */
+    if (!glide_client)
+    {
+        printf("ERROR: glide_client is NULL\n");
+        return NULL;
+    }
+
+    if (arg_count > 0)
+    {
+        if (!args)
+        {
+            printf("ERROR: args is NULL but arg_count is %lu\n", arg_count);
+            return NULL;
+        }
+        if (!args_len)
+        {
+            printf("ERROR: args_len is NULL but arg_count is %lu\n", arg_count);
+            return NULL;
+        }
+    }
+
+    if (route_bytes_len > 0)
+    {
+        if (!route_bytes)
+        {
+            printf("ERROR: route_bytes is NULL but route_bytes_len is %zu\n", route_bytes_len);
+            return NULL;
+        }
+    }
 
     /* Execute the command */
     CommandResult *result = command(
@@ -319,6 +400,17 @@ CommandResult *execute_command_with_route(
     if (route.type == ROUTE_TYPE_KEY && route.data.key_route.key_allocated)
     {
         efree(route.data.key_route.key);
+    }
+
+    /* Validate result before returning */
+    if (!result)
+    {
+        printf("Error: Command execution returned NULL result\n");
+    }
+    else if (result->command_error)
+    {
+        printf("Error: Command execution failed: %s\n",
+               result->command_error->command_error_message ? result->command_error->command_error_message : "Unknown error");
     }
 
     return result;
