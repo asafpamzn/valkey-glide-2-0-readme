@@ -176,7 +176,7 @@ static void build_sort_args(
     uintptr_t **args_ptr, unsigned long **args_len_ptr,
     unsigned long *arg_count_ptr)
 {
-    zend_bool alpha = 0, desc = 0;
+    zend_bool alpha = 0, desc = 0, explicit_asc = 0;
 
     /* Parse sort options from the pattern array first */
     if (sort_pattern && Z_TYPE_P(sort_pattern) == IS_ARRAY)
@@ -195,7 +195,11 @@ static void build_sort_args(
                 {
                     desc = 1;
                 }
-                /* ASC is default, so we don't need to set anything for it */
+                else if (strcasecmp(sort_val, "asc") == 0 || strcasecmp(sort_val, "ASC") == 0)
+                {
+                    explicit_asc = 1; /* Explicitly ASC */
+                    desc = 0;
+                }
             }
         }
 
@@ -374,23 +378,44 @@ static void build_sort_args(
             }
         }
 
-        /* Add GET patterns (case-insensitive) */
-        ZEND_HASH_FOREACH_KEY_VAL(ht, num_key, z_key, z_ele)
+        /* Check for GET patterns (case-insensitive) */
+        if ((z_ele = zend_hash_str_find(ht, "get", sizeof("get") - 1)) != NULL ||
+            (z_ele = zend_hash_str_find(ht, "GET", sizeof("GET") - 1)) != NULL)
         {
-            if (z_key && (strncasecmp(ZSTR_VAL(z_key), "get", 3) == 0 || strncasecmp(ZSTR_VAL(z_key), "GET", 3) == 0) && Z_TYPE_P(z_ele) == IS_STRING)
+            if (Z_TYPE_P(z_ele) == IS_ARRAY)
             {
-                /* Add GET keyword */
+                /* Handle array of GET patterns: 'get' => ['pattern1', 'pattern2'] */
+                HashTable *get_ht = Z_ARRVAL_P(z_ele);
+                zval *z_pattern;
+                ZEND_HASH_FOREACH_VAL(get_ht, z_pattern)
+                {
+                    if (Z_TYPE_P(z_pattern) == IS_STRING)
+                    {
+                        /* Add GET keyword */
+                        args[arg_idx] = (uintptr_t)"GET";
+                        args_len[arg_idx] = 3;
+                        arg_idx++;
+
+                        /* Add GET pattern */
+                        args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_pattern);
+                        args_len[arg_idx] = Z_STRLEN_P(z_pattern);
+                        arg_idx++;
+                    }
+                }
+                ZEND_HASH_FOREACH_END();
+            }
+            else if (Z_TYPE_P(z_ele) == IS_STRING)
+            {
+                /* Handle single GET pattern: 'get' => 'pattern' */
                 args[arg_idx] = (uintptr_t)"GET";
                 args_len[arg_idx] = 3;
                 arg_idx++;
 
-                /* Add GET pattern */
                 args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_ele);
                 args_len[arg_idx] = Z_STRLEN_P(z_ele);
                 arg_idx++;
             }
         }
-        ZEND_HASH_FOREACH_END();
 
         /* Check for STORE destination (case-insensitive) */
         if ((z_ele = zend_hash_str_find(ht, "store", sizeof("store") - 1)) != NULL ||
@@ -425,6 +450,12 @@ static void build_sort_args(
         args_len[arg_idx] = 4;
         arg_idx++;
     }
+    else if (explicit_asc)
+    {
+        args[arg_idx] = (uintptr_t)"ASC";
+        args_len[arg_idx] = 3;
+        arg_idx++;
+    }
 
     /* Set output parameters */
     *args_ptr = args;
@@ -440,7 +471,7 @@ static void free_sort_args(uintptr_t *args, unsigned long *args_len, unsigned lo
         /* Free any dynamically allocated argument strings (offset and count) */
         for (unsigned long i = 0; i < arg_count; i++)
         {
-            /* Skip key, BY, GET, LIMIT, STORE, ALPHA, DESC and any string that was
+            /* Skip key, BY, GET, LIMIT, STORE, ALPHA, DESC, ASC and any string that was
                directly extracted from a zval (not allocated) */
             if (strcmp((const char *)args[i], "BY") != 0 &&
                 strcmp((const char *)args[i], "GET") != 0 &&
@@ -448,6 +479,7 @@ static void free_sort_args(uintptr_t *args, unsigned long *args_len, unsigned lo
                 strcmp((const char *)args[i], "STORE") != 0 &&
                 strcmp((const char *)args[i], "ALPHA") != 0 &&
                 strcmp((const char *)args[i], "DESC") != 0 &&
+                strcmp((const char *)args[i], "ASC") != 0 &&
                 i > 0 &&                                                       /* Skip key */
                 ((i > 1 && strcmp((const char *)args[i - 1], "LIMIT") == 0) || /* Only free offset and count */
                  (i > 2 && strcmp((const char *)args[i - 2], "LIMIT") == 0)))
