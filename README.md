@@ -62,6 +62,7 @@ GLIDE's [documentation site](https://valkey.io/valkey-glide/) currently offers d
 - [Python](./python/README.md)
 - [Node](./node/README.md)
 - [Go](./go/README.md)
+- [PHP](./php/README.md)
 
 **General Concepts:**
 - [Custom Command](https://github.com/valkey-io/valkey-glide/wiki/General-Concepts#custom-command)
