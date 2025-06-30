@@ -172,10 +172,52 @@ int execute_getrange_command(zval *object, int argc, zval *return_value, zend_cl
 static void build_sort_args(
     const char *key, size_t key_len,
     zval *sort_pattern,
-    zend_bool alpha, zend_bool desc,
+    zend_bool *alpha_out, zend_bool *desc_out,
     uintptr_t **args_ptr, unsigned long **args_len_ptr,
     unsigned long *arg_count_ptr)
 {
+    zend_bool alpha = 0, desc = 0;
+
+    /* Parse sort options from the pattern array first */
+    if (sort_pattern && Z_TYPE_P(sort_pattern) == IS_ARRAY)
+    {
+        HashTable *ht = Z_ARRVAL_P(sort_pattern);
+        zval *z_ele;
+
+        /* Check for SORT option (case-insensitive) */
+        if ((z_ele = zend_hash_str_find(ht, "sort", sizeof("sort") - 1)) != NULL ||
+            (z_ele = zend_hash_str_find(ht, "SORT", sizeof("SORT") - 1)) != NULL)
+        {
+            if (Z_TYPE_P(z_ele) == IS_STRING)
+            {
+                const char *sort_val = Z_STRVAL_P(z_ele);
+                if (strcasecmp(sort_val, "desc") == 0 || strcasecmp(sort_val, "DESC") == 0)
+                {
+                    desc = 1;
+                }
+                /* ASC is default, so we don't need to set anything for it */
+            }
+        }
+
+        /* Check for ALPHA option (case-insensitive) */
+        if ((z_ele = zend_hash_str_find(ht, "alpha", sizeof("alpha") - 1)) != NULL ||
+            (z_ele = zend_hash_str_find(ht, "ALPHA", sizeof("ALPHA") - 1)) != NULL)
+        {
+            if (Z_TYPE_P(z_ele) == IS_TRUE ||
+                (Z_TYPE_P(z_ele) == IS_LONG && Z_LVAL_P(z_ele) != 0) ||
+                (Z_TYPE_P(z_ele) == IS_STRING && strcasecmp(Z_STRVAL_P(z_ele), "true") == 0))
+            {
+                alpha = 1;
+            }
+        }
+    }
+
+    /* Set output flags */
+    if (alpha_out)
+        *alpha_out = alpha;
+    if (desc_out)
+        *desc_out = desc;
+
     /* Calculate the maximum number of arguments */
     unsigned long max_args = 1; /* key */
     if (sort_pattern && Z_TYPE_P(sort_pattern) == IS_ARRAY)
@@ -221,63 +263,121 @@ static void build_sort_args(
         zend_string *z_key;
         zend_ulong num_key;
 
-        /* Check for BY pattern */
-        if ((z_ele = zend_hash_str_find(ht, "by", sizeof("by") - 1)) != NULL && Z_TYPE_P(z_ele) == IS_STRING)
+        /* Check for BY pattern (case-insensitive) */
+        if ((z_ele = zend_hash_str_find(ht, "by", sizeof("by") - 1)) != NULL ||
+            (z_ele = zend_hash_str_find(ht, "BY", sizeof("BY") - 1)) != NULL)
         {
-            /* Add BY keyword */
-            args[arg_idx] = (uintptr_t)"BY";
-            args_len[arg_idx] = 2;
-            arg_idx++;
-
-            /* Add BY pattern */
-            args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_ele);
-            args_len[arg_idx] = Z_STRLEN_P(z_ele);
-            arg_idx++;
-        }
-
-        /* Check for LIMIT offset count */
-        zval *z_offset, *z_count;
-        if ((z_offset = zend_hash_str_find(ht, "limit_offset", sizeof("limit_offset") - 1)) != NULL &&
-            (z_count = zend_hash_str_find(ht, "limit_count", sizeof("limit_count") - 1)) != NULL)
-        {
-            /* Add LIMIT keyword */
-            args[arg_idx] = (uintptr_t)"LIMIT";
-            args_len[arg_idx] = 5;
-            arg_idx++;
-
-            /* Add offset */
-            char *offset_str;
-            size_t offset_len;
-            long offset_val = zval_get_long(z_offset);
-            offset_str = long_to_string(offset_val, &offset_len);
-            if (offset_str)
+            if (Z_TYPE_P(z_ele) == IS_STRING)
             {
-                args[arg_idx] = (uintptr_t)offset_str;
-                args_len[arg_idx] = offset_len;
+                /* Add BY keyword */
+                args[arg_idx] = (uintptr_t)"BY";
+                args_len[arg_idx] = 2;
                 arg_idx++;
 
-                /* Add count */
-                char *count_str;
-                size_t count_len;
-                long count_val = zval_get_long(z_count);
-                count_str = long_to_string(count_val, &count_len);
-                if (count_str)
+                /* Add BY pattern */
+                args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_ele);
+                args_len[arg_idx] = Z_STRLEN_P(z_ele);
+                arg_idx++;
+            }
+        }
+
+        /* Check for LIMIT array format: 'LIMIT' => [offset, count] */
+        zval *z_limit = NULL;
+        if ((z_limit = zend_hash_str_find(ht, "limit", sizeof("limit") - 1)) != NULL ||
+            (z_limit = zend_hash_str_find(ht, "LIMIT", sizeof("LIMIT") - 1)) != NULL)
+        {
+            if (Z_TYPE_P(z_limit) == IS_ARRAY)
+            {
+                HashTable *limit_ht = Z_ARRVAL_P(z_limit);
+                if (zend_hash_num_elements(limit_ht) >= 2)
                 {
-                    args[arg_idx] = (uintptr_t)count_str;
-                    args_len[arg_idx] = count_len;
-                    arg_idx++;
+                    zval *z_offset = zend_hash_index_find(limit_ht, 0);
+                    zval *z_count = zend_hash_index_find(limit_ht, 1);
+
+                    if (z_offset && z_count)
+                    {
+                        /* Add LIMIT keyword */
+                        args[arg_idx] = (uintptr_t)"LIMIT";
+                        args_len[arg_idx] = 5;
+                        arg_idx++;
+
+                        /* Add offset */
+                        char *offset_str;
+                        size_t offset_len;
+                        long offset_val = zval_get_long(z_offset);
+                        offset_str = long_to_string(offset_val, &offset_len);
+                        if (offset_str)
+                        {
+                            args[arg_idx] = (uintptr_t)offset_str;
+                            args_len[arg_idx] = offset_len;
+                            arg_idx++;
+
+                            /* Add count */
+                            char *count_str;
+                            size_t count_len;
+                            long count_val = zval_get_long(z_count);
+                            count_str = long_to_string(count_val, &count_len);
+                            if (count_str)
+                            {
+                                args[arg_idx] = (uintptr_t)count_str;
+                                args_len[arg_idx] = count_len;
+                                arg_idx++;
+                            }
+                            else
+                            {
+                                efree(offset_str);
+                            }
+                        }
+                    }
                 }
-                else
+            }
+        }
+        /* Fallback to old format for backward compatibility */
+        else
+        {
+            zval *z_offset, *z_count;
+            if ((z_offset = zend_hash_str_find(ht, "limit_offset", sizeof("limit_offset") - 1)) != NULL &&
+                (z_count = zend_hash_str_find(ht, "limit_count", sizeof("limit_count") - 1)) != NULL)
+            {
+                /* Add LIMIT keyword */
+                args[arg_idx] = (uintptr_t)"LIMIT";
+                args_len[arg_idx] = 5;
+                arg_idx++;
+
+                /* Add offset */
+                char *offset_str;
+                size_t offset_len;
+                long offset_val = zval_get_long(z_offset);
+                offset_str = long_to_string(offset_val, &offset_len);
+                if (offset_str)
                 {
-                    efree(offset_str);
+                    args[arg_idx] = (uintptr_t)offset_str;
+                    args_len[arg_idx] = offset_len;
+                    arg_idx++;
+
+                    /* Add count */
+                    char *count_str;
+                    size_t count_len;
+                    long count_val = zval_get_long(z_count);
+                    count_str = long_to_string(count_val, &count_len);
+                    if (count_str)
+                    {
+                        args[arg_idx] = (uintptr_t)count_str;
+                        args_len[arg_idx] = count_len;
+                        arg_idx++;
+                    }
+                    else
+                    {
+                        efree(offset_str);
+                    }
                 }
             }
         }
 
-        /* Add GET patterns */
+        /* Add GET patterns (case-insensitive) */
         ZEND_HASH_FOREACH_KEY_VAL(ht, num_key, z_key, z_ele)
         {
-            if (z_key && strncasecmp(ZSTR_VAL(z_key), "get", 3) == 0 && Z_TYPE_P(z_ele) == IS_STRING)
+            if (z_key && (strncasecmp(ZSTR_VAL(z_key), "get", 3) == 0 || strncasecmp(ZSTR_VAL(z_key), "GET", 3) == 0) && Z_TYPE_P(z_ele) == IS_STRING)
             {
                 /* Add GET keyword */
                 args[arg_idx] = (uintptr_t)"GET";
@@ -292,18 +392,22 @@ static void build_sort_args(
         }
         ZEND_HASH_FOREACH_END();
 
-        /* Check for STORE destination */
-        if ((z_ele = zend_hash_str_find(ht, "store", sizeof("store") - 1)) != NULL && Z_TYPE_P(z_ele) == IS_STRING)
+        /* Check for STORE destination (case-insensitive) */
+        if ((z_ele = zend_hash_str_find(ht, "store", sizeof("store") - 1)) != NULL ||
+            (z_ele = zend_hash_str_find(ht, "STORE", sizeof("STORE") - 1)) != NULL)
         {
-            /* Add STORE keyword */
-            args[arg_idx] = (uintptr_t)"STORE";
-            args_len[arg_idx] = 5;
-            arg_idx++;
+            if (Z_TYPE_P(z_ele) == IS_STRING)
+            {
+                /* Add STORE keyword */
+                args[arg_idx] = (uintptr_t)"STORE";
+                args_len[arg_idx] = 5;
+                arg_idx++;
 
-            /* Add STORE destination key */
-            args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_ele);
-            args_len[arg_idx] = Z_STRLEN_P(z_ele);
-            arg_idx++;
+                /* Add STORE destination key */
+                args[arg_idx] = (uintptr_t)Z_STRVAL_P(z_ele);
+                args_len[arg_idx] = Z_STRLEN_P(z_ele);
+                arg_idx++;
+            }
         }
     }
 
@@ -384,7 +488,7 @@ int execute_sort_command(zval *object, int argc, zval *return_value, zend_class_
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {
@@ -620,7 +724,7 @@ int execute_sort_ro_command(zval *object, int argc, zval *return_value, zend_cla
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {
@@ -701,7 +805,7 @@ int execute_sortasc_command(zval *object, int argc, zval *return_value, zend_cla
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {
@@ -782,7 +886,7 @@ int execute_sortascalpha_command(zval *object, int argc, zval *return_value, zen
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {
@@ -863,7 +967,7 @@ int execute_sortdesc_command(zval *object, int argc, zval *return_value, zend_cl
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {
@@ -945,7 +1049,7 @@ int execute_sortdescalpha_command(zval *object, int argc, zval *return_value, ze
         uintptr_t *args = NULL;
         unsigned long *args_len = NULL;
         unsigned long arg_count = 0;
-        build_sort_args(key, key_len, z_opts, alpha, desc, &args, &args_len, &arg_count);
+        build_sort_args(key, key_len, z_opts, &alpha, &desc, &args, &args_len, &arg_count);
 
         if (!args || !args_len || arg_count == 0)
         {

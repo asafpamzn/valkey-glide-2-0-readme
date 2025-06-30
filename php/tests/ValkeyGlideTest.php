@@ -1205,15 +1205,15 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testSortPrefix() {
-        $this->markTestSkipped();
+        
         // Make sure that sorting works with a prefix
         $this->valkey_glide->del('some-item');
         $this->valkey_glide->sadd('some-item', 1);
         $this->valkey_glide->sadd('some-item', 2);
         $this->valkey_glide->sadd('some-item', 3);
 
-        $this->assertEquals(['1', '2', '3'], $this->valkey_glide->sort('some-item', ['sort' => 'asc']));
-        $this->assertEquals(['3', '2', '1'], $this->valkey_glide->sort('some-item', ['sort' => 'desc']));
+        $this->assertEquals(['1', '2', '3'], $this->valkey_glide->sort('some-item', ['sort' => 'asc']));        
+        $this->assertEquals(['3', '2', '1'], $this->valkey_glide->sort('some-item', ['sort' => 'desc']));        
         $this->assertEquals(['1', '2', '3'], $this->valkey_glide->sort('some-item'));
 
         // Kill our set/prefix
@@ -1221,7 +1221,6 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testSortAsc() {
-        $this->markTestSkipped();
         $this->setupSort();
         // sort by age and get IDs
         $byAgeAsc = ['3', '1', '2', '4'];
@@ -1277,7 +1276,6 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testSortDesc() {
-        $this->markTestSkipped();
         $this->setupSort();
 
         // sort by age and get IDs
@@ -1307,8 +1305,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     /* This test is just to make sure SORT and SORT_RO are both callable */
-    public function testSortHandler() {
-        $this->markTestSkipped();
+    public function testSortHandler() {        
         $this->valkey_glide->del('list');
 
         $this->valkey_glide->rpush('list', 'c', 'b', 'a');
