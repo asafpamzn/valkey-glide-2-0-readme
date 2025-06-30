@@ -173,7 +173,8 @@ int prepare_list_key_only_args(list_command_args_t *args, uintptr_t **args_out,
                                unsigned long **args_len_out);
 
 int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out,
-                                 unsigned long **args_len_out);
+                                 unsigned long **args_len_out,
+                                 char ***allocated_strings, int *allocated_count);
 
 int prepare_list_key_count_args(list_command_args_t *args, uintptr_t **args_out,
                                 unsigned long **args_len_out,

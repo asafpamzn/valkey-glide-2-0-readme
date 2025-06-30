@@ -1199,7 +1199,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // set-up
         $this->valkey_glide->del('person:id');
-        foreach ([1, 2, 3, 4] as $id) {
+        foreach ([1, 2, 3, 4] as $id) {            
             $this->valkey_glide->lPush('person:id', $id);
         }
     }
@@ -1281,7 +1281,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         // sort by age and get IDs
         $byAgeDesc = ['4', '2', '1', '3'];
         $this->assertEquals($byAgeDesc, $this->valkey_glide->sort('person:id', ['by' => 'person:age_*', 'sort' => 'desc']));
-
+        
         // sort by age and get names
         $byAgeDesc = ['Dave', 'Bob', 'Alice', 'Carol'];
         $this->assertEquals($byAgeDesc, $this->valkey_glide->sort('person:id', ['by' => 'person:age_*', 'get' => 'person:name_*', 'sort' => 'desc']));

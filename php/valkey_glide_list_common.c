@@ -110,7 +110,7 @@ int execute_list_generic_command(const void *glide_client,
     case RPush:
     case LPushX:
     case RPushX:
-        arg_count = prepare_list_key_values_args(args, &cmd_args, &args_len);
+        arg_count = prepare_list_key_values_args(args, &cmd_args, &args_len, &allocated_strings, &allocated_count);
         break;
     case LPop:
     case RPop:
@@ -394,7 +394,8 @@ int prepare_list_key_only_args(list_command_args_t *args, uintptr_t **args_out,
  * Prepare arguments for key+values commands (LPUSH, RPUSH, etc.)
  */
 int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out,
-                                 unsigned long **args_len_out)
+                                 unsigned long **args_len_out,
+                                 char ***allocated_strings, int *allocated_count)
 {
     VALIDATE_LIST_CLIENT(args->glide_client);
     VALIDATE_LIST_KEY(args->key, args->key_len);
@@ -408,7 +409,7 @@ int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out
     for (i = 0; i < args->value_count; i++)
     {
         zval *value = &args->values[i];
-        if (Z_TYPE_P(value) == IS_STRING)
+        if (Z_TYPE_P(value) == IS_STRING || Z_TYPE_P(value) == IS_LONG || Z_TYPE_P(value) == IS_DOUBLE)
         {
             total_args++;
         }
@@ -428,6 +429,15 @@ int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out
         return 0;
     }
 
+    /* Initialize allocated strings tracking */
+    *allocated_strings = (char **)emalloc(total_args * sizeof(char *));
+    if (!*allocated_strings)
+    {
+        free_list_command_args(*args_out, *args_len_out);
+        return 0;
+    }
+    *allocated_count = 0;
+
     /* First argument: key */
     (*args_out)[0] = (uintptr_t)args->key;
     (*args_len_out)[0] = args->key_len;
@@ -445,6 +455,44 @@ int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out
             (*args_len_out)[arg_idx] = Z_STRLEN_P(value);
             arg_idx++;
         }
+        else if (Z_TYPE_P(value) == IS_LONG)
+        {
+            /* Convert long to string */
+            size_t str_len;
+            char *str_val = alloc_list_number_string(Z_LVAL_P(value), &str_len);
+            if (!str_val)
+            {
+                FREE_LIST_ALLOCATED_STRINGS(*allocated_strings, *allocated_count);
+                free_list_command_args(*args_out, *args_len_out);
+                return 0;
+            }
+
+            (*allocated_strings)[*allocated_count] = str_val;
+            (*allocated_count)++;
+
+            (*args_out)[arg_idx] = (uintptr_t)str_val;
+            (*args_len_out)[arg_idx] = str_len;
+            arg_idx++;
+        }
+        else if (Z_TYPE_P(value) == IS_DOUBLE)
+        {
+            /* Convert double to string */
+            size_t str_len;
+            char *str_val = alloc_list_double_string(Z_DVAL_P(value), &str_len);
+            if (!str_val)
+            {
+                FREE_LIST_ALLOCATED_STRINGS(*allocated_strings, *allocated_count);
+                free_list_command_args(*args_out, *args_len_out);
+                return 0;
+            }
+
+            (*allocated_strings)[*allocated_count] = str_val;
+            (*allocated_count)++;
+
+            (*args_out)[arg_idx] = (uintptr_t)str_val;
+            (*args_len_out)[arg_idx] = str_len;
+            arg_idx++;
+        }
         else if (Z_TYPE_P(value) == IS_ARRAY)
         {
             HashTable *ht = Z_ARRVAL_P(value);
@@ -452,15 +500,56 @@ int prepare_list_key_values_args(list_command_args_t *args, uintptr_t **args_out
 
             ZEND_HASH_FOREACH_VAL(ht, z_item)
             {
-                if (Z_TYPE_P(z_item) != IS_STRING)
+                if (Z_TYPE_P(z_item) == IS_STRING)
                 {
+                    (*args_out)[arg_idx] = (uintptr_t)Z_STRVAL_P(z_item);
+                    (*args_len_out)[arg_idx] = Z_STRLEN_P(z_item);
+                    arg_idx++;
+                }
+                else if (Z_TYPE_P(z_item) == IS_LONG)
+                {
+                    /* Convert long to string */
+                    size_t str_len;
+                    char *str_val = alloc_list_number_string(Z_LVAL_P(z_item), &str_len);
+                    if (!str_val)
+                    {
+                        FREE_LIST_ALLOCATED_STRINGS(*allocated_strings, *allocated_count);
+                        free_list_command_args(*args_out, *args_len_out);
+                        return 0;
+                    }
+
+                    (*allocated_strings)[*allocated_count] = str_val;
+                    (*allocated_count)++;
+
+                    (*args_out)[arg_idx] = (uintptr_t)str_val;
+                    (*args_len_out)[arg_idx] = str_len;
+                    arg_idx++;
+                }
+                else if (Z_TYPE_P(z_item) == IS_DOUBLE)
+                {
+                    /* Convert double to string */
+                    size_t str_len;
+                    char *str_val = alloc_list_double_string(Z_DVAL_P(z_item), &str_len);
+                    if (!str_val)
+                    {
+                        FREE_LIST_ALLOCATED_STRINGS(*allocated_strings, *allocated_count);
+                        free_list_command_args(*args_out, *args_len_out);
+                        return 0;
+                    }
+
+                    (*allocated_strings)[*allocated_count] = str_val;
+                    (*allocated_count)++;
+
+                    (*args_out)[arg_idx] = (uintptr_t)str_val;
+                    (*args_len_out)[arg_idx] = str_len;
+                    arg_idx++;
+                }
+                else
+                {
+                    FREE_LIST_ALLOCATED_STRINGS(*allocated_strings, *allocated_count);
                     free_list_command_args(*args_out, *args_len_out);
                     return 0;
                 }
-
-                (*args_out)[arg_idx] = (uintptr_t)Z_STRVAL_P(z_item);
-                (*args_len_out)[arg_idx] = Z_STRLEN_P(z_item);
-                arg_idx++;
             }
             ZEND_HASH_FOREACH_END();
         }
