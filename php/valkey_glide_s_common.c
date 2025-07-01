@@ -16,6 +16,10 @@
 #include "common.h"
 #include "valkey_glide_s_common.h"
 
+/* Import the string conversion functions from command_response.c */
+extern char *long_to_string(long value, size_t *len);
+extern char *double_to_string(double value, size_t *len);
+
 /* ====================================================================
  * UTILITY FUNCTIONS
  * ==================================================================== */
@@ -2522,6 +2526,28 @@ int execute_serverversion_command(zval *object, int argc, zval *return_value, ze
 }
 
 /**
+ * Execute HSCAN command using the generic framework - INTERNAL SIGNATURE
+ */
+int execute_hscan_command_internal(const void *glide_client, const char *key, size_t key_len,
+                                   long *it, const char *pattern, size_t pattern_len,
+                                   long count, zval *return_value)
+{
+    s_command_args_t args;
+    INIT_S_COMMAND_ARGS(args);
+
+    args.glide_client = glide_client;
+    args.key = key;
+    args.key_len = key_len;
+    args.cursor = it;
+    args.pattern = pattern;
+    args.pattern_len = pattern_len;
+    args.count = count;
+    args.has_count = (count > 0);
+
+    return execute_s_generic_command(glide_client, HScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
+}
+
+/**
  * Execute HSCAN command with unified signature
  */
 int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce)
@@ -2531,6 +2557,8 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
     size_t key_len, pattern_len = 0;
     zval *z_iter;
     zend_long count = 0;
+    int has_pattern = 0;
+    int has_count = 0;
 
     /* Parse arguments */
     if (zend_parse_method_parameters(argc, object, "Osz|sl",
@@ -2540,6 +2568,10 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
         return 0;
     }
 
+    /* Check if optional parameters are provided */
+    has_pattern = (pattern != NULL && pattern_len > 0);
+    has_count = (argc > 3);
+
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
     if (!valkey_glide || !valkey_glide->glide_client)
@@ -2547,169 +2579,49 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
         return 0;
     }
 
-    /* Make sure we have a valid cursor */
-    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING)
+    /* Dereference if it's a reference */
+    ZVAL_DEREF(z_iter);
+
+    /* Make sure we have a valid cursor - accept NULL, numeric, or string */
+    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
     {
         php_error_docref(NULL, E_WARNING, "Cursor must be numeric or string");
         return 0;
     }
 
-    /* Dereference if it's a reference */
-    ZVAL_DEREF(z_iter);
-
-    /* If the cursor is a string, convert it to a long */
+    /* Convert cursor to long */
     long cursor;
-    if (Z_TYPE_P(z_iter) == IS_STRING)
+    if (Z_TYPE_P(z_iter) == IS_NULL)
+    {
+        /* NULL cursor means start from the beginning (0) */
+        cursor = 0;
+    }
+    else if (Z_TYPE_P(z_iter) == IS_STRING)
     {
         cursor = atol(Z_STRVAL_P(z_iter));
     }
     else
     {
+        convert_to_long(z_iter);
         cursor = Z_LVAL_P(z_iter);
     }
 
-    /* Initialize return array */
-    array_init(return_value);
+    /* Use empty pattern if not specified */
+    const char *scan_pattern = has_pattern ? pattern : "";
+    size_t scan_pattern_len = has_pattern ? pattern_len : 0;
 
-    /* Execute HSCAN command with the legacy implementation */
+    /* Use default count if not specified */
+    long scan_count = has_count ? count : 10;
 
-    /* Execute an HSCAN command using the Valkey Glide client */
-
-    /* Check if client and key are valid */
-    if (!valkey_glide->glide_client || !key || !return_value)
+    /* Execute the HSCAN command using the internal function */
+    if (execute_hscan_command_internal(valkey_glide->glide_client, key, key_len, &cursor,
+                                       scan_pattern, scan_pattern_len,
+                                       scan_count, return_value))
     {
-        return 0;
-    }
+        /* Update iterator value */
+        ZVAL_LONG(z_iter, cursor);
 
-    /* Calculate the number of arguments */
-    unsigned long arg_count = 2; /* key + cursor */
-    if (pattern && pattern_len > 0)
-        arg_count += 2; /* MATCH + pattern */
-    if (count > 0)
-        arg_count += 2; /* COUNT + count */
-
-    /* Allocate argument arrays */
-    uintptr_t *args = (uintptr_t *)emalloc(arg_count * sizeof(uintptr_t));
-    unsigned long *args_len = (unsigned long *)emalloc(arg_count * sizeof(unsigned long));
-
-    if (!args || !args_len)
-    {
-        if (args)
-            efree(args);
-        if (args_len)
-            efree(args_len);
-        return 0;
-    }
-
-    /* First argument: key */
-    args[0] = (uintptr_t)key;
-    args_len[0] = key_len;
-
-    /* Second argument: cursor (convert to string) */
-    size_t cursor_len;
-    char *cursor_str = long_to_string(cursor, &cursor_len);
-    if (!cursor_str)
-    {
-        efree(args);
-        efree(args_len);
-        return 0;
-    }
-    args[1] = (uintptr_t)cursor_str;
-    args_len[1] = cursor_len;
-
-    /* Track current argument index */
-    int arg_idx = 2;
-
-    /* Add pattern if provided */
-    if (pattern && pattern_len > 0)
-    {
-        args[arg_idx] = (uintptr_t)"MATCH";
-        args_len[arg_idx] = 5; /* strlen("MATCH") */
-        arg_idx++;
-
-        args[arg_idx] = (uintptr_t)pattern;
-        args_len[arg_idx] = pattern_len;
-        arg_idx++;
-    }
-
-    /* Add count if provided */
-    if (count > 0)
-    {
-        args[arg_idx] = (uintptr_t)"COUNT";
-        args_len[arg_idx] = 5; /* strlen("COUNT") */
-        arg_idx++;
-
-        size_t count_len;
-        char *count_str = long_to_string(count, &count_len);
-        if (!count_str)
-        {
-            efree(cursor_str);
-            efree(args);
-            efree(args_len);
-            return 0;
-        }
-        args[arg_idx] = (uintptr_t)count_str;
-        args_len[arg_idx] = count_len;
-        arg_idx++;
-    }
-
-    /* Execute the command */
-    CommandResult *result = execute_command(
-        valkey_glide->glide_client,
-        HScan,     /* command type */
-        arg_count, /* number of arguments */
-        args,      /* arguments */
-        args_len   /* argument lengths */
-    );
-
-    /* Free the cursor string */
-    efree(cursor_str);
-
-    /* Free the count string if used */
-    if (count > 0)
-        efree((void *)args[arg_idx - 1]);
-
-    /* Free the argument arrays */
-    efree(args);
-    efree(args_len);
-
-    /* Process the result */
-    int status = 0;
-
-    if (result)
-    {
-        if (result->command_error)
-        {
-            /* Command failed */
-            free_command_result(result);
-            return 0;
-        }
-
-        if (result->response && result->response->response_type == Array)
-        {
-            /* Convert the nested array result to PHP array */
-            status = command_response_to_zval(result->response, return_value, COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
-        }
-        free_command_result(result);
-    }
-
-    if (status)
-    {
-        /* The hscan_command directly sets the return_value */
-        /* We need to update the iterator value */
-        zval *z_new_cursor = zend_hash_index_find(Z_ARRVAL_P(return_value), 0);
-        if (z_new_cursor)
-        {
-            /* Update the passed-in cursor */
-            if (Z_TYPE_P(z_new_cursor) == IS_STRING)
-            {
-                ZVAL_STRINGL(z_iter, Z_STRVAL_P(z_new_cursor), Z_STRLEN_P(z_new_cursor));
-            }
-            else if (Z_TYPE_P(z_new_cursor) == IS_LONG)
-            {
-                ZVAL_LONG(z_iter, Z_LVAL_P(z_new_cursor));
-            }
-        }
+        /* Return value already set in execute_hscan_command_internal */
         return 1;
     }
 

@@ -189,6 +189,21 @@ int execute_sunionstore_command(zval *object, int argc, zval *return_value, zend
 int execute_sdiff_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
 int execute_sdiffstore_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
 
+/* Scan command implementations */
+int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
+int execute_sscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
+int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
+
+/* Internal scan command functions */
+int execute_scan_command_internal(const void *glide_client, long *it, const char *pattern, size_t pattern_len,
+                                  long count, zval *return_value);
+int execute_sscan_command_internal(const void *glide_client, const char *key, size_t key_len,
+                                   long *it, const char *pattern, size_t pattern_len,
+                                   long count, zval *return_value);
+int execute_hscan_command_internal(const void *glide_client, const char *key, size_t key_len,
+                                   long *it, const char *pattern, size_t pattern_len,
+                                   long count, zval *return_value);
+
 /* ====================================================================
  * CONVENIENCE MACROS
  * ==================================================================== */

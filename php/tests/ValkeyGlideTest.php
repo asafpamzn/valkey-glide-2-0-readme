@@ -5288,13 +5288,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     
 
     public function testHScan() {
-         $this->markTestSkipped(); // TODO
+         
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
-        // Never get empty sets
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-
+        
         $this->valkey_glide->del('hash');
         $foo_mems = 0;
 
