@@ -2552,11 +2552,12 @@ int execute_serverversion_command(zval *object, int argc, zval *return_value, ze
 }
 
 /**
- * Execute HSCAN command using the generic framework - INTERNAL SIGNATURE
+ * Execute generic SCAN command using the generic framework - INTERNAL SIGNATURE
  */
-int execute_hscan_command_internal(const void *glide_client, const char *key, size_t key_len,
-                                   long *it, const char *pattern, size_t pattern_len,
-                                   long count, zval *return_value)
+int execute_gen_scan_command_internal(const void *glide_client, enum RequestType cmd_type,
+                                      const char *key, size_t key_len,
+                                      long *it, const char *pattern, size_t pattern_len,
+                                      long count, zval *return_value)
 {
     s_command_args_t args;
     INIT_S_COMMAND_ARGS(args);
@@ -2570,9 +2571,19 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
     args.count = count;
     args.has_count = (count > 0);
 
-    int result = execute_s_generic_command(glide_client, HScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
+    int result = execute_s_generic_command(glide_client, cmd_type, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
 
     return result;
+}
+
+/**
+ * Execute HSCAN command using the generic framework - INTERNAL SIGNATURE
+ */
+int execute_hscan_command_internal(const void *glide_client, const char *key, size_t key_len,
+                                   long *it, const char *pattern, size_t pattern_len,
+                                   long count, zval *return_value)
+{
+    return execute_gen_scan_command_internal(glide_client, HScan, key, key_len, it, pattern, pattern_len, count, return_value);
 }
 
 /**

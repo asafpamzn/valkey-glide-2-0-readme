@@ -5359,11 +5359,9 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testZScan() {
-         $this->markTestSkipped(); // TODO
+         
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
-
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
 
         $this->valkey_glide->del('zset');
 
@@ -5405,8 +5403,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $this->assertEquals(0., $p_score);
         $this->assertEquals(0, $p_count);
 
-        // Turn off retrying and we should get some empty results
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
+        // Turn off retrying and we should get some empty results        
         [$skips, $p_score, $p_count] = [0, $p_score_old, $p_count_old];
 
         $it = NULL;

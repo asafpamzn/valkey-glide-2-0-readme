@@ -15,6 +15,7 @@
 
 #include "valkey_glide_z_common.h"
 #include "valkey_glide_list_common.h"
+#include "valkey_glide_s_common.h"
 #include "command_response.h"
 #include "include/glide_bindings.h"
 #include <stdlib.h>
@@ -2889,168 +2890,85 @@ int execute_bzpopmin_command(zval *object, int argc, zval *return_value, zend_cl
 /* Execute a ZSCAN command using the Valkey Glide client */
 int execute_zscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce)
 {
-    zval *z_iterator;
+    valkey_glide_object *valkey_glide;
     char *key = NULL, *pattern = NULL;
     size_t key_len, pattern_len = 0;
-    long count = 0, cursor;
-    const void *glide_client = NULL;
+    zval *z_iter;
+    zend_long count = 0;
+    int has_pattern = 0;
+    int has_count = 0;
 
     /* Parse parameters */
     if (zend_parse_method_parameters(argc, object, "Osz|sl",
-                                     &object, ce, &key, &key_len, &z_iterator,
+                                     &object, ce, &key, &key_len, &z_iter,
                                      &pattern, &pattern_len, &count) == FAILURE)
     {
         return 0;
     }
 
+    /* Check if optional parameters are provided */
+    has_pattern = (pattern != NULL && pattern_len > 0);
+    has_count = (argc > 3);
+
     /* Get ValkeyGlide object */
-    valkey_glide_object *valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
-    glide_client = valkey_glide->glide_client;
-
-    /* Check if we have a valid glide client */
-    if (!glide_client || !key || key_len <= 0)
+    valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
+    if (!valkey_glide || !valkey_glide->glide_client)
     {
         return 0;
     }
 
-    /* Make sure the iterator value is a reference */
-    if (!Z_ISREF_P(z_iterator))
+    /* Dereference if it's a reference */
+    ZVAL_DEREF(z_iter);
+
+    /* Make sure we have a valid cursor - accept NULL, numeric, or string */
+    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
     {
-        php_error_docref(NULL, E_WARNING, "Iterator must be passed as a reference");
+        php_error_docref(NULL, E_WARNING, "Cursor must be numeric or string");
         return 0;
     }
 
-    /* Get current iterator value */
-    cursor = Z_LVAL_P(Z_REFVAL_P(z_iterator));
-
-    /* Calculate number of arguments */
-    unsigned long arg_count = 2; /* key + cursor */
-    if (pattern && pattern_len > 0)
+    /* Convert cursor to long */
+    long cursor;
+    if (Z_TYPE_P(z_iter) == IS_NULL)
     {
-        arg_count += 2; /* MATCH + pattern */
+        /* NULL cursor means start from the beginning (0) */
+        cursor = 0;
     }
-    if (count > 0)
+    else if (Z_TYPE_P(z_iter) == IS_STRING)
     {
-        arg_count += 2; /* COUNT + count */
+        cursor = atol(Z_STRVAL_P(z_iter));
     }
-
-    /* Prepare command arguments */
-    uintptr_t *args = (uintptr_t *)emalloc(arg_count * sizeof(uintptr_t));
-    unsigned long *args_len = (unsigned long *)emalloc(arg_count * sizeof(unsigned long));
-
-    if (!args || !args_len)
+    else
     {
-        if (args)
-            efree(args);
-        if (args_len)
-            efree(args_len);
-        return 0;
+        convert_to_long(z_iter);
+        cursor = Z_LVAL_P(z_iter);
     }
 
-    /* Convert cursor to string */
-    char cursor_str[32];
-    snprintf(cursor_str, sizeof(cursor_str), "%ld", cursor);
-
-    /* Set key and cursor */
-    args[0] = (uintptr_t)key;
-    args_len[0] = key_len;
-    args[1] = (uintptr_t)cursor_str;
-    args_len[1] = strlen(cursor_str);
-
-    unsigned int offset = 2;
-
-    /* Add MATCH if needed */
-    if (pattern && pattern_len > 0)
+    /* Check if scan is already complete (cursor = -1) */
+    if (cursor == -1)
     {
-        args[offset] = (uintptr_t)"MATCH";
-        args_len[offset] = 5;
-        offset++;
-
-        args[offset] = (uintptr_t)pattern;
-        args_len[offset] = pattern_len;
-        offset++;
+        ZVAL_FALSE(return_value);
+        return 1;
     }
 
-    /* Add COUNT if needed */
-    if (count > 0)
-    {
-        args[offset] = (uintptr_t)"COUNT";
-        args_len[offset] = 5;
-        offset++;
+    /* Use empty pattern if not specified */
+    const char *scan_pattern = has_pattern ? pattern : "";
+    size_t scan_pattern_len = has_pattern ? pattern_len : 0;
 
-        char count_str[32];
-        snprintf(count_str, sizeof(count_str), "%ld", count);
-        args[offset] = (uintptr_t)estrdup(count_str);
-        args_len[offset] = strlen(count_str);
-        offset++;
+    /* Use default count if not specified */
+    long scan_count = has_count ? count : 10;
+
+    /* Execute the ZSCAN command using the generic scan function */
+    if (execute_gen_scan_command_internal(valkey_glide->glide_client, ZScan, key, key_len, &cursor,
+                                          scan_pattern, scan_pattern_len,
+                                          scan_count, return_value))
+    {
+        /* Update iterator value */
+        ZVAL_LONG(z_iter, cursor);
+
+        /* Return value already set in execute_gen_scan_command_internal */
+        return 1;
     }
 
-    /* Execute the command */
-    CommandResult *result = execute_command(
-        glide_client,
-        ZScan,     /* command type */
-        arg_count, /* number of arguments */
-        args,      /* arguments */
-        args_len   /* argument lengths */
-    );
-
-    /* Free allocated memory for COUNT */
-    if (count > 0)
-    {
-        efree((void *)args[arg_count - 1]);
-    }
-
-    /* Free arrays */
-    efree(args);
-    efree(args_len);
-
-    /* Process the result */
-    int status = 0;
-    if (result)
-    {
-        if (result->command_error)
-        {
-            /* Command failed */
-            free_command_result(result);
-            return 0;
-        }
-
-        if (result->response && result->response->response_type == Array && result->response->array_value_len >= 2)
-        {
-            /* Get new cursor from first element */
-            CommandResponse *cursor_resp = &result->response->array_value[0];
-            if (cursor_resp->response_type == String)
-            {
-                cursor = atol(cursor_resp->string_value);
-            }
-
-            /* Initialize result array */
-            array_init(return_value);
-
-            /* Add cursor as first element */
-            zval z_cursor;
-            ZVAL_LONG(&z_cursor, cursor);
-            add_next_index_zval(return_value, &z_cursor);
-
-            /* Add elements array as second element */
-            zval z_elements;
-            CommandResponse *elements = &result->response->array_value[1];
-            if (elements->response_type == Array)
-            {
-                command_response_to_zval(elements, &z_elements, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
-                add_next_index_zval(return_value, &z_elements);
-            }
-            else
-            {
-                array_init(&z_elements);
-                add_next_index_zval(return_value, &z_elements);
-            }
-
-            status = 1;
-        }
-
-        free_command_result(result);
-    }
-
-    return status;
+    return 0;
 }
