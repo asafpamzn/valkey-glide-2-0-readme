@@ -5341,8 +5341,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // Scan all of them
         $it = NULL;
-        while ($keys = $this->valkey_glide->sscan('set', $it)) {
-            var_dump($keys);
+        while ($keys = $this->valkey_glide->sscan('set', $it)) {            
             $i -= count($keys);
             foreach ($keys as $mem) {
                 $this->assertStringContains('member', $mem);
