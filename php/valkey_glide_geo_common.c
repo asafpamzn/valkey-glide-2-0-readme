@@ -1117,8 +1117,8 @@ int process_geo_radius_result(CommandResult *result, void *output)
     }
 
     /* Process the result (array of points) */
-    printf("Processing GEORADIUS result with options: withcoord=%d, withdist=%d, withhash=%d result->response->response_type =%d\n",
-           withcoord, withdist, withhash, result->response->response_type);
+    // printf("Processing GEORADIUS result with options: withcoord=%d, withdist=%d, withhash=%d result->response->response_type =%d\n",
+    //  withcoord, withdist, withhash, result->response->response_type);
     if (result->response->response_type == Array)
     {
         array_init(return_value);

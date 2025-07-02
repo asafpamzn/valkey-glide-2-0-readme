@@ -660,7 +660,7 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
         if (elements_resp->array_value_len > 0)
         {
             printf("file = %s, line = %d\n", __FILE__, __LINE__);
-            return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
+            return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY, false);
         }
         else
         {
@@ -674,7 +674,7 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
     *args->cursor = new_cursor;
 
     /* Use command_response_to_zval for robust element processing */
-    return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
+    return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY, false);
 }
 
 /* ====================================================================
@@ -751,7 +751,6 @@ int execute_s_generic_command(const void *glide_client,
     /* Process response based on type */
     if (result)
     {
-        printf("response_type = %d\n", response_type);
         switch (response_type)
         {
         case S_RESPONSE_INT:
@@ -2562,10 +2561,6 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
     s_command_args_t args;
     INIT_S_COMMAND_ARGS(args);
 
-    /* DEBUG: Internal function entry */
-    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 3 - Internal function entry, cursor pointer=%p, cursor value=%ld",
-                     (void *)it, it ? *it : -1);
-
     args.glide_client = glide_client;
     args.key = key;
     args.key_len = key_len;
@@ -2576,10 +2571,6 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
     args.has_count = (count > 0);
 
     int result = execute_s_generic_command(glide_client, HScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
-
-    /* DEBUG: Internal function exit */
-    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 4 - Internal function exit, cursor pointer=%p, cursor value=%ld, result=%d",
-                     (void *)it, it ? *it : -1, result);
 
     return result;
 }
@@ -2643,14 +2634,9 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
         cursor = Z_LVAL_P(z_iter);
     }
 
-    /* DEBUG: Initial cursor values */
-    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 1 - Initial cursor extracted: %ld, z_iter type=%d",
-                     cursor, Z_TYPE_P(z_iter));
-
     /* Check if scan is already complete (cursor = -1) */
     if (cursor == -1)
     {
-        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Scan already complete, returning FALSE");
         ZVAL_FALSE(return_value);
         return 1;
     }
@@ -2662,28 +2648,17 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
     /* Use default count if not specified */
     long scan_count = has_count ? count : 10;
 
-    /* DEBUG: Before calling internal function */
-    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 2 - About to call internal function with cursor=%ld", cursor);
-
     /* Execute the HSCAN command using the internal function */
     if (execute_hscan_command_internal(valkey_glide->glide_client, key, key_len, &cursor,
                                        scan_pattern, scan_pattern_len,
                                        scan_count, return_value))
     {
-        /* DEBUG: After internal function returns */
-        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 5 - After internal function, cursor=%ld", cursor);
-
         /* Update iterator value */
         ZVAL_LONG(z_iter, cursor);
-
-        /* DEBUG: After updating PHP variable */
-        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 6 - After ZVAL_LONG, z_iter type=%d, value=%ld",
-                         Z_TYPE_P(z_iter), Z_LVAL_P(z_iter));
 
         /* Return value already set in execute_hscan_command_internal */
         return 1;
     }
 
-    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Internal function failed, cursor=%ld", cursor);
     return 0;
 }

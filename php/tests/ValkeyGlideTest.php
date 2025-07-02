@@ -5308,25 +5308,22 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         // Scan all of them
         $it = NULL;
         while ($keys = $this->valkey_glide->hscan('hash', $it)) {
-            $i -= count($keys);            
-            var_dump($it);
-            var_dump($keys);
-            
+            $i -= count($keys);                       
         }
-        echo"1111\n";
-        var_dump($it);
-        var_dump($keys);        
+          
         $this->assertEquals(0, $i);
-        return;
+        
         // Scan just *foomem* (should be 4)
         $it = NULL;
-        while ($keys = $this->valkey_glide->hscan('hash', $it, '*foomember*')) {
+        while ($keys = $this->valkey_glide->hscan('hash', $it, '*foomember*', 1000)) {
+
             $foo_mems -= count($keys);
             foreach ($keys as $mem => $val) {
                 $this->assertStringContains('member', $mem);
                 $this->assertStringContains('value', $val);
             }
         }
+
         $this->assertEquals(0, $foo_mems);
     }
 
