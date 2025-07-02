@@ -23,8 +23,9 @@
 enum CommandResponseToZvalFlags
 {
   COMMAND_RESPONSE_NOT_ASSOSIATIVE = 0,
-  COMMAND_RESPONSE_ASSOSIATIVE_ARRAY = 1,        // Use associative array format for Map elements
+  COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP = 1,    // Use associative array format for Map elements
   COMMAND_RESPONSE_STREAM_ARRAY_ASSOCIATIVE = 2, // Use associative array format for stream entries
+  COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY = 3
 };
 /*
  * Execute a command and handle common error checking

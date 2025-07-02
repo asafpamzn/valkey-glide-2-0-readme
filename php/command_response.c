@@ -774,7 +774,28 @@ int command_response_to_zval(CommandResponse *response, zval *output, int use_as
     case Array:
         // printf("%s:%d - CommandResponse is Array with length: %ld, use_associative_array = %d\n", __FILE__, __LINE__, response->array_value_len, use_associative_array);
         array_init(output);
-        if (response->array_value_len == 2 && use_associative_array == COMMAND_RESPONSE_STREAM_ARRAY_ASSOCIATIVE)
+        if (use_associative_array == COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY)
+        {
+            for (int64_t i = 0; i + 1 < response->array_value_len; i += 2)
+            {
+                zval field, value;
+
+                command_response_to_zval(&response->array_value[i], &field, COMMAND_RESPONSE_NOT_ASSOSIATIVE, use_false_if_null);
+                command_response_to_zval(&response->array_value[i + 1], &value, COMMAND_RESPONSE_NOT_ASSOSIATIVE, use_false_if_null);
+
+                if (Z_TYPE(field) == IS_STRING)
+                {
+                    add_assoc_zval(output, Z_STRVAL(field), &value);
+                    zval_dtor(&field);
+                }
+                else
+                {
+                    zval_dtor(&field);
+                    zval_dtor(&value);
+                }
+            }
+        }
+        else if (response->array_value_len == 2 && use_associative_array == COMMAND_RESPONSE_STREAM_ARRAY_ASSOCIATIVE)
         {
             zval field, value;
             // printf("%s:%d - response->array_value[0]->command_response_type = %d, response->array_value[1]->command_response_type = %d\n",

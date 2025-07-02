@@ -5315,7 +5315,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         }
         echo"1111\n";
         var_dump($it);
-         var_dump($keys);        
+        var_dump($keys);        
         $this->assertEquals(0, $i);
         return;
         // Scan just *foomem* (should be 4)

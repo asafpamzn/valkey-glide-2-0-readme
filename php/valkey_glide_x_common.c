@@ -809,7 +809,7 @@ int process_x_info_result(CommandResult *result, void *output)
     zval *return_value = (zval *)output;
 
     /* XINFO returns information about the stream or consumers in associative array format */
-    return command_response_to_zval(result->response, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY, false);
+    return command_response_to_zval(result->response, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
 }
 
 /**

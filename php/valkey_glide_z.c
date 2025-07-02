@@ -2115,7 +2115,7 @@ int execute_zmpop_command1(const void *glide_client, const char *cmd, double tim
 
     /* Process the result */
     /* For ZMPOP, use associative array format for the values */
-    int use_assoc = COMMAND_RESPONSE_ASSOSIATIVE_ARRAY; /* Always use associative arrays for sorted set responses */
+    int use_assoc = COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP; /* Always use associative arrays for sorted set responses */
     int ret_val = command_response_to_zval(cmd_result->response, result, use_assoc, false);
 
     /* Free the result */
@@ -3037,7 +3037,7 @@ int execute_zscan_command(zval *object, int argc, zval *return_value, zend_class
             CommandResponse *elements = &result->response->array_value[1];
             if (elements->response_type == Array)
             {
-                command_response_to_zval(elements, &z_elements, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY, false);
+                command_response_to_zval(elements, &z_elements, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
                 add_next_index_zval(return_value, &z_elements);
             }
             else

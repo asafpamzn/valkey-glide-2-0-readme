@@ -783,7 +783,7 @@ int process_h_randfield_result(CommandResult *result, void *output)
         /* Fields with values (associative) */
         else if (args->withvalues)
         {
-            // ret_val = command_response_to_zval(result->response, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY, false);
+            // ret_val = command_response_to_zval(result->response, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
             size_t i;
             for (i = 0; i < result->response->array_value_len; i++)
             {
@@ -887,7 +887,7 @@ int process_h_getall_result(CommandResult *result, void *output)
 
     /* Convert response to associative array */
     return command_response_to_zval(result->response, return_value,
-                                    COMMAND_RESPONSE_ASSOSIATIVE_ARRAY, false);
+                                    COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
 }
 
 /* ====================================================================

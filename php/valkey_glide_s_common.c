@@ -15,6 +15,7 @@
 */
 #include "common.h"
 #include "valkey_glide_s_common.h"
+#include "command_response.h"
 
 /* Import the string conversion functions from command_response.c */
 extern char *long_to_string(long value, size_t *len);
@@ -614,6 +615,7 @@ int process_s_string_response(CommandResult *result, s_command_args_t *args, zva
 
 /**
  * Process scan response (cursor + array)
+ * Refactored to use command_response_to_zval utility for better robustness
  */
 int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval *return_value)
 {
@@ -622,64 +624,57 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
         return 0;
     }
 
-    if (result->response->response_type == Array && result->response->array_value_len >= 2)
+    /* Validate response structure: should be Array with at least 2 elements [cursor, elements] */
+    if (result->response->response_type != Array || result->response->array_value_len < 2)
     {
-        /* Get the new cursor */
-        CommandResponse *cursor_resp = &result->response->array_value[0];
-        long new_cursor = 0;
-        if (cursor_resp->response_type == String)
+        return 0;
+    }
+
+    /* Extract cursor from first element */
+    CommandResponse *cursor_resp = &result->response->array_value[0];
+    long new_cursor = 0;
+    if (cursor_resp->response_type == String)
+    {
+        new_cursor = atol(cursor_resp->string_value);
+    }
+    else
+    {
+        /* Handle unexpected cursor type */
+        return 0;
+    }
+
+    /* Extract elements from second element */
+    CommandResponse *elements_resp = &result->response->array_value[1];
+    if (elements_resp->response_type != Array)
+    {
+        return 0;
+    }
+
+    /* Handle scan completion: when server returns cursor=0, scan is complete */
+    if (new_cursor == 0)
+    {
+        /* Set cursor to -1 to indicate scan completion */
+        *args->cursor = -1;
+
+        /* If there are elements in this final batch, return them using robust conversion */
+        if (elements_resp->array_value_len > 0)
         {
-            new_cursor = atol(cursor_resp->string_value);
+            printf("file = %s, line = %d\n", __FILE__, __LINE__);
+            return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_ASSOSIATIVE_ARRAY_MAP, false);
         }
-
-        /* Get the elements array */
-        CommandResponse *elements_resp = &result->response->array_value[1];
-        if (elements_resp->response_type == Array)
+        else
         {
-            /* When cursor=0 is returned by server, scan is complete */
-            if (new_cursor == 0)
-            {
-                /* Set cursor to -1 to indicate scan completion */
-                *args->cursor = -1;
-
-                /* If there are elements in this final batch, return them */
-                if (elements_resp->array_value_len > 0)
-                {
-                    array_init(return_value);
-                    for (int i = 0; i < elements_resp->array_value_len; i++)
-                    {
-                        CommandResponse *element = &elements_resp->array_value[i];
-                        if (element->response_type == String)
-                        {
-                            add_next_index_stringl(return_value, element->string_value, element->string_value_len);
-                        }
-                    }
-                    return 1;
-                }
-                else
-                {
-                    /* No elements in final batch - return FALSE to terminate loop */
-                    ZVAL_FALSE(return_value);
-                    return 1;
-                }
-            }
-
-            /* Normal case: cursor != 0, update cursor and return elements array */
-            *args->cursor = new_cursor;
-            array_init(return_value);
-            for (int i = 0; i < elements_resp->array_value_len; i++)
-            {
-                CommandResponse *element = &elements_resp->array_value[i];
-                if (element->response_type == String)
-                {
-                    add_next_index_stringl(return_value, element->string_value, element->string_value_len);
-                }
-            }
+            /* No elements in final batch - return FALSE to terminate loop */
+            ZVAL_FALSE(return_value);
             return 1;
         }
     }
 
-    return 0;
+    /* Normal case: cursor != 0, update cursor and return elements array */
+    *args->cursor = new_cursor;
+
+    /* Use command_response_to_zval for robust element processing */
+    return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
 }
 
 /* ====================================================================
