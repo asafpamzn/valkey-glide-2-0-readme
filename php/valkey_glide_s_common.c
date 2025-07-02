@@ -617,7 +617,7 @@ int process_s_string_response(CommandResult *result, s_command_args_t *args, zva
  * Process scan response (cursor + array)
  * Refactored to use command_response_to_zval utility for better robustness
  */
-int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval *return_value)
+int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_command_args_t *args, zval *return_value)
 {
     if (!result || !result->response || result->command_error || !return_value || !args->cursor)
     {
@@ -659,8 +659,7 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
         {
-            printf("file = %s, line = %d\n", __FILE__, __LINE__);
-            return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY, false);
+            return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
         }
         else
         {
@@ -674,7 +673,7 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
     *args->cursor = new_cursor;
 
     /* Use command_response_to_zval for robust element processing */
-    return command_response_to_zval(elements_resp, return_value, COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY, false);
+    return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
 }
 
 /* ====================================================================
@@ -769,7 +768,7 @@ int execute_s_generic_command(const void *glide_client,
             status = process_s_string_response(result, args, return_value);
             break;
         case S_RESPONSE_SCAN:
-            status = process_s_scan_response(result, args, return_value);
+            status = process_s_scan_response(result, cmd_type, args, return_value);
             break;
         default:
             status = 0;
@@ -2265,19 +2264,7 @@ int execute_sscan_command_internal(const void *glide_client, const char *key, si
                                    long *it, const char *pattern, size_t pattern_len,
                                    long count, zval *return_value)
 {
-    s_command_args_t args;
-    INIT_S_COMMAND_ARGS(args);
-
-    args.glide_client = glide_client;
-    args.key = key;
-    args.key_len = key_len;
-    args.cursor = it;
-    args.pattern = pattern;
-    args.pattern_len = pattern_len;
-    args.count = count;
-    args.has_count = (count > 0);
-
-    return execute_s_generic_command(glide_client, SScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
+    return execute_gen_scan_command_internal(glide_client, SScan, key, key_len, it, pattern, pattern_len, count, return_value);
 }
 
 /**
@@ -2285,62 +2272,7 @@ int execute_sscan_command_internal(const void *glide_client, const char *key, si
  */
 int execute_sscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce)
 {
-    valkey_glide_object *valkey_glide;
-    char *key = NULL;
-    size_t key_len;
-    zval *z_iter;
-    char *pattern = NULL;
-    size_t pattern_len = 0;
-    int has_pattern = 0;
-    zend_long count = 0;
-    int has_count = 0;
-
-    /* Parse parameters */
-    if (zend_parse_method_parameters(argc, object, "Osz|sl",
-                                     &object, ce, &key, &key_len, &z_iter,
-                                     &pattern, &pattern_len, &count) == FAILURE)
-    {
-        return 0;
-    }
-
-    /* Check if optional parameters are provided */
-    has_pattern = (pattern != NULL && pattern_len > 0);
-    has_count = (argc > 3);
-
-    /* Get ValkeyGlide object */
-    valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
-    if (!valkey_glide || !valkey_glide->glide_client)
-    {
-        return 0;
-    }
-
-    /* Dereference if it's a reference */
-    ZVAL_DEREF(z_iter);
-
-    /* Convert iterator */
-    convert_to_long(z_iter);
-    long iter = Z_LVAL_P(z_iter);
-
-    /* Use empty pattern if not specified */
-    const char *scan_pattern = has_pattern ? pattern : "";
-    size_t scan_pattern_len = has_pattern ? pattern_len : 0;
-
-    /* Use default count if not specified */
-    long scan_count = has_count ? count : 10;
-
-    /* Execute the SSCAN command using the internal function */
-    if (execute_sscan_command_internal(valkey_glide->glide_client, key, key_len, &iter,
-                                       scan_pattern, scan_pattern_len,
-                                       scan_count, return_value))
-    {
-        /* Update iterator value */
-        ZVAL_LONG(z_iter, iter);
-
-        /* Return value already set in execute_sscan_command_internal */
-        return 1;
-    }
-
-    return 0;
+    return execute_scan_command_generic(object, argc, return_value, ce, SScan);
 }
 
 /**

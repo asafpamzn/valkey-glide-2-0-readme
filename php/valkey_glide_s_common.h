@@ -159,7 +159,7 @@ int process_s_bool_response(CommandResult *result, s_command_args_t *args, zval 
 int process_s_set_response(CommandResult *result, s_command_args_t *args, zval *return_value);
 int process_s_mixed_response(CommandResult *result, s_command_args_t *args, zval *return_value);
 int process_s_string_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval *return_value);
+int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_command_args_t *args, zval *return_value);
 
 /* Utility functions */
 int allocate_s_command_args(int count, uintptr_t **args_out, unsigned long **args_len_out);
