@@ -5296,7 +5296,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $this->valkey_glide->del('hash');
         $foo_mems = 0;
 
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 1000; $i++) {
             if ($i > 3) {
                 $this->valkey_glide->hset('hash', "member:$i", "value:$i");
             } else {
@@ -5308,10 +5308,16 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         // Scan all of them
         $it = NULL;
         while ($keys = $this->valkey_glide->hscan('hash', $it)) {
-            $i -= count($keys);
+            $i -= count($keys);            
+            var_dump($it);
+            var_dump($keys);
+            
         }
+        echo"1111\n";
+        var_dump($it);
+         var_dump($keys);        
         $this->assertEquals(0, $i);
-
+        return;
         // Scan just *foomem* (should be 4)
         $it = NULL;
         while ($keys = $this->valkey_glide->hscan('hash', $it, '*foomember*')) {

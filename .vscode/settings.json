@@ -166,5 +166,6 @@
         "map": "c",
         "numeric": "c",
         "valkey_glide_commands_common.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "/Users/asafp/work/valkey-glide-php/cpp"
 }

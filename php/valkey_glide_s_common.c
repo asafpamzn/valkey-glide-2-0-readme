@@ -626,15 +626,46 @@ int process_s_scan_response(CommandResult *result, s_command_args_t *args, zval 
     {
         /* Get the new cursor */
         CommandResponse *cursor_resp = &result->response->array_value[0];
+        long new_cursor = 0;
         if (cursor_resp->response_type == String)
         {
-            *args->cursor = atol(cursor_resp->string_value);
+            new_cursor = atol(cursor_resp->string_value);
         }
 
         /* Get the elements array */
         CommandResponse *elements_resp = &result->response->array_value[1];
         if (elements_resp->response_type == Array)
         {
+            /* When cursor=0 is returned by server, scan is complete */
+            if (new_cursor == 0)
+            {
+                /* Set cursor to -1 to indicate scan completion */
+                *args->cursor = -1;
+
+                /* If there are elements in this final batch, return them */
+                if (elements_resp->array_value_len > 0)
+                {
+                    array_init(return_value);
+                    for (int i = 0; i < elements_resp->array_value_len; i++)
+                    {
+                        CommandResponse *element = &elements_resp->array_value[i];
+                        if (element->response_type == String)
+                        {
+                            add_next_index_stringl(return_value, element->string_value, element->string_value_len);
+                        }
+                    }
+                    return 1;
+                }
+                else
+                {
+                    /* No elements in final batch - return FALSE to terminate loop */
+                    ZVAL_FALSE(return_value);
+                    return 1;
+                }
+            }
+
+            /* Normal case: cursor != 0, update cursor and return elements array */
+            *args->cursor = new_cursor;
             array_init(return_value);
             for (int i = 0; i < elements_resp->array_value_len; i++)
             {
@@ -725,6 +756,7 @@ int execute_s_generic_command(const void *glide_client,
     /* Process response based on type */
     if (result)
     {
+        printf("response_type = %d\n", response_type);
         switch (response_type)
         {
         case S_RESPONSE_INT:
@@ -2535,6 +2567,10 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
     s_command_args_t args;
     INIT_S_COMMAND_ARGS(args);
 
+    /* DEBUG: Internal function entry */
+    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 3 - Internal function entry, cursor pointer=%p, cursor value=%ld",
+                     (void *)it, it ? *it : -1);
+
     args.glide_client = glide_client;
     args.key = key;
     args.key_len = key_len;
@@ -2544,7 +2580,13 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
     args.count = count;
     args.has_count = (count > 0);
 
-    return execute_s_generic_command(glide_client, HScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
+    int result = execute_s_generic_command(glide_client, HScan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
+
+    /* DEBUG: Internal function exit */
+    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 4 - Internal function exit, cursor pointer=%p, cursor value=%ld, result=%d",
+                     (void *)it, it ? *it : -1, result);
+
+    return result;
 }
 
 /**
@@ -2606,6 +2648,18 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
         cursor = Z_LVAL_P(z_iter);
     }
 
+    /* DEBUG: Initial cursor values */
+    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 1 - Initial cursor extracted: %ld, z_iter type=%d",
+                     cursor, Z_TYPE_P(z_iter));
+
+    /* Check if scan is already complete (cursor = -1) */
+    if (cursor == -1)
+    {
+        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Scan already complete, returning FALSE");
+        ZVAL_FALSE(return_value);
+        return 1;
+    }
+
     /* Use empty pattern if not specified */
     const char *scan_pattern = has_pattern ? pattern : "";
     size_t scan_pattern_len = has_pattern ? pattern_len : 0;
@@ -2613,17 +2667,28 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
     /* Use default count if not specified */
     long scan_count = has_count ? count : 10;
 
+    /* DEBUG: Before calling internal function */
+    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 2 - About to call internal function with cursor=%ld", cursor);
+
     /* Execute the HSCAN command using the internal function */
     if (execute_hscan_command_internal(valkey_glide->glide_client, key, key_len, &cursor,
                                        scan_pattern, scan_pattern_len,
                                        scan_count, return_value))
     {
+        /* DEBUG: After internal function returns */
+        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 5 - After internal function, cursor=%ld", cursor);
+
         /* Update iterator value */
         ZVAL_LONG(z_iter, cursor);
+
+        /* DEBUG: After updating PHP variable */
+        php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Step 6 - After ZVAL_LONG, z_iter type=%d, value=%ld",
+                         Z_TYPE_P(z_iter), Z_LVAL_P(z_iter));
 
         /* Return value already set in execute_hscan_command_internal */
         return 1;
     }
 
+    php_error_docref(NULL, E_NOTICE, "HSCAN DEBUG: Internal function failed, cursor=%ld", cursor);
     return 0;
 }
