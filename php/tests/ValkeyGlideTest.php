@@ -5172,22 +5172,16 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testScan() {
-        $this->markTestSkipped(); // TODO
+        
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
         // Key count
         $key_count = $this->get_keyspace_count('db0');
         
-        var_dump($key_count);
-        return;
-        // Have scan retry
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-
         // Scan them all
         $it = NULL;
-        while ($keys = $this->valkey_glide->scan($it)) {
-            var_dump($it);
+        while ($keys = $this->valkey_glide->scan($it)) {            
             $key_count -= count($keys);
         }
         // Should have iterated all keys
