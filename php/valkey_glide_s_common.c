@@ -2587,9 +2587,10 @@ int execute_hscan_command_internal(const void *glide_client, const char *key, si
 }
 
 /**
- * Execute HSCAN command with unified signature
+ * Generic scan command implementation for HSCAN, ZSCAN, SSCAN
  */
-int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce)
+int execute_scan_command_generic(zval *object, int argc, zval *return_value,
+                                 zend_class_entry *ce, enum RequestType cmd_type)
 {
     valkey_glide_object *valkey_glide;
     char *key = NULL, *pattern = NULL;
@@ -2659,17 +2660,25 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
     /* Use default count if not specified */
     long scan_count = has_count ? count : 10;
 
-    /* Execute the HSCAN command using the internal function */
-    if (execute_hscan_command_internal(valkey_glide->glide_client, key, key_len, &cursor,
-                                       scan_pattern, scan_pattern_len,
-                                       scan_count, return_value))
+    /* Execute the scan command using the generic internal function */
+    if (execute_gen_scan_command_internal(valkey_glide->glide_client, cmd_type, key, key_len, &cursor,
+                                          scan_pattern, scan_pattern_len,
+                                          scan_count, return_value))
     {
         /* Update iterator value */
         ZVAL_LONG(z_iter, cursor);
 
-        /* Return value already set in execute_hscan_command_internal */
+        /* Return value already set in execute_gen_scan_command_internal */
         return 1;
     }
 
     return 0;
+}
+
+/**
+ * Execute HSCAN command with unified signature
+ */
+int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce)
+{
+    return execute_scan_command_generic(object, argc, return_value, ce, HScan);
 }

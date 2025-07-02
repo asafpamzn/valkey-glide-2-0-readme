@@ -5328,11 +5328,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testSScan() {
-        $this->markTestSkipped(); // TODO
+        
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
+        
 
         $this->valkey_glide->del('set');
         for ($i = 0; $i < 100; $i++) {
