@@ -326,8 +326,6 @@ class ValkeyGlide {
      *                                depending on whether any elements could be popped within the
      *                                specified timeout.
      *
-     * NOTE:  If ValkeyGlide::OPT_NULL_MULTIBULK_AS_NULL is set to true via ValkeyGlide::setOption(), this method will
-     *        instead return NULL when ValkeyGlide doesn't pop any elements.
      */
     public function bzmpop(float $timeout, array $keys, string $from, int $count = 1): ValkeyGlide|array|null|false;
 
@@ -2394,13 +2392,11 @@ class ValkeyGlide {
      *                         should instead continue to SCAN until the iterator reference is
      *                         returned to zero.
      *
-     * @see https://valkey.io/commands/scan
-     * @see ValkeyGlide::setOption()
+     * @see https://valkey.io/commands/scan     
      *
      * @example
      * $valkey_glide = new ValkeyGlide(['host' => 'localhost']);
-     *
-     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
+     *     
      *
      * $it = null;
      *
@@ -2411,13 +2407,13 @@ class ValkeyGlide {
      *     }
      * } while ($it != 0);
      *
-     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-     *
      * $it = null;
      *
      * // When ValkeyGlide::SCAN_RETRY is enabled, we can use simpler logic, as we will never receive an
      * // empty array of keys when the iterator is nonzero.
-     * while ($keys = $valkey_glide->scan($it, '*zorg*')) {
+     * while (true) {
+     *     $keys = $valkey_glide->scan($it, '*zorg*')
+     *     if ($it == -1) break;
      *     foreach ($keys as $key) {
      *         echo "KEY: $key\n";
      *     }
@@ -2668,7 +2664,6 @@ class ValkeyGlide {
      *
      * @see https://valkey.io/commands/sscan
      * @see https://valkey.io/commands/scan
-     * @see ValkeyGlide::setOption()
      *
      * @param string $key       The ValkeyGlide SET key in question.
      * @param int    $iterator  A reference to an iterator which should be initialized to NULL that
@@ -2687,8 +2682,6 @@ class ValkeyGlide {
      * }
      * $valkey_glide->sadd('myset', 'foofoo');
      *
-     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NORETRY);
-     *
      * $scanned = 0;
      * $it = null;
      *
@@ -2704,14 +2697,14 @@ class ValkeyGlide {
      * } while ($it != 0);
      * echo "TOTAL: $scanned\n";
      *
-     * $valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-     *
      * $scanned = 0;
      * $it = null;
      *
      * // With ValkeyGlide::SCAN_RETRY PhpValkeyGlide will never return an empty array
      * // when the cursor is non-zero
-     * while (($members = $valkey_glide->sscan('myset', $it, '*5*'))) {
+     * while (true) {
+     *     $members = $valkey_glide->sscan('myset', $it, '*5*');
+     *     if ($it == -1) break;
      *     foreach ($members as $member) {
      *         echo "RETRY: $member\n";
      *         $scanned++;

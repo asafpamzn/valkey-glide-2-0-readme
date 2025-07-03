@@ -101,6 +101,9 @@ typedef struct _s_command_args_t
     long *cursor;        /* Cursor pointer for scan operations */
     const char *pattern; /* MATCH pattern */
     size_t pattern_len;  /* Pattern length */
+    const char *type;    /* TYPE filter (SCAN only) */
+    size_t type_len;     /* Type filter length */
+    int has_type;        /* Whether type filter is specified */
 
     /* Output parameters */
     long *output_long;         /* For integer outputs */

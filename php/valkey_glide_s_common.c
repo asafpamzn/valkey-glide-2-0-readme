@@ -399,9 +399,10 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
 
     int has_pattern = (args->pattern && args->pattern_len > 0);
     int has_count = args->has_count;
-    int has_key = (args->key && args->key_len > 0); /* For SSCAN */
+    int has_key = (args->key && args->key_len > 0);                      /* For SSCAN */
+    int has_type = args->has_type && (args->type && args->type_len > 0); /* For SCAN only */
 
-    unsigned long arg_count = (has_key ? 1 : 0) + 1 + (has_pattern ? 2 : 0) + (has_count ? 2 : 0);
+    unsigned long arg_count = (has_key ? 1 : 0) + 1 + (has_pattern ? 2 : 0) + (has_count ? 2 : 0) + (has_type ? 2 : 0);
 
     if (!allocate_s_command_args(arg_count, args_out, args_len_out))
     {
@@ -456,6 +457,17 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
         }
         (*args_out)[arg_idx] = (uintptr_t)count_str;
         (*args_len_out)[arg_idx] = strlen(count_str);
+        arg_idx++;
+    }
+
+    /* Add TYPE if provided (SCAN only) */
+    if (has_type)
+    {
+        (*args_out)[arg_idx] = (uintptr_t)"TYPE";
+        (*args_len_out)[arg_idx] = 4;
+        arg_idx++;
+        (*args_out)[arg_idx] = (uintptr_t)args->type;
+        (*args_len_out)[arg_idx] = args->type_len;
         arg_idx++;
     }
 
@@ -2204,16 +2216,16 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
 {
     valkey_glide_object *valkey_glide;
     zval *z_iter;
-    char *pattern = NULL;
-    size_t pattern_len = 0;
-    int has_pattern = 0;
+    char *pattern = NULL, *type = NULL;
+    size_t pattern_len = 0, type_len = 0;
+    int has_pattern = 0, has_type = 0;
     zend_long count = 0;
     int has_count = 0;
 
     /* Parse parameters */
-    if (zend_parse_method_parameters(argc, object, "Oz|sl",
+    if (zend_parse_method_parameters(argc, object, "Oz|sls",
                                      &object, ce, &z_iter, &pattern, &pattern_len,
-                                     &count) == FAILURE)
+                                     &count, &type, &type_len) == FAILURE)
     {
         return 0;
     }
@@ -2221,6 +2233,7 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     /* Check if optional parameters are provided */
     has_pattern = (pattern != NULL && pattern_len > 0);
     has_count = (argc > 2);
+    has_type = (argc > 3 && type != NULL && type_len > 0);
 
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
@@ -2232,9 +2245,36 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     /* Dereference if it's a reference */
     ZVAL_DEREF(z_iter);
 
-    /* Convert iterator */
-    convert_to_long(z_iter);
-    long iter = Z_LVAL_P(z_iter);
+    /* Make sure we have a valid cursor - accept NULL, numeric, or string */
+    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
+    {
+        php_error_docref(NULL, E_WARNING, "Cursor must be numeric or string");
+        return 0;
+    }
+
+    /* Convert cursor to long */
+    long cursor;
+    if (Z_TYPE_P(z_iter) == IS_NULL)
+    {
+        /* NULL cursor means start from the beginning (0) */
+        cursor = 0;
+    }
+    else if (Z_TYPE_P(z_iter) == IS_STRING)
+    {
+        cursor = atol(Z_STRVAL_P(z_iter));
+    }
+    else
+    {
+        convert_to_long(z_iter);
+        cursor = Z_LVAL_P(z_iter);
+    }
+
+    /* Check if scan is already complete (cursor = -1) */
+    if (cursor == -1)
+    {
+        ZVAL_FALSE(return_value);
+        return 1;
+    }
 
     /* Use empty pattern if not specified */
     const char *scan_pattern = has_pattern ? pattern : "";
@@ -2243,14 +2283,27 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     /* Use default count if not specified */
     long scan_count = has_count ? count : 10;
 
-    /* Execute the SCAN command using the internal function */
-    if (execute_scan_command_internal(valkey_glide->glide_client, &iter, scan_pattern,
-                                      scan_pattern_len, scan_count, return_value))
+    /* Use framework for command execution with type support */
+    s_command_args_t args;
+    INIT_S_COMMAND_ARGS(args);
+
+    args.glide_client = valkey_glide->glide_client;
+    args.cursor = &cursor;
+    args.pattern = scan_pattern;
+    args.pattern_len = scan_pattern_len;
+    args.count = scan_count;
+    args.has_count = (scan_count > 0);
+    args.type = has_type ? type : NULL;
+    args.type_len = has_type ? type_len : 0;
+    args.has_type = has_type;
+
+    /* Execute the SCAN command using the S-command framework */
+    if (execute_s_generic_command(valkey_glide->glide_client, Scan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value))
     {
         /* Update iterator value */
-        ZVAL_LONG(z_iter, iter);
+        ZVAL_LONG(z_iter, cursor);
 
-        /* Return value already set in execute_scan_command_internal */
+        /* Return value already set in execute_s_generic_command */
         return 1;
     }
 

@@ -5195,11 +5195,17 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // Scan just these keys using a pattern match
         $it = NULL;
-        while ($keys = $this->valkey_glide->scan($it, "*$uniq*")) {
-            $i -= count($keys);
+        
+        while (true) {
+            $keys = $this->valkey_glide->scan($it, "*$uniq*");            
+            if ($it == -1) 
+                break;
+            
+            $i -= count($keys);            
         }
-        $this->assertEquals(0, $i);
 
+        $this->assertEquals(0, $i);
+        
         // SCAN with type is scheduled for release in ValkeyGlide 6.
         if (version_compare($this->version, '6.0.0') >= 0) {
             // Use a unique ID so we can find our type keys
@@ -5225,7 +5231,9 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                     $resp = [];
 
                     $it = NULL;
-                    while ($scan = $this->valkey_glide->scan($it, "*$id*", $count, $type)) {
+                    while (true) {
+                        $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);
+                        if ($it == -1) break;
                         $resp = array_merge($resp, $scan);
                     }
 
