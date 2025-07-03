@@ -671,7 +671,7 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
         {
-            return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
+            return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan || cmd_type == ZScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
         }
         else
         {
@@ -685,7 +685,7 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
     *args->cursor = new_cursor;
 
     /* Use command_response_to_zval for robust element processing */
-    return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
+    return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan || cmd_type == ZScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
 }
 
 /* ====================================================================
@@ -2308,16 +2308,6 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     }
 
     return 0;
-}
-
-/**
- * Execute SSCAN command using the generic framework - ORIGINAL SIGNATURE
- */
-int execute_sscan_command_internal(const void *glide_client, const char *key, size_t key_len,
-                                   long *it, const char *pattern, size_t pattern_len,
-                                   long count, zval *return_value)
-{
-    return execute_gen_scan_command_internal(glide_client, SScan, key, key_len, it, pattern, pattern_len, count, return_value);
 }
 
 /**

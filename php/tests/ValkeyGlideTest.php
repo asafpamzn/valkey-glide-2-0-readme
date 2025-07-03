@@ -5198,10 +5198,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         
         while (true) {
             $keys = $this->valkey_glide->scan($it, "*$uniq*");            
+           
+            if ($keys)
+                $i -= count($keys); 
             if ($it == -1) 
-                break;
-            
-            $i -= count($keys);            
+                break;           
         }
 
         $this->assertEquals(0, $i);
@@ -5232,9 +5233,10 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
                     $it = NULL;
                     while (true) {
-                        $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);
+                        $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);  
+                        if ($scan)                      
+                            $resp = array_merge($resp, $scan);
                         if ($it == -1) break;
-                        $resp = array_merge($resp, $scan);
                     }
 
                     $this->assertEqualsCanonicalizing($vals, $resp);
@@ -5382,43 +5384,54 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // Scan them all
         $it = NULL;
-        while ($keys = $this->valkey_glide->zscan('zset', $it)) {
-            foreach ($keys as $mem => $f_score) {
+        while (true) {
+            $keys = $this->valkey_glide->zscan('zset', $it);
+
+            foreach ($keys as $mem => $f_score) {               
                 $t_score -= $f_score;
                 $i--;
             }
+            if ($it == -1) break;
         }
-
+        
         $this->assertEquals(0, $i);
-        $this->assertEquals(0., $t_score);
+        $this->assertEquals(0, $t_score);        
 
         // Just scan 'pmem' members
         $it = NULL;
         $p_score_old = $p_score;
         $p_count_old = $p_count;
-        while ($keys = $this->valkey_glide->zscan('zset', $it, '*pmem*')) {
-            foreach ($keys as $mem => $f_score) {
-                $p_score -= $f_score;
-                $p_count -= 1;
-            }
+        while (true) {
+            $keys = $this->valkey_glide->zscan('zset', $it, '*pmem*');
+            if ($keys)
+                foreach ($keys as $mem => $f_score) {
+                    $p_score -= $f_score;
+                    $p_count -= 1;
+                }
+            if ($it == -1) break;
         }
-        $this->assertEquals(0., $p_score);
+        $this->assertEquals(0, $p_score);
         $this->assertEquals(0, $p_count);
 
         // Turn off retrying and we should get some empty results        
         [$skips, $p_score, $p_count] = [0, $p_score_old, $p_count_old];
 
         $it = NULL;
-        while (($keys = $this->valkey_glide->zscan('zset', $it, '*pmem*')) !== FALSE) {
-            if (count($keys) == 0) $skips++;
-            foreach ($keys as $mem => $f_score) {
-                $p_score -= $f_score;
-                $p_count -= 1;
+        while (true) {
+            $keys = $this->valkey_glide->zscan('zset', $it, '*pmem*');
+            
+            if ($keys !== FALSE) {
+                if (count($keys) == 0) $skips++;
+                foreach ($keys as $mem => $f_score) {
+                    $p_score -= $f_score;
+                    $p_count -= 1;
+                }
             }
+            if ($it == -1) break;
         }
         // We should still get all the keys, just with several empty results
         $this->assertGT(0, $skips);
-        $this->assertEquals(0., $p_score);
+        $this->assertEquals(0, $p_score);
         $this->assertEquals(0, $p_count);
     }
 

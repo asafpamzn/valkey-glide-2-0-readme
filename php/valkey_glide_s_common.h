@@ -200,9 +200,6 @@ int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class
 /* Internal scan command functions */
 int execute_scan_command_internal(const void *glide_client, long *it, const char *pattern, size_t pattern_len,
                                   long count, zval *return_value);
-int execute_sscan_command_internal(const void *glide_client, const char *key, size_t key_len,
-                                   long *it, const char *pattern, size_t pattern_len,
-                                   long count, zval *return_value);
 int execute_gen_scan_command_internal(const void *glide_client, enum RequestType cmd_type,
                                       const char *key, size_t key_len,
                                       long *it, const char *pattern, size_t pattern_len,
