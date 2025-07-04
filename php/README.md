@@ -38,6 +38,7 @@ macOS:
 
 | PHP Version |
 |-------------|
+| 8.1         |
 | 8.2         |
 | 8.3         |
 
@@ -240,6 +241,48 @@ $client = new ValkeyGlide(
 );
 ?>
 ```
+
+## Development & Continuous Integration
+
+The Valkey GLIDE PHP project includes comprehensive development infrastructure:
+
+### Automated CI/CD Pipeline
+
+- **GitHub Actions Integration**: Automated testing across PHP versions (8.1, 8.2, 8.3), multiple engine versions, and host platforms
+- **Matrix Testing**: Comprehensive testing on Ubuntu, macOS, and containerized environments
+- **Code Quality Enforcement**: Automated linting and static analysis for both C and PHP code
+- **Benchmark Testing**: Performance regression testing integrated into the CI pipeline
+
+### Code Quality Standards
+
+- **PHP Standards**: PSR-12 coding standards with PHPStan static analysis (level 6)
+- **C Code Standards**: Google-based formatting with comprehensive static analysis
+- **Automated Formatting**: Pre-commit hooks and CI enforcement of code formatting
+- **Comprehensive Testing**: Unit tests, integration tests, and memory leak detection
+
+### Local Development
+
+```bash
+# Install development dependencies
+make install-lint-tools
+
+# Run all quality checks
+make lint
+
+# Fix formatting issues
+make lint-fix
+
+# Run tests
+make test
+```
+
+### Contributing
+
+All contributions are automatically validated through our CI pipeline, ensuring:
+- Code style compliance (PSR-12 for PHP, Google style for C)
+- Static analysis passing (PHPStan level 6)
+- All tests passing across supported PHP versions
+- Memory leak detection and performance benchmarks
 
 ## Building & Testing
 
