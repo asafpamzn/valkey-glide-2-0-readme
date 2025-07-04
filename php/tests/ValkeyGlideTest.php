@@ -5181,8 +5181,10 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         
         // Scan them all
         $it = NULL;
-        while ($keys = $this->valkey_glide->scan($it)) {            
+        while (true) {      
+            $keys = $this->valkey_glide->scan($it);
             $key_count -= count($keys);
+            if ($it == "0") break;
         }
         // Should have iterated all keys
         $this->assertEquals(0, $key_count);
@@ -5201,7 +5203,8 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
            
             if ($keys)
                 $i -= count($keys); 
-            if ($it == "finished") 
+            
+            if ($it == "0") 
                 break;           
         }
 
@@ -5236,7 +5239,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                         $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);  
                         if ($scan)                      
                             $resp = array_merge($resp, $scan);
-                        if ($it == "finished") break;
+                        if ($it == "0") break;
                     }
 
                     $this->assertEqualsCanonicalizing($vals, $resp);
@@ -5311,8 +5314,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // Scan all of them
         $it = NULL;
-        while ($keys = $this->valkey_glide->hscan('hash', $it)) {
-            $i -= count($keys);                       
+        while (true) {
+            $keys = $this->valkey_glide->hscan('hash', $it);
+            $i -= count($keys);
+            if ($it == "0")
+                break;                    
         }
           
         $this->assertEquals(0, $i);
@@ -5345,19 +5351,25 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
         // Scan all of them
         $it = NULL;
-        while ($keys = $this->valkey_glide->sscan('set', $it)) {            
+        while (true) {            
+            $keys = $this->valkey_glide->sscan('set', $it);
             $i -= count($keys);
             foreach ($keys as $mem) {
                 $this->assertStringContains('member', $mem);
             }
+            if ($it == "0")
+                break;
         }
         $this->assertEquals(0, $i);
 
         // Scan just ones with zero in them (0, 10, 20, 30, 40, 50, 60, 70, 80, 90)
         $it = NULL;
         $w_zero = 0;
-        while ($keys = $this->valkey_glide->sscan('set', $it, '*0*')) {
+        while (true) {
+            $keys = $this->valkey_glide->sscan('set', $it, '*0*');
             $w_zero += count($keys);
+            if ($it == "0")
+                break;
         }
         $this->assertEquals(10, $w_zero);
     }
@@ -5391,7 +5403,8 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                 $t_score -= $f_score;
                 $i--;
             }
-            if ($it == "finished") break;
+
+            if ($it == "0") break;
         }
         
         $this->assertEquals(0, $i);
@@ -5403,12 +5416,13 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $p_count_old = $p_count;
         while (true) {
             $keys = $this->valkey_glide->zscan('zset', $it, '*pmem*');
-            if ($keys)
+            if ($keys) {
                 foreach ($keys as $mem => $f_score) {
                     $p_score -= $f_score;
                     $p_count -= 1;
                 }
-            if ($it == "finished") break;
+            }
+            if ($it == "0") break;
         }
         $this->assertEquals(0, $p_score);
         $this->assertEquals(0, $p_count);
@@ -5427,7 +5441,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                     $p_count -= 1;
                 }
             }
-            if ($it == "finished") break;
+            if ($it == "0") break;
         }
         // We should still get all the keys, just with several empty results
         $this->assertGT(0, $skips);

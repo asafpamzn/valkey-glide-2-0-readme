@@ -659,12 +659,12 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
     /* Handle scan completion: when server returns cursor="0", scan is complete */
     if (strcmp(new_cursor_str, "0") == 0)
     {
-        /* Free old cursor and set to finished state */
+        /* Free old cursor and keep it as "0" to indicate completion */
         if (*args->cursor)
         {
             efree(*args->cursor);
         }
-        *args->cursor = estrdup("finished");
+        *args->cursor = estrdup("0");
 
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
@@ -2382,13 +2382,6 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
         return 0;
     }
 
-    /* Check if scan is already complete (cursor finished) */
-    if (strcmp(cursor_value, "finished") == 0)
-    {
-        ZVAL_FALSE(return_value);
-        return 1;
-    }
-
     /* Create a copy of cursor for passing to functions */
     char *cursor_ptr = estrdup(cursor_value);
 
@@ -2747,13 +2740,6 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
     else
     {
         return 0;
-    }
-
-    /* Check if scan is already complete (cursor finished) */
-    if (strcmp(cursor_value, "finished") == 0)
-    {
-        ZVAL_FALSE(return_value);
-        return 1;
     }
 
     /* Create a copy of cursor for passing to functions */
