@@ -24,7 +24,7 @@ runs:
           uses: shivammathur/setup-php@v2
           with:
               php-version: ${{ inputs.php-version }}
-              extensions: none
+              extensions: tokenizer, json, ctype, iconv, mbstring
               tools: none
           env:
               runner: self-hosted
