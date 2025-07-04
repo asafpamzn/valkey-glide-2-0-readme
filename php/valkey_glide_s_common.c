@@ -2283,7 +2283,12 @@ int execute_cluster_scan_command(const void *glide_client, char **cursor,
 
         /* Process scan response */
         success = process_s_scan_response(result, Scan, &scan_args, return_value);
-
+        /* Convert legacy "finished" cursor to "0" for backward compatibility */
+        if (*cursor && strcmp(*cursor, "finished") == 0)
+        {
+            efree(*cursor);
+            *cursor = estrdup("0");
+        }
         free_command_result(result);
     }
 

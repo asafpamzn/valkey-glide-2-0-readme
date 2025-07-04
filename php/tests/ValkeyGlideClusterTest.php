@@ -314,7 +314,6 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
             $keys = $this->valkey_glide->scan($it);
             if ($keys)
                 $scan_count += count($keys);
-            var_dump($it);
             if ($it == "0") break;
         }
         
