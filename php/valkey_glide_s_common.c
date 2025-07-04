@@ -2191,6 +2191,120 @@ int execute_sdiffstore_command(zval *object, int argc, zval *return_value, zend_
 }
 
 /**
+ * Execute cluster scan command using the FFI request_cluster_scan function
+ */
+int execute_cluster_scan_command(const void *glide_client, long *cursor,
+                                 const char *pattern, size_t pattern_len,
+                                 long count, int has_count,
+                                 const char *type, size_t type_len, int has_type,
+                                 zval *return_value)
+{
+    if (!glide_client || !cursor || !return_value)
+    {
+        return 0;
+    }
+
+    /* Convert cursor to string */
+    char cursor_str[32];
+    snprintf(cursor_str, sizeof(cursor_str), "%ld", *cursor);
+
+    /* Build arguments array */
+    /* Count arguments: pattern (MATCH + value), count (COUNT + value), type (TYPE + value) */
+    int arg_count = 0;
+    if (pattern && pattern_len > 0)
+        arg_count += 2; /* MATCH + pattern */
+    if (has_count)
+        arg_count += 2; /* COUNT + count_value */
+    if (has_type && type && type_len > 0)
+        arg_count += 2; /* TYPE + type_value */
+
+    uintptr_t *args = NULL;
+    unsigned long *args_len = NULL;
+    char *count_str = NULL;
+
+    if (arg_count > 0)
+    {
+        args = emalloc(arg_count * sizeof(uintptr_t));
+        args_len = emalloc(arg_count * sizeof(unsigned long));
+
+        int idx = 0;
+
+        /* Add MATCH pattern */
+        if (pattern && pattern_len > 0)
+        {
+            args[idx] = (uintptr_t)"MATCH";
+            args_len[idx] = 5;
+            idx++;
+            args[idx] = (uintptr_t)pattern;
+            args_len[idx] = pattern_len;
+            idx++;
+        }
+
+        /* Add COUNT */
+        if (has_count)
+        {
+            count_str = alloc_long_string(count, NULL);
+            if (!count_str)
+            {
+                efree(args);
+                efree(args_len);
+                return 0;
+            }
+            args[idx] = (uintptr_t)"COUNT";
+            args_len[idx] = 5;
+            idx++;
+            args[idx] = (uintptr_t)count_str;
+            args_len[idx] = strlen(count_str);
+            idx++;
+        }
+
+        /* Add TYPE (for SCAN only) */
+        if (has_type && type && type_len > 0)
+        {
+            args[idx] = (uintptr_t)"TYPE";
+            args_len[idx] = 4;
+            idx++;
+            args[idx] = (uintptr_t)type;
+            args_len[idx] = type_len;
+            idx++;
+        }
+    }
+
+    /* Call request_cluster_scan FFI function directly */
+    CommandResult *result = request_cluster_scan(glide_client, 0, cursor_str,
+                                                 arg_count, args, args_len);
+
+    int success = 0;
+    if (result)
+    {
+        /* Create temporary args structure for response processing */
+        s_command_args_t scan_args;
+        INIT_S_COMMAND_ARGS(scan_args);
+        scan_args.cursor = cursor;
+
+        /* Process scan response */
+        success = process_s_scan_response(result, Scan, &scan_args, return_value);
+        free_command_result(result);
+    }
+
+    /* Cleanup */
+    if (count_str)
+    {
+        efree(count_str);
+    }
+    if (args)
+    {
+        efree(args);
+    }
+    if (args_len)
+    {
+        efree(args_len);
+    }
+
+    return success;
+}
+
+/**
  * Execute SCAN command using the generic framework - ORIGINAL SIGNATURE
  */
 int execute_scan_command_internal(const void *glide_client, long *it, const char *pattern, size_t pattern_len,
@@ -2283,28 +2397,46 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     /* Use default count if not specified */
     long scan_count = has_count ? count : 10;
 
-    /* Use framework for command execution with type support */
-    s_command_args_t args;
-    INIT_S_COMMAND_ARGS(args);
+    /* Check if this is cluster mode */
+    int is_cluster = (ce == get_valkey_glide_cluster_ce());
 
-    args.glide_client = valkey_glide->glide_client;
-    args.cursor = &cursor;
-    args.pattern = scan_pattern;
-    args.pattern_len = scan_pattern_len;
-    args.count = scan_count;
-    args.has_count = (scan_count > 0);
-    args.type = has_type ? type : NULL;
-    args.type_len = has_type ? type_len : 0;
-    args.has_type = has_type;
-
-    /* Execute the SCAN command using the S-command framework */
-    if (execute_s_generic_command(valkey_glide->glide_client, Scan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value))
+    if (is_cluster)
     {
-        /* Update iterator value */
-        ZVAL_LONG(z_iter, cursor);
+        /* Use cluster scan implementation */
+        if (execute_cluster_scan_command(valkey_glide->glide_client, &cursor,
+                                         scan_pattern, scan_pattern_len,
+                                         scan_count, (scan_count > 0),
+                                         has_type ? type : NULL, has_type ? type_len : 0, has_type,
+                                         return_value))
+        {
+            /* Update iterator value */
+            ZVAL_LONG(z_iter, cursor);
+            return 1;
+        }
+    }
+    else
+    {
+        /* Use existing non-cluster implementation */
+        s_command_args_t args;
+        INIT_S_COMMAND_ARGS(args);
 
-        /* Return value already set in execute_s_generic_command */
-        return 1;
+        args.glide_client = valkey_glide->glide_client;
+        args.cursor = &cursor;
+        args.pattern = scan_pattern;
+        args.pattern_len = scan_pattern_len;
+        args.count = scan_count;
+        args.has_count = (scan_count > 0);
+        args.type = has_type ? type : NULL;
+        args.type_len = has_type ? type_len : 0;
+        args.has_type = has_type;
+
+        /* Execute the SCAN command using the S-command framework */
+        if (execute_s_generic_command(valkey_glide->glide_client, Scan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value))
+        {
+            /* Update iterator value */
+            ZVAL_LONG(z_iter, cursor);
+            return 1;
+        }
     }
 
     return 0;
@@ -2549,16 +2681,6 @@ int execute_gen_scan_command_internal(const void *glide_client, enum RequestType
     int result = execute_s_generic_command(glide_client, cmd_type, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value);
 
     return result;
-}
-
-/**
- * Execute HSCAN command using the generic framework - INTERNAL SIGNATURE
- */
-int execute_hscan_command_internal(const void *glide_client, const char *key, size_t key_len,
-                                   long *it, const char *pattern, size_t pattern_len,
-                                   long count, zval *return_value)
-{
-    return execute_gen_scan_command_internal(glide_client, HScan, key, key_len, it, pattern, pattern_len, count, return_value);
 }
 
 /**

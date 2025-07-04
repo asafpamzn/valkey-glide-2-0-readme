@@ -300,14 +300,10 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         $this->assertEquals(strval(intval($usec)), strval($usec));
     }
 
-    public function testScan() {
-        $this->markTestSkipped();
+    public function testScan() {        
 
         $key_count = 0;
         $scan_count = 0;
-
-        /* Have scan retry for us */
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
 
         /* Iterate over our masters, scanning each one */
         foreach ($this->valkey_glide->_masters() as $master) {
