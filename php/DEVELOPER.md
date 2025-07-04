@@ -137,7 +137,7 @@ Before starting this step, make sure you've installed all software requirements.
 
     ```bash
     # Pre-build step to prepare modules
-    make build-modules-pre
+    make generate-bindings generate-proto
     
     # Build the extension
     make

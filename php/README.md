@@ -115,7 +115,7 @@ protoc --version
     ```bash
     phpize
     ./configure --enable-valkey-glide
-    make build-modules-pre
+    make generate-bindings generate-proto
     make install
     ```
 

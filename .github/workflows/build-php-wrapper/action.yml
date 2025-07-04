@@ -118,7 +118,7 @@ runs:
           shell: bash
           working-directory: php
           run: |
-              make build-modules-pre
+              make generate-bindings generate-proto
 
         - name: Build PHP extension
           shell: bash

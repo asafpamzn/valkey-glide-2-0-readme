@@ -216,7 +216,7 @@ jobs:
             - name: Generate protobuf and bindings
               working-directory: php
               run: |
-                  make build-modules-pre
+                  make generate-bindings generate-proto
 
             - name: Lint C code formatting
               working-directory: php
