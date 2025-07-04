@@ -118,7 +118,7 @@ int execute_role_command(zval *object, int argc, zval *return_value, zend_class_
 int execute_servername_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
 int execute_serverversion_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
 int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_cluster_scan_command(const void *glide_client, long *cursor,
+int execute_cluster_scan_command(const void *glide_client, char **cursor,
                                  const char *pattern, size_t pattern_len,
                                  long count, int has_count,
                                  const char *type, size_t type_len, int has_type,

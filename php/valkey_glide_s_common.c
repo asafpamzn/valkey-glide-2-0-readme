@@ -420,14 +420,8 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
     }
 
     /* Add cursor */
-    char *cursor_str = alloc_long_string(*args->cursor, NULL);
-    if (!cursor_str)
-    {
-        cleanup_s_command_args(*args_out, *args_len_out);
-        return 0;
-    }
-    (*args_out)[arg_idx] = (uintptr_t)cursor_str;
-    (*args_len_out)[arg_idx] = strlen(cursor_str);
+    (*args_out)[arg_idx] = (uintptr_t)*args->cursor;
+    (*args_len_out)[arg_idx] = strlen(*args->cursor);
     arg_idx++;
 
     /* Add MATCH pattern if provided */
@@ -626,7 +620,7 @@ int process_s_string_response(CommandResult *result, s_command_args_t *args, zva
 }
 
 /**
- * Process scan response (cursor + array)
+ * Process scan response (cursor + array) - Updated for string cursors
  * Refactored to use command_response_to_zval utility for better robustness
  */
 int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_command_args_t *args, zval *return_value)
@@ -644,10 +638,10 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
 
     /* Extract cursor from first element */
     CommandResponse *cursor_resp = &result->response->array_value[0];
-    long new_cursor = 0;
+    const char *new_cursor_str = NULL;
     if (cursor_resp->response_type == String)
     {
-        new_cursor = atol(cursor_resp->string_value);
+        new_cursor_str = cursor_resp->string_value;
     }
     else
     {
@@ -662,11 +656,15 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         return 0;
     }
 
-    /* Handle scan completion: when server returns cursor=0, scan is complete */
-    if (new_cursor == 0)
+    /* Handle scan completion: when server returns cursor="0", scan is complete */
+    if (strcmp(new_cursor_str, "0") == 0)
     {
-        /* Set cursor to -1 to indicate scan completion */
-        *args->cursor = -1;
+        /* Free old cursor and set to finished state */
+        if (*args->cursor)
+        {
+            efree(*args->cursor);
+        }
+        *args->cursor = estrdup("finished");
 
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
@@ -681,8 +679,12 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         }
     }
 
-    /* Normal case: cursor != 0, update cursor and return elements array */
-    *args->cursor = new_cursor;
+    /* Normal case: cursor != "0", update cursor string and return elements array */
+    if (*args->cursor)
+    {
+        efree(*args->cursor);
+    }
+    *args->cursor = estrdup(new_cursor_str);
 
     /* Use command_response_to_zval for robust element processing */
     return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan || cmd_type == ZScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
@@ -808,11 +810,11 @@ cleanup:
         }
         else if (category == S_CMD_SCAN)
         {
-            int has_key = (args->key && args->key_len > 0);
-            efree((void *)cmd_args[has_key ? 1 : 0]); /* Free cursor string */
+            /* No need to free cursor string anymore - it's directly referenced */
             if (args->has_count)
             {
                 /* Find and free count string */
+                int has_key = (args->key && args->key_len > 0);
                 int count_idx = (has_key ? 1 : 0) + 1 + (args->pattern ? 2 : 0) + 1;
                 if (count_idx < arg_count)
                 {
@@ -2193,7 +2195,7 @@ int execute_sdiffstore_command(zval *object, int argc, zval *return_value, zend_
 /**
  * Execute cluster scan command using the FFI request_cluster_scan function
  */
-int execute_cluster_scan_command(const void *glide_client, long *cursor,
+int execute_cluster_scan_command(const void *glide_client, char **cursor,
                                  const char *pattern, size_t pattern_len,
                                  long count, int has_count,
                                  const char *type, size_t type_len, int has_type,
@@ -2203,10 +2205,6 @@ int execute_cluster_scan_command(const void *glide_client, long *cursor,
     {
         return 0;
     }
-
-    /* Convert cursor to string */
-    char cursor_str[32];
-    snprintf(cursor_str, sizeof(cursor_str), "%ld", *cursor);
 
     /* Build arguments array */
     /* Count arguments: pattern (MATCH + value), count (COUNT + value), type (TYPE + value) */
@@ -2221,6 +2219,7 @@ int execute_cluster_scan_command(const void *glide_client, long *cursor,
     uintptr_t *args = NULL;
     unsigned long *args_len = NULL;
     char *count_str = NULL;
+    printf("file = %s, line = %d\n", __FILE__, __LINE__);
 
     if (arg_count > 0)
     {
@@ -2269,14 +2268,19 @@ int execute_cluster_scan_command(const void *glide_client, long *cursor,
             idx++;
         }
     }
+    printf("file = %s, line = %d cursor = %s\n", __FILE__, __LINE__, cursor);
 
     /* Call request_cluster_scan FFI function directly */
-    CommandResult *result = request_cluster_scan(glide_client, 0, cursor_str,
+    CommandResult *result = request_cluster_scan(glide_client, 0, cursor,
                                                  arg_count, args, args_len);
 
     int success = 0;
+    printf("file = %s, line = %d cursor = %s\n", __FILE__, __LINE__, cursor);
+
     if (result)
     {
+        printf("file = %s, line = %d cursor =%s\n", __FILE__, __LINE__, cursor);
+
         /* Create temporary args structure for response processing */
         s_command_args_t scan_args;
         INIT_S_COMMAND_ARGS(scan_args);
@@ -2284,6 +2288,8 @@ int execute_cluster_scan_command(const void *glide_client, long *cursor,
 
         /* Process scan response */
         success = process_s_scan_response(result, Scan, &scan_args, return_value);
+        printf("file = %s, line = %d cursor =%s\n", __FILE__, __LINE__, *cursor);
+
         free_command_result(result);
     }
 
@@ -2360,35 +2366,37 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     ZVAL_DEREF(z_iter);
 
     /* Make sure we have a valid cursor - accept NULL, numeric, or string */
-    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
+    if (Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
     {
-        php_error_docref(NULL, E_WARNING, "Cursor must be numeric or string");
+        php_error_docref(NULL, E_WARNING, "Cursor must be string");
         return 0;
     }
 
-    /* Convert cursor to long */
-    long cursor;
+    /* Get cursor string */
+    char *cursor_value;
     if (Z_TYPE_P(z_iter) == IS_NULL)
     {
         /* NULL cursor means start from the beginning (0) */
-        cursor = 0;
+        cursor_value = "0";
     }
     else if (Z_TYPE_P(z_iter) == IS_STRING)
     {
-        cursor = atol(Z_STRVAL_P(z_iter));
+        cursor_value = Z_STRVAL_P(z_iter);
     }
     else
     {
-        convert_to_long(z_iter);
-        cursor = Z_LVAL_P(z_iter);
+        return 0;
     }
 
-    /* Check if scan is already complete (cursor = -1) */
-    if (cursor == -1)
+    /* Check if scan is already complete (cursor finished) */
+    if (strcmp(cursor_value, "finished") == 0)
     {
         ZVAL_FALSE(return_value);
         return 1;
     }
+
+    /* Create a copy of cursor for passing to functions */
+    char *cursor_ptr = estrdup(cursor_value);
 
     /* Use empty pattern if not specified */
     const char *scan_pattern = has_pattern ? pattern : "";
@@ -2402,15 +2410,17 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
 
     if (is_cluster)
     {
+        printf("file = %s, line = %d\n", __FILE__, __LINE__);
         /* Use cluster scan implementation */
-        if (execute_cluster_scan_command(valkey_glide->glide_client, &cursor,
+        if (execute_cluster_scan_command(valkey_glide->glide_client, &cursor_ptr,
                                          scan_pattern, scan_pattern_len,
                                          scan_count, (scan_count > 0),
                                          has_type ? type : NULL, has_type ? type_len : 0, has_type,
                                          return_value))
         {
             /* Update iterator value */
-            ZVAL_LONG(z_iter, cursor);
+            ZVAL_STRING(z_iter, cursor_ptr);
+            efree(cursor_ptr);
             return 1;
         }
     }
@@ -2421,7 +2431,7 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
         INIT_S_COMMAND_ARGS(args);
 
         args.glide_client = valkey_glide->glide_client;
-        args.cursor = &cursor;
+        args.cursor = &cursor_ptr;
         args.pattern = scan_pattern;
         args.pattern_len = scan_pattern_len;
         args.count = scan_count;
@@ -2434,10 +2444,14 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
         if (execute_s_generic_command(valkey_glide->glide_client, Scan, S_CMD_SCAN, S_RESPONSE_SCAN, &args, return_value))
         {
             /* Update iterator value */
-            ZVAL_LONG(z_iter, cursor);
+            ZVAL_STRING(z_iter, cursor_ptr);
+            efree(cursor_ptr);
             return 1;
         }
     }
+
+    /* Clean up on failure */
+    efree(cursor_ptr);
 
     return 0;
 }

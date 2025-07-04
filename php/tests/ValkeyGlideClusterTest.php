@@ -300,22 +300,24 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         $this->assertEquals(strval(intval($usec)), strval($usec));
     }
 
-    public function testScan() {        
-
+    public function testScan111() {   
         $key_count = 0;
         $scan_count = 0;
 
         /* Iterate over our masters, scanning each one */
-        foreach ($this->valkey_glide->_masters() as $master) {
-            /* Grab the number of keys we have */
-            $key_count += $this->valkey_glide->dbsize($master);
-
-            /* Scan the keys here */
-            $it = NULL;
-            while ($keys = $this->valkey_glide->scan($it, $master)) {
+       
+        $key_count = $this->valkey_glide->dbsize("allPrimaries");
+        var_dump($key_count);
+       
+        /* Scan the keys here */
+        $it = NULL;
+        while (true) {
+            $keys = $this->valkey_glide->scan($it);
+            if ($keys)
                 $scan_count += count($keys);
-            }
+            if ($it == -1) break;
         }
+        
 
         /* Our total key count should match */
         $this->assertEquals($scan_count, $key_count);

@@ -160,6 +160,15 @@ class ValkeyGlideCluster {
    //TODO public function config(mixed $route, string $subcommand, mixed ...$extra_args): mixed;
 
     /**
+     * @param mixed $route         The routing configuration that determines which node(s) to send the 
+     *                             command to. Can be:
+     *                             - string "randomNode" to route to a random node
+     *                             - string "allPrimaries" to route to all primary nodes
+     *                             - string "allNodes" to route to all nodes (primaries and replicas)
+     *                             - string containing a key name for slot-based routing
+     *                             - array ['type' => 'primarySlotKey', 'key' => 'keyName'] for slot key routing
+     *                             - array ['type' => 'routeByAddress', 'host' => 'hostname', 'port' => port] 
+     *                               for specific node routing
      * @see ValkeyGlide::dbsize()
      */
     public function dbSize(mixed $route): ValkeyGlideCluster|int;
@@ -719,7 +728,7 @@ class ValkeyGlideCluster {
     /**
      * @see ValkeyGlide::scan
      */
-    public function scan(null|int|string &$iterator, mixed $route, ?string $pattern = null, int $count = 0): bool|array;
+    public function scan(null|string &$iterator, ?string $pattern = null, int $count = 0, ?string $type = null): bool|array;
 
     /**
      * @see ValkeyGlide::scard

@@ -2419,7 +2419,7 @@ class ValkeyGlide {
      *     }
      * }
      */
-    public function scan(null|int|string &$iterator, ?string $pattern = null, int $count = 0, ?string $type = null): array|false;
+    public function scan(null|string &$iterator, ?string $pattern = null, int $count = 0, ?string $type = null): array|false;
 
     /**
      * Retrieve the number of members in a ValkeyGlide set.

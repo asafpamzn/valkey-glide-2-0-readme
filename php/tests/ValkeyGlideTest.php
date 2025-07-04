@@ -5201,7 +5201,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
            
             if ($keys)
                 $i -= count($keys); 
-            if ($it == -1) 
+            if ($it == "finished") 
                 break;           
         }
 
@@ -5236,7 +5236,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                         $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);  
                         if ($scan)                      
                             $resp = array_merge($resp, $scan);
-                        if ($it == -1) break;
+                        if ($it == "finished") break;
                     }
 
                     $this->assertEqualsCanonicalizing($vals, $resp);
