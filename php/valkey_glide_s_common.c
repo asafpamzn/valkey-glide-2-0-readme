@@ -2219,7 +2219,6 @@ int execute_cluster_scan_command(const void *glide_client, char **cursor,
     uintptr_t *args = NULL;
     unsigned long *args_len = NULL;
     char *count_str = NULL;
-    printf("file = %s, line = %d\n", __FILE__, __LINE__);
 
     if (arg_count > 0)
     {
@@ -2268,19 +2267,15 @@ int execute_cluster_scan_command(const void *glide_client, char **cursor,
             idx++;
         }
     }
-    printf("file = %s, line = %d cursor = %s\n", __FILE__, __LINE__, *cursor);
 
     /* Call request_cluster_scan FFI function directly */
     CommandResult *result = request_cluster_scan(glide_client, 0, *cursor,
                                                  arg_count, args, args_len);
 
     int success = 0;
-    printf("file = %s, line = %d cursor = %s\n", __FILE__, __LINE__, *cursor);
 
     if (result)
     {
-        printf("file = %s, line = %d cursor =%s\n", __FILE__, __LINE__, *cursor);
-
         /* Create temporary args structure for response processing */
         s_command_args_t scan_args;
         INIT_S_COMMAND_ARGS(scan_args);
@@ -2288,7 +2283,6 @@ int execute_cluster_scan_command(const void *glide_client, char **cursor,
 
         /* Process scan response */
         success = process_s_scan_response(result, Scan, &scan_args, return_value);
-        printf("file = %s, line = %d cursor =%s\n", __FILE__, __LINE__, *cursor);
 
         free_command_result(result);
     }
@@ -2410,7 +2404,6 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
 
     if (is_cluster)
     {
-        printf("file = %s, line = %d\n", __FILE__, __LINE__);
         /* Use cluster scan implementation */
         if (execute_cluster_scan_command(valkey_glide->glide_client, &cursor_ptr,
                                          scan_pattern, scan_pattern_len,
