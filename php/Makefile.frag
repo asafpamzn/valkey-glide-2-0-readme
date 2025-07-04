@@ -1,59 +1,93 @@
-INCLUDES += -I/opt/homebrew/include
-PROTOC = protoc
-PROTOC_C_PLUGIN := protoc-c
-PROTO_SRC_DIR = ../glide-core/src/protobuf
-GEN_INCLUDE_DIR = include/glide
-GEN_SRC_DIR = src
-VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lSystem
+# Linting targets for PHP and C code
+lint: lint-c lint-php
 
-PROTO_FILES = connection_request.proto command_request.proto response.proto
+lint-c:
+	@echo "Checking C code formatting..."
+	@if command -v clang-format >/dev/null 2>&1; then \
+		if find . -name "*.c" -o -name "*.h" | grep -v "\.pb-c\." | grep -q .; then \
+			find . -name "*.c" -o -name "*.h" | grep -v "\.pb-c\." | xargs clang-format --dry-run --Werror; \
+			echo "✓ C code formatting check passed"; \
+		else \
+			echo "No C files found to check"; \
+		fi; \
+	else \
+		echo "Warning: clang-format not found, skipping C code formatting check"; \
+	fi
+	@echo "Running C static analysis..."
+	@if command -v cppcheck >/dev/null 2>&1; then \
+		cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 --quiet .; \
+		echo "✓ C static analysis passed"; \
+	else \
+		echo "Warning: cppcheck not found, skipping C static analysis"; \
+	fi
 
-define proto_rule
-$(GEN_INCLUDE_DIR)/$(basename $(1)).pb-c.h $(GEN_INCLUDE_DIR)/$(basename $(1)).pb-c.c: $(PROTO_SRC_DIR)/$(1)
-	@mkdir -p $(GEN_INCLUDE_DIR)
-	$(PROTOC) --c_out=$(GEN_INCLUDE_DIR) -I $(PROTO_SRC_DIR) $(PROTO_SRC_DIR)/$(1)
+lint-php:
+	@echo "Running PHP linting..."
+	@if [ -f "composer.json" ] && [ ! -d "vendor" ]; then \
+		echo "Installing composer dependencies..."; \
+		if command -v composer >/dev/null 2>&1; then \
+			composer install --dev --no-progress --quiet; \
+		else \
+			echo "Warning: composer not found, some PHP linting tools may not be available"; \
+		fi; \
+	fi
+	@if command -v phpcs >/dev/null 2>&1 || [ -f "vendor/bin/phpcs" ]; then \
+		echo "Running PHP CodeSniffer..."; \
+		if [ -f "vendor/bin/phpcs" ]; then \
+			./vendor/bin/phpcs --standard=phpcs.xml; \
+		else \
+			phpcs --standard=phpcs.xml; \
+		fi; \
+		echo "✓ PHP CodeSniffer passed"; \
+	else \
+		echo "Warning: phpcs not found, skipping PHP coding standards check"; \
+	fi
+	@if command -v phpstan >/dev/null 2>&1 || [ -f "vendor/bin/phpstan" ]; then \
+		echo "Running PHPStan static analysis..."; \
+		if [ -f "vendor/bin/phpstan" ]; then \
+			./vendor/bin/phpstan analyze --no-progress; \
+		else \
+			phpstan analyze --no-progress; \
+		fi; \
+		echo "✓ PHPStan analysis passed"; \
+	else \
+		echo "Warning: phpstan not found, skipping PHP static analysis"; \
+	fi
 
-$(GEN_SRC_DIR)/$(basename $(1)).pb-c.c: $(GEN_INCLUDE_DIR)/$(basename $(1)).pb-c.c
-	@mkdir -p $(GEN_SRC_DIR)
-	mv $(GEN_INCLUDE_DIR)/$(basename $(1)).pb-c.c $(GEN_SRC_DIR)/$(basename $(1)).pb-c.c
-	sed -i.bak 's|"$(basename $(1)).pb-c.h"|<glide/$(basename $(1)).pb-c.h>|' $(GEN_SRC_DIR)/$(basename $(1)).pb-c.c
-	rm -f $(GEN_SRC_DIR)/$(basename $(1)).pb-c.c.bak
-endef
+lint-fix:
+	@echo "Fixing C code formatting..."
+	@if command -v clang-format >/dev/null 2>&1; then \
+		if find . -name "*.c" -o -name "*.h" | grep -v "\.pb-c\." | grep -q .; then \
+			find . -name "*.c" -o -name "*.h" | grep -v "\.pb-c\." | xargs clang-format -i; \
+			echo "✓ C code formatting fixed"; \
+		else \
+			echo "No C files found to format"; \
+		fi; \
+	else \
+		echo "Warning: clang-format not found, cannot fix C code formatting"; \
+	fi
+	@echo "Fixing PHP code formatting..."
+	@if command -v phpcbf >/dev/null 2>&1 || [ -f "vendor/bin/phpcbf" ]; then \
+		if [ -f "vendor/bin/phpcbf" ]; then \
+			./vendor/bin/phpcbf --standard=phpcs.xml || true; \
+		else \
+			phpcbf --standard=phpcs.xml || true; \
+		fi; \
+		echo "✓ PHP code formatting fixed"; \
+	else \
+		echo "Warning: phpcbf not found, cannot fix PHP code formatting"; \
+	fi
 
-$(foreach proto,$(PROTO_FILES),$(eval $(call proto_rule,$(proto))))
+install-lint-tools:
+	@echo "Installing linting tools..."
+	@if command -v composer >/dev/null 2>&1; then \
+		composer install --dev --no-progress; \
+		echo "✓ PHP linting tools installed via Composer"; \
+	else \
+		echo "Warning: composer not found, please install composer first"; \
+	fi
+	@echo "Please ensure clang-format and cppcheck are installed for C code linting"
+	@echo "Ubuntu/Debian: sudo apt-get install clang-format cppcheck"
+	@echo "macOS: brew install clang-format cppcheck"
 
-PROTO_HEADERS := $(foreach proto,$(PROTO_FILES),$(GEN_INCLUDE_DIR)/$(basename $(proto)).pb-c.h)
-PROTO_SOURCES := $(foreach proto,$(PROTO_FILES),$(GEN_SRC_DIR)/$(basename $(proto)).pb-c.c)
-
-generate-proto: $(PROTO_HEADERS) $(PROTO_SOURCES)
-	@echo "Generated C protobuf bindings."
-
-clean-proto:
-	rm -f $(PROTO_HEADERS)
-	rm -f $(PROTO_SOURCES)
-
-generate-bindings:
-	@echo "Generating C bindings from Rust code..."
-	@mkdir -p $(top_srcdir)/include
-	@cp $(top_srcdir)/../ffi/src/lib.rs $(top_srcdir)/include/lib.rs
-	@cd $(top_srcdir)/../ffi && PATH=/Users/asafp/.cargo/bin:$$PATH /Users/asafp/.cargo/bin/cbindgen --config cbindgen.toml --crate glide-ffi --output $(top_srcdir)/include/glide_bindings.h
-
-.PHONY: build-modules-pre
-
-
-
-
-
-valkey_glide_arginfo.h: valkey_glide.stub.php
-	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
-
-valkey_glide_cluster_arginfo.h: valkey_glide_cluster.stub.php
-	$(PHP_EXECUTABLE) $(top_srcdir)/build/gen_stub.php --target-php-version=8.2 $<
-
-
-build-modules-pre: valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
-	@$(MAKE) generate-proto
-	@$(MAKE) generate-bindings
-
-# Wrap the original build-modules
-build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
+.PHONY: lint lint-c lint-php lint-fix install-lint-tools

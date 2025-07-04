@@ -167,5 +167,29 @@
         "numeric": "c",
         "valkey_glide_commands_common.h": "c"
     },
-    "cmake.sourceDirectory": "/Users/asafp/work/valkey-glide-php/cpp"
+    "cmake.sourceDirectory": "/Users/asafp/work/valkey-glide-php/cpp",
+    "php.validate.enable": true,
+    "php.suggest.basic": false,
+    "phpcs.enable": true,
+    "phpcs.standard": "php/phpcs.xml",
+    "phpcs.executablePath": "php/vendor/bin/phpcs",
+    "phpstan.enabled": true,
+    "phpstan.configFile": "php/phpstan.neon",
+    "phpstan.binPath": "php/vendor/bin/phpstan",
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.clang_format_fallbackStyle": "Google",
+    "[php]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always"
+        }
+    },
+    "[c]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    }
 }
