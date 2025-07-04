@@ -1,0 +1,372 @@
+name: PHP CI
+
+on:
+    push:
+        branches:
+            - main
+            - release-*
+            - v*
+        paths:
+            - glide-core/src/**
+            - glide-core/redis-rs/redis/src/**
+            - ffi/src/**
+            - utils/cluster_manager.py
+            - php/**
+            - .github/workflows/php.yml
+            - .github/workflows/install-shared-dependencies/action.yml
+            - .github/workflows/build-php-wrapper/action.yml
+            - .github/workflows/test-benchmark/action.yml
+            - .github/workflows/lint-rust/action.yml
+            - .github/workflows/install-engine/action.yml
+            - .github/workflows/create-test-matrices/action.yml
+            - .github/json_matrices/**
+    pull_request:
+        paths:
+            - glide-core/src/**
+            - glide-core/redis-rs/redis/src/**
+            - ffi/src/**
+            - utils/cluster_manager.py
+            - php/**
+            - .github/workflows/php.yml
+            - .github/workflows/install-shared-dependencies/action.yml
+            - .github/workflows/build-php-wrapper/action.yml
+            - .github/workflows/test-benchmark/action.yml
+            - .github/workflows/lint-rust/action.yml
+            - .github/workflows/install-engine/action.yml
+            - .github/workflows/create-test-matrices/action.yml
+            - .github/json_matrices/**
+    workflow_dispatch:
+        inputs:
+            full-matrix:
+                description: "Run the full engine, host, and language version matrix"
+                type: boolean
+                default: false
+            name:
+                required: false
+                type: string
+                description: "(Optional) Test run name"
+            run-modules-tests:
+                description: "Run modules tests"
+                type: boolean
+                default: false
+
+    workflow_call:
+
+concurrency:
+    group: php-${{ github.head_ref || github.ref }}-${{ toJson(inputs) }}
+    cancel-in-progress: true
+
+run-name:
+    # Set custom name if job is started manually and name is given
+    ${{ github.event_name == 'workflow_dispatch' && (inputs.name == '' && format('{0} @ {1} {2}', github.ref_name, github.sha, toJson(inputs)) || inputs.name) || '' }}
+
+env:
+    CARGO_TERM_COLOR: always
+    BASE_PHP_VERSION: "8.2"
+
+jobs:
+    get-matrices:
+        runs-on: ubuntu-latest
+        outputs:
+            engine-matrix-output: ${{ steps.get-matrices.outputs.engine-matrix-output }}
+            host-matrix-output: ${{ steps.get-matrices.outputs.host-matrix-output }}
+            version-matrix-output: ${{ steps.get-matrices.outputs.version-matrix-output }}
+        steps:
+            - uses: actions/checkout@v4
+            - id: get-matrices
+              uses: ./.github/workflows/create-test-matrices
+              with:
+                  language-name: php
+                  # Run full test matrix if job started by cron or it was explictly specified by a person who triggered the workflow
+                  run-full-matrix: ${{ github.event.inputs.full-matrix == 'true' || github.event_name == 'schedule' }}
+
+    test-php:
+        name: PHP Tests - ${{ matrix.php }}, EngineVersion - ${{ matrix.engine.version }}, Target - ${{ matrix.host.TARGET }}
+        needs: get-matrices
+        timeout-minutes: 35
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ${{ fromJson(needs.get-matrices.outputs.version-matrix-output) }}
+                engine: ${{ fromJson(needs.get-matrices.outputs.engine-matrix-output) }}
+                host: ${{ fromJson(needs.get-matrices.outputs.host-matrix-output) }}
+        runs-on: ${{ matrix.host.RUNNER }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Output Matrix Parameters for this job
+              run: |
+                  echo "Job running with the following matrix configuration:"
+                  echo "${{ toJson(matrix) }}"
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                      php/src/*.pb-c.c
+                      php/src/*.pb-c.h
+                  key: ${{ matrix.host.TARGET }}-php-${{ matrix.php }}
+                  restore-keys: |
+                      ${{ matrix.host.TARGET }}-php
+                      ${{ matrix.host.TARGET }}-glide-core
+                      ${{ matrix.host.TARGET }}
+
+            - name: Build PHP wrapper
+              uses: ./.github/workflows/build-php-wrapper
+              with:
+                  os: ${{ matrix.host.OS }}
+                  target: ${{ matrix.host.TARGET }}
+                  php-version: ${{ matrix.php }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  engine-version: ${{ matrix.engine.version }}
+
+            - name: Run PHP extension tests
+              working-directory: php
+              run: |
+                  make test
+
+            - name: Run integration tests
+              working-directory: php
+              run: |
+                  php run-tests.php tests/
+
+            - uses: ./.github/workflows/test-benchmark
+              if: ${{ matrix.engine.version == '8.0' && matrix.host.OS == 'ubuntu' && matrix.host.RUNNER == 'ubuntu-latest' && matrix.php == env.BASE_PHP_VERSION }}
+              with:
+                  language-flag: -php
+
+            - name: Upload logs and reports
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-report-php-${{ matrix.php }}-${{ matrix.engine.type }}-${{ matrix.engine.version }}-${{ matrix.host.RUNNER }}
+                  path: |
+                      utils/clusters/**
+                      benchmarks/results/**
+                      php/tests/**/*.diff
+                      php/tests/**/*.exp
+                      php/tests/**/*.log
+                      php/tests/**/*.out
+
+    lint:
+        timeout-minutes: 15
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ env.BASE_PHP_VERSION }}
+                  extensions: none
+                  tools: phpcs, phpstan
+
+            - name: Install system dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                      php${{ env.BASE_PHP_VERSION }}-dev \
+                      build-essential \
+                      autoconf \
+                      automake \
+                      libtool \
+                      pkg-config \
+                      libssl-dev \
+                      clang-format \
+                      cppcheck \
+                      protobuf-c-compiler
+
+            - name: Install protoc
+              uses: ./.github/workflows/install-rust-and-protoc
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                  key: x86_64-unknown-linux-gnu-php-lint
+                  restore-keys: |
+                      x86_64-unknown-linux-gnu-php
+                      x86_64-unknown-linux-gnu-glide-core
+                      x86_64-unknown-linux-gnu
+
+            - name: lint rust
+              uses: ./.github/workflows/lint-rust
+              with:
+                  cargo-toml-folder: ffi
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Initialize PHP extension build system
+              working-directory: php
+              run: |
+                  phpize
+
+            - name: Configure PHP extension
+              working-directory: php
+              run: |
+                  ./configure --enable-valkey-glide
+
+            - name: Generate protobuf and bindings
+              working-directory: php
+              run: |
+                  make build-modules-pre
+
+            - name: Lint C code formatting
+              working-directory: php
+              run: |
+                  find . -name "*.c" -o -name "*.h" | grep -v "\.pb-c\." | xargs clang-format --dry-run --Werror
+
+            - name: Run C static analysis
+              working-directory: php
+              run: |
+                  cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 .
+
+            - name: Lint PHP code (if PHP files exist)
+              working-directory: php
+              run: |
+                  if find tests/ -name "*.php" | head -1 | grep -q .; then
+                      phpcs --standard=PSR12 tests/ || true
+                  fi
+
+    get-containers:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.inputs.full-matrix == 'true' || github.event_name == 'schedule' }}
+        outputs:
+            engine-matrix-output: ${{ steps.get-matrices.outputs.engine-matrix-output }}
+            host-matrix-output: ${{ steps.get-matrices.outputs.host-matrix-output }}
+            version-matrix-output: ${{ steps.get-matrices.outputs.version-matrix-output }}
+
+        steps:
+            - uses: actions/checkout@v4
+            - id: get-matrices
+              uses: ./.github/workflows/create-test-matrices
+              with:
+                  language-name: php
+                  run-full-matrix: true
+                  containers: true
+
+    test-php-container:
+        runs-on: ${{ matrix.host.RUNNER }}
+        needs: get-containers
+        timeout-minutes: 35
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ${{ fromJson(needs.get-containers.outputs.version-matrix-output) }}
+                engine: ${{ fromJson(needs.get-containers.outputs.engine-matrix-output) }}
+                host: ${{ fromJson(needs.get-containers.outputs.host-matrix-output) }}
+        container:
+            image: ${{ matrix.host.IMAGE }}
+            options: ${{ join(' -q ', matrix.host.CONTAINER_OPTIONS) }} # adding `-q` to bypass empty options
+        steps:
+            - name: Install git and dependencies
+              run: |
+                  yum update
+                  yum install -y git tar php php-devel gcc make autoconf automake libtool pkgconfig openssl openssl-devel unzip
+                  git config --global --add safe.directory "$GITHUB_WORKSPACE"
+                  echo IMAGE=amazonlinux:latest | sed -r 's/:/-/g' >> $GITHUB_ENV
+            # Replace `:` in the variable otherwise it can't be used in `upload-artifact`
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                  key: ${{ matrix.host.IMAGE }}-php-${{ matrix.php }}
+                  restore-keys: ${{ matrix.host.IMAGE }}-php
+
+            - name: Build PHP wrapper
+              uses: ./.github/workflows/build-php-wrapper
+              with:
+                  os: ${{ matrix.host.OS }}
+                  target: ${{ matrix.host.TARGET }}
+                  php-version: ${{ matrix.php }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  engine-version: ${{ matrix.engine.version }}
+
+            - name: Run PHP extension tests
+              working-directory: php
+              run: |
+                  make test
+
+            - name: Run integration tests
+              working-directory: php
+              run: |
+                  php run-tests.php tests/
+
+            - name: Upload test reports
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-reports-php-${{ matrix.php }}-${{ matrix.engine.type }}-${{ matrix.engine.version }}-${{ env.IMAGE }}-${{ matrix.host.ARCH }}
+                  path: |
+                      utils/clusters/**
+                      benchmarks/results/**
+                      php/tests/**/*.diff
+                      php/tests/**/*.exp
+                      php/tests/**/*.log
+                      php/tests/**/*.out
+
+    test-modules:
+        if: ((github.repository_owner == 'valkey-io' && github.event_name == 'workflow_dispatch' && github.event.inputs.run-modules-tests == 'true') || github.event.pull_request.head.repo.owner.login == 'valkey-io')
+        environment: AWS_ACTIONS
+        name: Modules Tests
+        runs-on: [self-hosted, linux, ARM64, persistent]
+        timeout-minutes: 15
+        steps:
+            - name: Setup self-hosted runner access
+              run: sudo chown -R $USER:$USER /home/ubuntu/actions-runner/_work/valkey-glide
+
+            - uses: actions/checkout@v4
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                  key: aarch64-unknown-linux-gnu-php
+                  restore-keys: |
+                      aarch64-unknown-linux-gnu-glide-core
+                      aarch64-unknown-linux-gnu
+
+            - name: Install zig
+              uses: ./.github/workflows/install-zig
+
+            - name: Build PHP wrapper
+              uses: ./.github/workflows/build-php-wrapper
+              with:
+                  os: ubuntu
+                  target: aarch64-unknown-linux-gnu
+                  php-version: ${{ env.BASE_PHP_VERSION }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Run modules tests
+              working-directory: php
+              run: |
+                  # TODO: Add modules-specific test commands when available
+                  make test
+
+            - name: Upload test reports
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-reports-modules
+                  path: |
+                      php/tests/**/*.diff
+                      php/tests/**/*.exp
+                      php/tests/**/*.log
+                      php/tests/**/*.out
