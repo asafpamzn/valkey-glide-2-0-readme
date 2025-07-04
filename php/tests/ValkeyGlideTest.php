@@ -5391,7 +5391,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                 $t_score -= $f_score;
                 $i--;
             }
-            if ($it == -1) break;
+            if ($it == "finished") break;
         }
         
         $this->assertEquals(0, $i);
@@ -5408,7 +5408,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                     $p_score -= $f_score;
                     $p_count -= 1;
                 }
-            if ($it == -1) break;
+            if ($it == "finished") break;
         }
         $this->assertEquals(0, $p_score);
         $this->assertEquals(0, $p_count);
@@ -5427,7 +5427,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                     $p_count -= 1;
                 }
             }
-            if ($it == -1) break;
+            if ($it == "finished") break;
         }
         // We should still get all the keys, just with several empty results
         $this->assertGT(0, $skips);
