@@ -300,7 +300,7 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         $this->assertEquals(strval(intval($usec)), strval($usec));
     }
 
-    public function testScan111() {   
+    public function testScan() {   
         $key_count = 0;
         $scan_count = 0;
 
@@ -312,10 +312,11 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         /* Scan the keys here */
         $it = NULL;
         while (true) {
+            
             $keys = $this->valkey_glide->scan($it);
             if ($keys)
                 $scan_count += count($keys);
-            if ($it == -1) break;
+            if ($it == "finished") break;
         }
         
 
