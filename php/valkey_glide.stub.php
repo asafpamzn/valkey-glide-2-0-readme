@@ -1394,9 +1394,9 @@ class ValkeyGlide {
      *     foreach ($fields as $field => $value) {
      *         echo "[$field] => $value\n";
      *     }
-     * } while ($it != 0);
+     * } while ($it != "finished");
      */
-    public function hscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlide|array|bool;
+    public function hscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlide|array|bool;
 
     /**
      * Set an expiration on a key member (KeyDB only).
@@ -2370,11 +2370,11 @@ class ValkeyGlide {
      * keys match inside a key space with a great many keys.  The following example demonstrates how
      * to use ValkeyGlide::scan() with the option disabled and enabled.
      *
-     * @param int    $iterator The cursor returned by ValkeyGlide for every subsequent call to SCAN.  On
+     * @param string    $iterator The cursor returned by ValkeyGlide for every subsequent call to SCAN.  On
      *                         the initial invocation of the call, it should be initialized by the
      *                         caller to NULL.  Each time SCAN is invoked, the iterator will be
      *                         updated to a new number, until finally ValkeyGlide will set the value to
-     *                         zero, indicating that the scan is complete.
+     *                         "finished", indicating that the scan is complete.
      *
      * @param string|null $pattern An optional glob-style pattern for matching key names.  If passed as
      *                         NULL, it is the equivalent of sending '*' (match every key).
@@ -2413,7 +2413,7 @@ class ValkeyGlide {
      * // empty array of keys when the iterator is nonzero.
      * while (true) {
      *     $keys = $valkey_glide->scan($it, '*zorg*')
-     *     if ($it == -1) break;
+     *     if ($it == "finished") break;
      *     foreach ($keys as $key) {
      *         echo "KEY: $key\n";
      *     }
@@ -2666,9 +2666,9 @@ class ValkeyGlide {
      * @see https://valkey.io/commands/scan
      *
      * @param string $key       The ValkeyGlide SET key in question.
-     * @param int    $iterator  A reference to an iterator which should be initialized to NULL that
+     * @param string $iterator  A reference to an iterator which should be initialized to NULL that
      *                          PhpValkeyGlide will update with the value returned from ValkeyGlide after each
-     *                          subsequent call to SSCAN.  Once this cursor is zero you know all
+     *                          subsequent call to SSCAN.  Once this cursor is "finished" you know all
      *                          members have been traversed.
      * @param string|null $pattern An optional glob style pattern to match against, so ValkeyGlide only
      *                          returns the subset of members matching this pattern.
@@ -2704,14 +2704,14 @@ class ValkeyGlide {
      * // when the cursor is non-zero
      * while (true) {
      *     $members = $valkey_glide->sscan('myset', $it, '*5*');
-     *     if ($it == -1) break;
+     *     if ($it == "finished") break;
      *     foreach ($members as $member) {
      *         echo "RETRY: $member\n";
      *         $scanned++;
      *     }
      * }
      */
-    public function sscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): array|false;
+    public function sscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): array|false;
 
     /**
      * Subscribes the client to the specified shard channels.
@@ -3952,9 +3952,9 @@ class ValkeyGlide {
      * Scan the members of a sorted set incrementally, using a cursor
      *
      * @param string $key        The sorted set to scan.
-     * @param int    $iterator   A reference to an iterator that should be initialized to NULL initially, that
+     * @param string $iterator   A reference to an iterator that should be initialized to NULL initially, that
      *                           will be updated after each subsequent call to ZSCAN.  Once the iterator
-     *                           has returned to zero the scan is complete
+     *                           has returned to "finished" the scan is complete
      * @param string|null $pattern An optional glob-style pattern that limits which members are returned during
      *                           the scanning process.
      * @param int    $count      A hint for ValkeyGlide that tells it how many elements it should test before returning
@@ -3970,7 +3970,7 @@ class ValkeyGlide {
      * NOTE:  See ValkeyGlide::scan() for detailed example code on how to call SCAN like commands.
      *
      */
-    public function zscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlide|array|false;
+    public function zscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlide|array|false;
 
     /**
      * Retrieve the union of one or more sorted sets

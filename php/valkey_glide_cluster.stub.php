@@ -419,7 +419,7 @@ class ValkeyGlideCluster {
     /**
      * @see ValkeyGlide::hscan
      */
-    public function hscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): array|bool;
+    public function hscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): array|bool;
 
     /**
      * @see ValkeyGlide::expiremember
@@ -839,7 +839,7 @@ class ValkeyGlideCluster {
     /**
      * @see ValkeyGlide::sscan
      */
-    public function sscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): array|false;
+    public function sscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): array|false;
 
     /**
      * @see ValkeyGlide::strlen
@@ -1086,7 +1086,7 @@ class ValkeyGlideCluster {
     /**
      * @see ValkeyGlide::zscan
      */
-    public function zscan(string $key, null|int|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlideCluster|bool|array;
+    public function zscan(string $key, null|string &$iterator, ?string $pattern = null, int $count = 0): ValkeyGlideCluster|bool|array;
 
     /**
      * @see ValkeyGlide::zScore

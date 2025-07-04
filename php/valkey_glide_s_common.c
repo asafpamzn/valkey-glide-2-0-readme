@@ -2673,11 +2673,11 @@ int execute_serverversion_command(zval *object, int argc, zval *return_value, ze
 }
 
 /**
- * Execute generic SCAN command using the generic framework - INTERNAL SIGNATURE
+ * Execute generic SCAN command using the generic framework - Updated for string cursors
  */
 int execute_gen_scan_command_internal(const void *glide_client, enum RequestType cmd_type,
                                       const char *key, size_t key_len,
-                                      long *it, const char *pattern, size_t pattern_len,
+                                      char **cursor, const char *pattern, size_t pattern_len,
                                       long count, zval *return_value)
 {
     s_command_args_t args;
@@ -2686,7 +2686,7 @@ int execute_gen_scan_command_internal(const void *glide_client, enum RequestType
     args.glide_client = glide_client;
     args.key = key;
     args.key_len = key_len;
-    args.cursor = it;
+    args.cursor = cursor;
     args.pattern = pattern;
     args.pattern_len = pattern_len;
     args.count = count;
@@ -2698,7 +2698,7 @@ int execute_gen_scan_command_internal(const void *glide_client, enum RequestType
 }
 
 /**
- * Generic scan command implementation for HSCAN, ZSCAN, SSCAN
+ * Generic scan command implementation for HSCAN, ZSCAN, SSCAN - Updated for string cursors
  */
 int execute_scan_command_generic(zval *object, int argc, zval *return_value,
                                  zend_class_entry *ce, enum RequestType cmd_type)
@@ -2733,36 +2733,38 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
     /* Dereference if it's a reference */
     ZVAL_DEREF(z_iter);
 
-    /* Make sure we have a valid cursor - accept NULL, numeric, or string */
-    if (Z_TYPE_P(z_iter) != IS_LONG && Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
+    /* Make sure we have a valid cursor - accept NULL or string */
+    if (Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL)
     {
-        php_error_docref(NULL, E_WARNING, "Cursor must be numeric or string");
+        php_error_docref(NULL, E_WARNING, "Cursor must be string");
         return 0;
     }
 
-    /* Convert cursor to long */
-    long cursor;
+    /* Get cursor string */
+    char *cursor_value;
     if (Z_TYPE_P(z_iter) == IS_NULL)
     {
         /* NULL cursor means start from the beginning (0) */
-        cursor = 0;
+        cursor_value = "0";
     }
     else if (Z_TYPE_P(z_iter) == IS_STRING)
     {
-        cursor = atol(Z_STRVAL_P(z_iter));
+        cursor_value = Z_STRVAL_P(z_iter);
     }
     else
     {
-        convert_to_long(z_iter);
-        cursor = Z_LVAL_P(z_iter);
+        return 0;
     }
 
-    /* Check if scan is already complete (cursor = -1) */
-    if (cursor == -1)
+    /* Check if scan is already complete (cursor finished) */
+    if (strcmp(cursor_value, "finished") == 0)
     {
         ZVAL_FALSE(return_value);
         return 1;
     }
+
+    /* Create a copy of cursor for passing to functions */
+    char *cursor_ptr = estrdup(cursor_value);
 
     /* Use empty pattern if not specified */
     const char *scan_pattern = has_pattern ? pattern : "";
@@ -2772,17 +2774,18 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
     long scan_count = has_count ? count : 10;
 
     /* Execute the scan command using the generic internal function */
-    if (execute_gen_scan_command_internal(valkey_glide->glide_client, cmd_type, key, key_len, &cursor,
+    if (execute_gen_scan_command_internal(valkey_glide->glide_client, cmd_type, key, key_len, &cursor_ptr,
                                           scan_pattern, scan_pattern_len,
                                           scan_count, return_value))
     {
         /* Update iterator value */
-        ZVAL_LONG(z_iter, cursor);
-
-        /* Return value already set in execute_gen_scan_command_internal */
+        ZVAL_STRING(z_iter, cursor_ptr);
+        efree(cursor_ptr);
         return 1;
     }
 
+    /* Clean up on failure */
+    efree(cursor_ptr);
     return 0;
 }
 

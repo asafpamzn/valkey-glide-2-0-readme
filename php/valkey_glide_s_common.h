@@ -203,7 +203,7 @@ int execute_scan_command_internal(const void *glide_client, long *it, const char
                                   long count, zval *return_value);
 int execute_gen_scan_command_internal(const void *glide_client, enum RequestType cmd_type,
                                       const char *key, size_t key_len,
-                                      long *it, const char *pattern, size_t pattern_len,
+                                      char **cursor, const char *pattern, size_t pattern_len,
                                       long count, zval *return_value);
 
 /* Generic scan command wrapper for HSCAN, ZSCAN, SSCAN */
