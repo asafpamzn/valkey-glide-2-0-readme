@@ -126,16 +126,45 @@ jobs:
             - name: Start Valkey servers
               working-directory: php/tests
               run: |
+                  set -e  # Exit on any error
+                  
+                  echo "=== DEBUG: Current directory and files ==="
+                  pwd
+                  ls -la
+                  
+                  echo "=== DEBUG: Checking script permissions ==="
+                  ls -la start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
                   # Make scripts executable
                   chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
                   
+                  echo "=== DEBUG: After chmod ==="
+                  ls -la start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Check if valkey-server is available
+                  echo "=== DEBUG: Checking for valkey-server ==="
+                  which valkey-server || echo "valkey-server not found in PATH"
+                  
                   # Start standalone servers (6379, 6380, 6381)
-                  echo "Starting standalone Valkey servers..."
+                  echo "=== Starting standalone Valkey servers ==="
                   ./start_valkey_with_replicas.sh
                   
+                  # Wait a moment for servers to start
+                  echo "=== Waiting for standalone servers to start ==="
+                  sleep 3
+                  
+                  # Check if servers are running
+                  echo "=== Checking standalone server status ==="
+                  ps aux | grep valkey-server | grep -v grep || echo "No valkey-server processes found"
+                  
                   # Start cluster servers (7001-7006)
-                  echo "Starting Valkey cluster..."
+                  echo "=== Starting Valkey cluster ==="
                   ./create-valkey-cluster.sh
+                  
+                  # Final server status check
+                  echo "=== Final server status check ==="
+                  ps aux | grep valkey-server | grep -v grep || echo "No valkey-server processes found"
+                  echo "=== Valkey servers startup completed ==="
 
             - name: Run PHP extension tests
               working-directory: php
@@ -331,16 +360,45 @@ jobs:
             - name: Start Valkey servers
               working-directory: php/tests
               run: |
+                  set -e  # Exit on any error
+                  
+                  echo "=== DEBUG: Current directory and files ==="
+                  pwd
+                  ls -la
+                  
+                  echo "=== DEBUG: Checking script permissions ==="
+                  ls -la start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
                   # Make scripts executable
                   chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
                   
+                  echo "=== DEBUG: After chmod ==="
+                  ls -la start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Check if valkey-server is available
+                  echo "=== DEBUG: Checking for valkey-server ==="
+                  which valkey-server || echo "valkey-server not found in PATH"
+                  
                   # Start standalone servers (6379, 6380, 6381)
-                  echo "Starting standalone Valkey servers..."
+                  echo "=== Starting standalone Valkey servers ==="
                   ./start_valkey_with_replicas.sh
                   
+                  # Wait a moment for servers to start
+                  echo "=== Waiting for standalone servers to start ==="
+                  sleep 3
+                  
+                  # Check if servers are running
+                  echo "=== Checking standalone server status ==="
+                  ps aux | grep valkey-server | grep -v grep || echo "No valkey-server processes found"
+                  
                   # Start cluster servers (7001-7006)
-                  echo "Starting Valkey cluster..."
+                  echo "=== Starting Valkey cluster ==="
                   ./create-valkey-cluster.sh
+                  
+                  # Final server status check
+                  echo "=== Final server status check ==="
+                  ps aux | grep valkey-server | grep -v grep || echo "No valkey-server processes found"
+                  echo "=== Valkey servers startup completed ==="
 
             - name: Run PHP extension tests
               working-directory: php
