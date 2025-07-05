@@ -45,7 +45,8 @@ runs:
                   libssl-dev \
                   unzip \
                   clang-format \
-                  cppcheck
+                  cppcheck \
+                  libprotobuf-c-dev
 
         - name: Install system dependencies (macOS)
           if: ${{ inputs.os == 'macos' }}
