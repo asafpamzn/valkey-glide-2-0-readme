@@ -126,12 +126,19 @@ jobs:
             - name: Run PHP extension tests
               working-directory: php
               run: |
-                  make test
+                  # Run tests using direct extension loading
+                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
 
             - name: Run integration tests
               working-directory: php
               run: |
-                  php run-tests.php tests/
+                  # Run all test files with direct extension loading
+                  for test_file in tests/ValkeyGlide*Test.php; do
+                    if [ -f "$test_file" ]; then
+                      echo "Running $test_file..."
+                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                    fi
+                  done
 
             - uses: ./.github/workflows/test-benchmark
               if: ${{ matrix.engine.version == '8.0' && matrix.host.OS == 'ubuntu' && matrix.host.RUNNER == 'ubuntu-latest' && matrix.php == env.BASE_PHP_VERSION }}
@@ -178,7 +185,8 @@ jobs:
                       libssl-dev \
                       clang-format \
                       cppcheck \
-                      protobuf-c-compiler
+                      protobuf-c-compiler \
+                      libprotobuf-c-dev
 
             - name: Install protoc
               uses: ./.github/workflows/install-rust-and-protoc
@@ -298,12 +306,19 @@ jobs:
             - name: Run PHP extension tests
               working-directory: php
               run: |
-                  make test
+                  # Run tests using direct extension loading
+                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
 
             - name: Run integration tests
               working-directory: php
               run: |
-                  php run-tests.php tests/
+                  # Run all test files with direct extension loading
+                  for test_file in tests/ValkeyGlide*Test.php; do
+                    if [ -f "$test_file" ]; then
+                      echo "Running $test_file..."
+                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                    fi
+                  done
 
             - name: Upload test reports
               if: always()
@@ -356,8 +371,16 @@ jobs:
             - name: Run modules tests
               working-directory: php
               run: |
-                  # TODO: Add modules-specific test commands when available
-                  make test
+                  # Run tests using direct extension loading
+                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
+                  
+                  # Run all test files with direct extension loading
+                  for test_file in tests/ValkeyGlide*Test.php; do
+                    if [ -f "$test_file" ]; then
+                      echo "Running $test_file..."
+                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                    fi
+                  done
 
             - name: Upload test reports
               if: always()

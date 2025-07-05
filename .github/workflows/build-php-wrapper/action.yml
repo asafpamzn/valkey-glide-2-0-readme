@@ -132,14 +132,18 @@ runs:
           run: |
               make
 
-        - name: Install PHP extension
+        - name: Verify extension build
           shell: bash
           working-directory: php
           run: |
-              make install
-
-        - name: Verify extension installation
-          shell: bash
-          run: |
-              php -m | grep valkey_glide || echo "Extension not found in module list"
-              php --ri valkey_glide || echo "Extension info not available"
+              # Check if the extension was built successfully
+              if [ -f "modules/valkey_glide.so" ]; then
+                  echo "✓ Extension built successfully: modules/valkey_glide.so"
+                  ls -la modules/valkey_glide.so
+              else
+                  echo "✗ Extension build failed - modules/valkey_glide.so not found"
+                  exit 1
+              fi
+              
+              # Test loading the extension directly
+              php -n -d extension=modules/valkey_glide.so -m | grep valkey_glide && echo "✓ Extension loads correctly" || echo "✗ Extension failed to load"

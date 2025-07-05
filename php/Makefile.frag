@@ -47,15 +47,6 @@ generate-bindings:
 	@cp $(top_srcdir)/../ffi/src/lib.rs $(top_srcdir)/include/lib.rs
 	@cd $(top_srcdir)/../ffi && $(CBINDGEN) --config cbindgen.toml --crate glide-ffi --output $(top_srcdir)/include/glide_bindings.h
 
-.PHONY: build-modules-pre
-
-build-modules-pre:
-	@$(MAKE) generate-proto
-	@$(MAKE) generate-bindings
-
-# Wrap the original build-modules
-build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
-
 valkey_glide_arginfo.h: valkey_glide.stub.php
 	@echo "Generating arginfo from valkey_glide.stub.php"
 	$(PHP_EXECUTABLE) build/gen_stub.php --no-legacy-arginfo valkey_glide.stub.php
@@ -68,9 +59,14 @@ ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
 
 all: $(ARGINFO_HEADERS)
 
+.PHONY: build-modules-pre
+
 build-modules-pre: valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
 	@$(MAKE) generate-proto
 	@$(MAKE) generate-bindings
+
+# Wrap the original build-modules
+build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
 
 # Linting targets for PHP and C code
 lint: lint-c lint-php
