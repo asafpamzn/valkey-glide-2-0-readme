@@ -85,11 +85,10 @@ runs:
           with:
               github-token: ${{ inputs.github-token }}
 
-        - name: Install build tools
+        - name: Install cbindgen
           shell: bash
-          working-directory: php
           run: |
-              make install-build-tools
+              cargo install cbindgen
 
         - name: Install ziglang (Ubuntu)
           if: ${{ inputs.os == 'ubuntu' }}
