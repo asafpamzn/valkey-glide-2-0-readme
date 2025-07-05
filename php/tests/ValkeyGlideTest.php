@@ -5175,18 +5175,20 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
-
+        $ttl = 0;
         // Key count
         $key_count = $this->get_keyspace_count('db0');
         
         // Scan them all
         $it = NULL;
-        while (true) {      
+        while (true) {
+            $ttl += 1;      
             $keys = $this->valkey_glide->scan($it);
             if ($keys) {
                 $key_count -= count($keys);
             }
             if ($it == "0") break;
+            $this->assertNotEquals(1000, $ttl);
         }
         // Should have iterated all keys
         $this->assertEquals(0, $key_count);
@@ -5201,13 +5203,16 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $it = NULL;
         
         while (true) {
+            $ttl += 1;      
             $keys = $this->valkey_glide->scan($it, "*$uniq*");            
            
             if ($keys)
                 $i -= count($keys); 
             
             if ($it == "0") 
-                break;           
+                break;  
+            $this->assertNotEquals(1000, $ttl);
+         
         }
 
         $this->assertEquals(0, $i);
@@ -5238,10 +5243,12 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
                     $it = NULL;
                     while (true) {
+                        $ttl += 1;
                         $scan = $this->valkey_glide->scan($it, "*$id*", $count, $type);  
                         if ($scan)                      
                             $resp = array_merge($resp, $scan);
                         if ($it == "0") break;
+                        $this->assertNotEquals(1000, $ttl);
                     }
 
                     $this->assertEqualsCanonicalizing($vals, $resp);
