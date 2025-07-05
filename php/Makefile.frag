@@ -1,3 +1,5 @@
+
+VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lSystem
 # Platform-specific includes
 ifeq ($(shell uname),Darwin)
     INCLUDES += -I/opt/homebrew/include
