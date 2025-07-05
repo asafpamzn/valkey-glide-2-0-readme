@@ -108,6 +108,23 @@ runs:
                   cargo build --target ${{ inputs.target }} --release
               fi
 
+        - name: Debug FFI library location
+          shell: bash
+          working-directory: ffi
+          run: |
+              echo "=== FFI Target Directory Structure ==="
+              find target -name "libglide_ffi.a" -type f 2>/dev/null || echo "No libglide_ffi.a found"
+              echo "=== Target directory contents ==="
+              ls -la target/ || true
+              if [ -d "target/${{ inputs.target }}" ]; then
+                  echo "=== Target-specific directory ==="
+                  ls -la "target/${{ inputs.target }}/" || true
+                  if [ -d "target/${{ inputs.target }}/release" ]; then
+                      echo "=== Target release directory ==="
+                      ls -la "target/${{ inputs.target }}/release/" || true
+                  fi
+              fi
+
         - name: Initialize PHP extension build system
           shell: bash
           working-directory: php
@@ -125,6 +142,19 @@ runs:
           working-directory: php
           run: |
               make build-modules-pre
+
+        - name: Debug PHP extension linking
+          shell: bash
+          working-directory: php
+          run: |
+              echo "=== Checking FFI library paths ==="
+              echo "Platform: $(uname)"
+              echo "Checking for target-specific paths:"
+              ls -la ../ffi/target/*/release/libglide_ffi.a 2>/dev/null || echo "No target-specific paths found"
+              echo "Checking for generic release path:"
+              ls -la ../ffi/target/release/libglide_ffi.a 2>/dev/null || echo "No generic release path found"
+              echo "=== Makefile.frag VALKEY_GLIDE_SHARED_LIBADD setting ==="
+              grep "VALKEY_GLIDE_SHARED_LIBADD" Makefile.frag || echo "VALKEY_GLIDE_SHARED_LIBADD not found"
 
         - name: Build PHP extension
           shell: bash
