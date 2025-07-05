@@ -36,34 +36,16 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
     public function testWait()     { $this->markTestSkipped(); }
     public function testSelect()   { $this->markTestSkipped(); }
     public function testReconnectSelect() { $this->markTestSkipped(); }
-    public function testMultipleConnect() { $this->markTestSkipped(); }
     public function testDoublePipeNoOp() { $this->markTestSkipped(); }
     public function testSwapDB() { $this->markTestSkipped(); }
     public function testConnectException() { $this->markTestSkipped(); }
     public function testTlsConnect() { $this->markTestSkipped(); }
-    public function testReset() { $this->markTestSkipped(); }
-    public function testInvalidAuthArgs() { $this->markTestSkipped(); }
-    public function testScanErrors() { $this->markTestSkipped(); }
     public function testConnectDatabaseSelect() { $this->markTestSkipped(); }
 
     /* These 'directed node' commands work differently in ValkeyGlideCluster */
     public function testConfig() { $this->markTestSkipped(); }
     public function testFlushDB() { $this->markTestSkipped(); }
     public function testFunction() { $this->markTestSkipped(); }
-
-    /* Session locking feature is currently not supported in in context of ValkeyGlide Cluster.
-       The biggest issue for this is the distribution nature of ValkeyGlide cluster */
-    public function testSession_lockKeyCorrect() { $this->markTestSkipped(); }
-    public function testSession_lockingDisabledByDefault() { $this->markTestSkipped(); }
-    public function testSession_lockReleasedOnClose() { $this->markTestSkipped(); }
-    public function testSession_ttlMaxExecutionTime() { $this->markTestSkipped(); }
-    public function testSession_ttlLockExpire() { $this->markTestSkipped(); }
-    public function testSession_lockHoldCheckBeforeWrite_otherProcessHasLock() { $this->markTestSkipped(); }
-    public function testSession_lockHoldCheckBeforeWrite_nobodyHasLock() { $this->markTestSkipped(); }
-    public function testSession_correctLockRetryCount() { $this->markTestSkipped(); }
-    public function testSession_defaultLockRetryCount() { $this->markTestSkipped(); }
-    public function testSession_noUnlockOfOtherProcess() { $this->markTestSkipped(); }
-    public function testSession_lockWaitTime() { $this->markTestSkipped(); }
 
     private function loadSeedsFromHostPort($host, $port) {
         try {
