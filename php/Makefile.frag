@@ -66,6 +66,10 @@ ARGINFO_HEADERS = valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
 
 all: $(ARGINFO_HEADERS)
 
+build-modules-pre: valkey_glide_arginfo.h valkey_glide_cluster_arginfo.h
+	@$(MAKE) generate-proto
+	@$(MAKE) generate-bindings
+
 # Linting targets for PHP and C code
 lint: lint-c lint-php
 
