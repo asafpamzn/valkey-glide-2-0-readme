@@ -123,6 +123,20 @@ jobs:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   engine-version: ${{ matrix.engine.version }}
 
+            - name: Start Valkey servers
+              working-directory: php/tests
+              run: |
+                  # Make scripts executable
+                  chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Start standalone servers (6379, 6380, 6381)
+                  echo "Starting standalone Valkey servers..."
+                  ./start_valkey_with_replicas.sh
+                  
+                  # Start cluster servers (7001-7006)
+                  echo "Starting Valkey cluster..."
+                  ./create-valkey-cluster.sh
+
             - name: Run PHP extension tests
               working-directory: php
               run: |
@@ -139,6 +153,16 @@ jobs:
                       php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
                     fi
                   done
+
+            - name: Stop Valkey servers
+              if: always()
+              run: |
+                  # Stop all Valkey server processes
+                  echo "Stopping Valkey servers..."
+                  pkill valkey-server || true
+                  # Clean up data directories
+                  rm -rf $HOME/valkey-cluster || true
+                  rm -rf php/tests/valkey_data || true
 
             - uses: ./.github/workflows/test-benchmark
               if: ${{ matrix.engine.version == '8.0' && matrix.host.OS == 'ubuntu' && matrix.host.RUNNER == 'ubuntu-latest' && matrix.php == env.BASE_PHP_VERSION }}
@@ -304,6 +328,20 @@ jobs:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   engine-version: ${{ matrix.engine.version }}
 
+            - name: Start Valkey servers
+              working-directory: php/tests
+              run: |
+                  # Make scripts executable
+                  chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Start standalone servers (6379, 6380, 6381)
+                  echo "Starting standalone Valkey servers..."
+                  ./start_valkey_with_replicas.sh
+                  
+                  # Start cluster servers (7001-7006)
+                  echo "Starting Valkey cluster..."
+                  ./create-valkey-cluster.sh
+
             - name: Run PHP extension tests
               working-directory: php
               run: |
@@ -320,6 +358,16 @@ jobs:
                       php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
                     fi
                   done
+
+            - name: Stop Valkey servers
+              if: always()
+              run: |
+                  # Stop all Valkey server processes
+                  echo "Stopping Valkey servers..."
+                  pkill valkey-server || true
+                  # Clean up data directories
+                  rm -rf $HOME/valkey-cluster || true
+                  rm -rf php/tests/valkey_data || true
 
             - name: Upload test reports
               if: always()
