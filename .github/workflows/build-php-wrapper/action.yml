@@ -85,6 +85,12 @@ runs:
           with:
               github-token: ${{ inputs.github-token }}
 
+        - name: Install build tools
+          shell: bash
+          working-directory: php
+          run: |
+              make install-build-tools
+
         - name: Install ziglang (Ubuntu)
           if: ${{ inputs.os == 'ubuntu' }}
           shell: bash
@@ -118,7 +124,7 @@ runs:
           shell: bash
           working-directory: php
           run: |
-              make generate-bindings generate-proto
+              make build-modules-pre
 
         - name: Build PHP extension
           shell: bash

@@ -243,32 +243,48 @@ Development on the PHP wrapper involves changes in both C and PHP code. We have 
 - **PHPStan**: Static analysis at level 6 for type safety and code quality
 - **PHP Code Beautifier (phpcbf)**: Automatic code formatting
 
-#### Linting Tools Installation
+#### Tools Installation
 
-**Install PHP linting tools via Composer:**
+**Install all development tools:**
 ```bash
-# From the php/ directory
-composer install --dev
+# Install both build and linting tools
+make install-tools
+```
 
+**Install build tools only:**
+```bash
+# Install cbindgen and other build tools
+make install-build-tools
+```
+
+**Install linting tools only:**
+```bash
+# Install PHP linting tools via Composer
+make install-lint-tools
+```
+
+**Manual installation:**
+
+*PHP linting tools via Composer:*
+```bash
+composer install --dev
 # Or install globally
 composer global require squizlabs/php_codesniffer phpstan/phpstan
 ```
 
-**Install C linting tools:**
-
-*Ubuntu/Debian:*
+*C linting tools:*
 ```bash
+# Ubuntu/Debian
 sudo apt-get install clang-format cppcheck
-```
 
-*macOS:*
-```bash
+# macOS
 brew install clang-format cppcheck
 ```
 
-**Or use the make target:**
+*Build tools:*
 ```bash
-make install-lint-tools
+# Install cbindgen via Cargo
+cargo install cbindgen
 ```
 
 #### Running the Linters

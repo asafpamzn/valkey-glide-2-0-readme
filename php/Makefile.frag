@@ -1,9 +1,17 @@
-INCLUDES += -I/opt/homebrew/include
+# Platform-specific includes
+ifeq ($(shell uname),Darwin)
+    INCLUDES += -I/opt/homebrew/include
+endif
+
 PROTOC = protoc
 PROTOC_C_PLUGIN := protoc-c
 PROTO_SRC_DIR = ../glide-core/src/protobuf
 GEN_INCLUDE_DIR = include/glide
 GEN_SRC_DIR = src
+
+# Cargo and tool detection
+CARGO_HOME ?= $(HOME)/.cargo
+CBINDGEN := $(shell which cbindgen 2>/dev/null || echo $(CARGO_HOME)/bin/cbindgen)
 
 PROTO_FILES = connection_request.proto command_request.proto response.proto
 
@@ -35,7 +43,7 @@ generate-bindings:
 	@echo "Generating C bindings from Rust code..."
 	@mkdir -p $(top_srcdir)/include
 	@cp $(top_srcdir)/../ffi/src/lib.rs $(top_srcdir)/include/lib.rs
-	@cd $(top_srcdir)/../ffi && PATH=/Users/asafp/.cargo/bin:$$PATH /Users/asafp/.cargo/bin/cbindgen --config cbindgen.toml --crate glide-ffi --output $(top_srcdir)/include/glide_bindings.h
+	@cd $(top_srcdir)/../ffi && $(CBINDGEN) --config cbindgen.toml --crate glide-ffi --output $(top_srcdir)/include/glide_bindings.h
 
 .PHONY: build-modules-pre
 
@@ -44,7 +52,7 @@ build-modules-pre:
 	@$(MAKE) generate-bindings
 
 # Wrap the original build-modules
-build-modules: build-modules-pre $(PHP_MODULES) $(PHP_ZEND_EX)
+build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
 
 valkey_glide_arginfo.h: valkey_glide.stub.php
 	@echo "Generating arginfo from valkey_glide.stub.php"
@@ -138,6 +146,15 @@ lint-fix:
 		echo "Warning: phpcbf not found, cannot fix PHP code formatting"; \
 	fi
 
+install-build-tools:
+	@echo "Installing build tools..."
+	@if command -v cargo >/dev/null 2>&1; then \
+		cargo install cbindgen; \
+		echo "✓ cbindgen installed via Cargo"; \
+	else \
+		echo "Warning: cargo not found, please install Rust first"; \
+	fi
+
 install-lint-tools:
 	@echo "Installing linting tools..."
 	@if command -v composer >/dev/null 2>&1; then \
@@ -150,4 +167,6 @@ install-lint-tools:
 	@echo "Ubuntu/Debian: sudo apt-get install clang-format cppcheck"
 	@echo "macOS: brew install clang-format cppcheck"
 
-.PHONY: lint lint-c lint-php lint-fix install-lint-tools
+install-tools: install-build-tools install-lint-tools
+
+.PHONY: lint lint-c lint-php lint-fix install-build-tools install-lint-tools install-tools
