@@ -5189,6 +5189,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
             }
             if ($it == "0") break;
             $this->assertNotEquals(1000, $ttl);
+            if ($ttl > 1000) break;
         }
         // Should have iterated all keys
         $this->assertEquals(0, $key_count);
@@ -5212,6 +5213,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
             if ($it == "0") 
                 break;  
             $this->assertNotEquals(1000, $ttl);
+            if ($ttl > 1000) break;
          
         }
 
@@ -5249,12 +5251,15 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                             $resp = array_merge($resp, $scan);
                         if ($it == "0") break;
                         $this->assertNotEquals(1000, $ttl);
+                        if ($ttl > 1000) break;
                     }
 
                     $this->assertEqualsCanonicalizing($vals, $resp);
                 }
             }
         }
+        var_dump($ttl);
+        $this->assertLT(1000, $ttl);
     }
     
     public function testHScan() {
