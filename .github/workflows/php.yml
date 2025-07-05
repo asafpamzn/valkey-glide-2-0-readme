@@ -190,13 +190,13 @@ jobs:
             - name: Run integration tests
               working-directory: php
               run: |
-                  # Run all test files with direct extension loading using absolute path
-                  for test_file in tests/ValkeyGlide*Test.php; do
-                    if [ -f "$test_file" ]; then
-                      echo "Running $test_file..."
-                      php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
-                    fi
-                  done
+                  # All tests are now run through the main TestValkeyGlide.php runner
+                  echo "All 4 test classes are already included in the main test runner"
+                  echo "TestValkeyGlide.php now runs all classes by default:"
+                  echo "- ValkeyGlide_Test (standalone)"
+                  echo "- ValkeyGlide_Cluster_Test (cluster)"
+                  echo "- ValkeyGlide_Features_Test (standalone features)"
+                  echo "- ValkeyGlide_Cluster_Features_Test (cluster features)"
 
             - name: Stop Valkey servers
               if: always()
@@ -439,13 +439,13 @@ jobs:
             - name: Run integration tests
               working-directory: php
               run: |
-                  # Run all test files with direct extension loading using absolute path
-                  for test_file in tests/ValkeyGlide*Test.php; do
-                    if [ -f "$test_file" ]; then
-                      echo "Running $test_file..."
-                      php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
-                    fi
-                  done
+                  # All tests are now run through the main TestValkeyGlide.php runner
+                  echo "All 4 test classes are already included in the main test runner"
+                  echo "TestValkeyGlide.php now runs all classes by default:"
+                  echo "- ValkeyGlide_Test (standalone)"
+                  echo "- ValkeyGlide_Cluster_Test (cluster)"
+                  echo "- ValkeyGlide_Features_Test (standalone features)"
+                  echo "- ValkeyGlide_Cluster_Features_Test (cluster features)"
 
             - name: Stop Valkey servers
               if: always()
