@@ -126,17 +126,17 @@ jobs:
             - name: Run PHP extension tests
               working-directory: php
               run: |
-                  # Run tests using direct extension loading
-                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
+                  # Run tests using direct extension loading with absolute path
+                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
 
             - name: Run integration tests
               working-directory: php
               run: |
-                  # Run all test files with direct extension loading
+                  # Run all test files with direct extension loading using absolute path
                   for test_file in tests/ValkeyGlide*Test.php; do
                     if [ -f "$test_file" ]; then
                       echo "Running $test_file..."
-                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                      php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
                     fi
                   done
 
@@ -186,7 +186,8 @@ jobs:
                       clang-format \
                       cppcheck \
                       protobuf-c-compiler \
-                      libprotobuf-c-dev
+                      libprotobuf-c-dev \
+                      libprotobuf-c1
 
             - name: Install protoc
               uses: ./.github/workflows/install-rust-and-protoc
@@ -306,17 +307,17 @@ jobs:
             - name: Run PHP extension tests
               working-directory: php
               run: |
-                  # Run tests using direct extension loading
-                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
+                  # Run tests using direct extension loading with absolute path
+                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
 
             - name: Run integration tests
               working-directory: php
               run: |
-                  # Run all test files with direct extension loading
+                  # Run all test files with direct extension loading using absolute path
                   for test_file in tests/ValkeyGlide*Test.php; do
                     if [ -f "$test_file" ]; then
                       echo "Running $test_file..."
-                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                      php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
                     fi
                   done
 
@@ -371,14 +372,14 @@ jobs:
             - name: Run modules tests
               working-directory: php
               run: |
-                  # Run tests using direct extension loading
-                  php -n -d extension=modules/valkey_glide.so tests/TestValkeyGlide.php
+                  # Run tests using direct extension loading with absolute path
+                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
                   
-                  # Run all test files with direct extension loading
+                  # Run all test files with direct extension loading using absolute path
                   for test_file in tests/ValkeyGlide*Test.php; do
                     if [ -f "$test_file" ]; then
                       echo "Running $test_file..."
-                      php -n -d extension=modules/valkey_glide.so "$test_file"
+                      php -n -d extension=$(pwd)/modules/valkey_glide.so "$test_file"
                     fi
                   done
 

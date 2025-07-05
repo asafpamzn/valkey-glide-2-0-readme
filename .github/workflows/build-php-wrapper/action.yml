@@ -46,7 +46,8 @@ runs:
                   unzip \
                   clang-format \
                   cppcheck \
-                  libprotobuf-c-dev
+                  libprotobuf-c-dev \
+                  libprotobuf-c1
 
         - name: Install system dependencies (macOS)
           if: ${{ inputs.os == 'macos' }}
