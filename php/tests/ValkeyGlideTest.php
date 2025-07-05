@@ -5256,59 +5256,12 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
             }
         }
     }
-
-    public function testScanPrefix() {
-        $this->markTestSkipped(); // TODO
-        $keyid = uniqid();
-
-        /* Set some keys with different prefixes */
-        $prefixes = ['prefix-a:', 'prefix-b:'];
-        foreach ($prefixes as $prefix) {
-            $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, $prefix);
-            $this->valkey_glide->set("$keyid", 'LOLWUT');
-            $all_keys["{$prefix}{$keyid}"] = true;
-        }
-
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_PREFIX);
-
-        foreach ($prefixes as $prefix) {
-            $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, $prefix);
-            $it = NULL;
-            $keys = $this->valkey_glide->scan($it, "*$keyid*");
-            $this->assertEquals($keys, ["{$prefix}{$keyid}"]);
-        }
-
-        /* Unset the prefix option */
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NOPREFIX);
-
-        $it = NULL;
-        while ($keys = $this->valkey_glide->scan($it, "*$keyid*")) {
-            foreach ($keys as $key) {
-                unset($all_keys[$key]);
-            }
-        }
-
-        /* Should have touched every key */
-        $this->assertEquals(0, count($all_keys));
-    }
-
-    public function testMaxRetriesOption() {
-         $this->markTestSkipped(); // TODO
-        $maxRetriesExpected = 5;
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_MAX_RETRIES, $maxRetriesExpected);
-        $maxRetriesActual=$this->valkey_glide->getOption(ValkeyGlide::OPT_MAX_RETRIES);
-        $this->assertEquals($maxRetriesActual, $maxRetriesExpected);
-    }
-
     
-
     public function testHScan() {
          
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
-        
         $this->valkey_glide->del('hash');
         $foo_mems = 0;
 
@@ -5464,7 +5417,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
     /* Make sure we capture errors when scanning */
     public function testScanErrors() {
-        $this->markTestSkipped(); // TODO
+        
         $this->valkey_glide->set('scankey', 'simplekey');
 
         foreach (['sScan', 'hScan', 'zScan'] as $method) {
