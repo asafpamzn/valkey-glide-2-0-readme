@@ -5183,7 +5183,9 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $it = NULL;
         while (true) {      
             $keys = $this->valkey_glide->scan($it);
-            $key_count -= count($keys);
+            if ($keys) {
+                $key_count -= count($keys);
+            }
             if ($it == "0") break;
         }
         // Should have iterated all keys
