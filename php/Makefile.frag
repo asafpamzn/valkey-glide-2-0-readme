@@ -183,8 +183,7 @@ install-tools: install-build-tools install-lint-tools
 # ASAN (AddressSanitizer) targets
 build-asan:
 	@echo "Building with AddressSanitizer..."
-	@$(MAKE) clean
-	@phpize --clean
+	@$(MAKE) clean	
 	@phpize
 	@./configure --enable-valkey-glide --enable-valkey-glide-asan
 	@$(MAKE)

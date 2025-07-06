@@ -236,11 +236,6 @@ jobs:
             fail-fast: false
             matrix:
                 engine: ${{ fromJson(needs.get-matrices.outputs.engine-matrix-output) }}
-        env:
-            CFLAGS: "-fsanitize=address -fno-omit-frame-pointer -g -O1"
-            CXXFLAGS: "-fsanitize=address -fno-omit-frame-pointer -g -O1"
-            LDFLAGS: "-fsanitize=address"
-            ASAN_OPTIONS: "detect_leaks=1:abort_on_error=1:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1"
 
         steps:
             - uses: actions/checkout@v4
@@ -249,10 +244,6 @@ jobs:
               run: |
                   echo "Job running with the following matrix configuration:"
                   echo "${{ toJson(matrix) }}"
-                  echo "ASAN build flags:"
-                  echo "CFLAGS=$CFLAGS"
-                  echo "LDFLAGS=$LDFLAGS"
-                  echo "ASAN_OPTIONS=$ASAN_OPTIONS"
 
             - uses: actions/cache@v4
               with:
@@ -269,14 +260,33 @@ jobs:
                       ubuntu-latest-glide-core
                       ubuntu-latest
 
-            - name: Build PHP wrapper with ASAN
-              uses: ./.github/workflows/build-php-wrapper
+            - name: Install shared dependencies
+              uses: ./.github/workflows/install-shared-dependencies
               with:
-                  os: ubuntu
                   target: x86_64-unknown-linux-gnu
-                  php-version: ${{ env.BASE_PHP_VERSION }}
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   engine-version: ${{ matrix.engine.version }}
+
+            - name: Install Rust and protoc
+              uses: ./.github/workflows/install-rust-and-protoc
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Install system dependencies for PHP ASAN build
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                      php${{ env.BASE_PHP_VERSION }}-dev \
+                      php${{ env.BASE_PHP_VERSION }}-cli \
+                      build-essential \
+                      autoconf \
+                      automake \
+                      libtool \
+                      pkg-config \
+                      libssl-dev \
+                      protobuf-c-compiler \
+                      libprotobuf-c-dev \
+                      libprotobuf-c1
 
             - name: Start Valkey servers
               working-directory: php/tests
@@ -308,56 +318,34 @@ jobs:
                   ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
                   echo "=== Valkey servers startup completed ==="
 
-            - name: Run PHP extension tests with ASAN
+            - name: Build and test PHP extension with ASAN
               working-directory: php
-              env:
-                  ASAN_OPTIONS: "detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs:halt_on_error=0:exit_code=1"
               run: |
-                  echo "=== Running PHP tests with AddressSanitizer ==="
-                  echo "ASAN_Options: $ASAN_OPTIONS"
+                  echo "=== Building and testing PHP extension with AddressSanitizer ==="
+                  echo "Using Makefile ASAN targets for consistent build process"
                   
-                  # Create directory for ASAN logs
-                  mkdir -p asan_logs
-                  
-                  # Find ASAN library for preloading
-                  echo "=== Locating ASAN library ==="
-                  ASAN_LIB=$(find /usr/lib -name "libasan.so*" 2>/dev/null | head -1)
-                  if [ -z "$ASAN_LIB" ]; then
-                      # Try alternative locations
-                      ASAN_LIB=$(find /usr/lib/gcc -name "libasan.so*" 2>/dev/null | head -1)
-                  fi
-                  if [ -z "$ASAN_LIB" ]; then
-                      # Try with ldconfig
-                      ASAN_LIB=$(ldconfig -p | grep libasan | head -1 | awk '{print $NF}')
-                  fi
-                  
-                  if [ -n "$ASAN_LIB" ]; then
-                      echo "Found ASAN library: $ASAN_LIB"
-                      echo "=== Running PHP tests with ASAN preloaded ==="
-                      LD_PRELOAD="$ASAN_LIB" php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
-                      TEST_EXIT_CODE=$?
-                      
-                      echo "=== Test completed with exit code: $TEST_EXIT_CODE ==="
-                      
-                      # Display ASAN logs if they exist
-                      if [ -d "./asan_logs" ] && [ "$(ls -A ./asan_logs)" ]; then
-                          echo "=== ASAN Reports Found ==="
-                          for log_file in ./asan_logs/*; do
-                              if [ -f "$log_file" ]; then
-                                  echo "=== Contents of $log_file ==="
-                                  cat "$log_file"
-                                  echo "=== End of $log_file ==="
-                              fi
-                          done
-                      else
-                          echo "=== No ASAN logs found in ./asan_logs ==="
-                      fi
-                      
-                      # Exit with the test's exit code
-                      exit $TEST_EXIT_CODE
+                  # Use the Makefile's test-asan target which handles:
+                  # - Clean build environment 
+                  # - Configure with ASAN flags
+                  # - Build with proper ASAN settings
+                  # - Run tests with correct ASAN_OPTIONS
+                  make test-asan
+
+            - name: Display ASAN logs if found
+              working-directory: php
+              if: always()
+              run: |
+                  if [ -d "./asan_logs" ] && [ "$(ls -A ./asan_logs 2>/dev/null)" ]; then
+                      echo "=== ASAN Reports Found ==="
+                      for log_file in ./asan_logs/*; do
+                          if [ -f "$log_file" ]; then
+                              echo "=== Contents of $log_file ==="
+                              cat "$log_file"
+                              echo "=== End of $log_file ==="
+                          fi
+                      done
                   else
-                      echo "WARNING: ASAN library not found, trying without preload"
-                      php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+                      echo "✓ No ASAN issues detected"
                   fi
 
             - name: Stop Valkey servers
