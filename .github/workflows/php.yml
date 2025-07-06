@@ -227,6 +227,125 @@ jobs:
                       php/tests/**/*.log
                       php/tests/**/*.out
 
+    test-php-asan:
+        name: PHP ASAN Tests - EngineVersion ${{ matrix.engine.version }}
+        needs: get-matrices
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        strategy:
+            fail-fast: false
+            matrix:
+                engine: ${{ fromJson(needs.get-matrices.outputs.engine-matrix-output) }}
+        env:
+            CFLAGS: "-fsanitize=address -fno-omit-frame-pointer -g -O1"
+            CXXFLAGS: "-fsanitize=address -fno-omit-frame-pointer -g -O1"
+            LDFLAGS: "-fsanitize=address"
+            ASAN_OPTIONS: "detect_leaks=1:abort_on_error=1:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1"
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Output Matrix Parameters for this job
+              run: |
+                  echo "Job running with the following matrix configuration:"
+                  echo "${{ toJson(matrix) }}"
+                  echo "ASAN build flags:"
+                  echo "CFLAGS=$CFLAGS"
+                  echo "LDFLAGS=$LDFLAGS"
+                  echo "ASAN_OPTIONS=$ASAN_OPTIONS"
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                      php/src/*.pb-c.c
+                      php/src/*.pb-c.h
+                  key: ubuntu-latest-php-asan-${{ env.BASE_PHP_VERSION }}
+                  restore-keys: |
+                      ubuntu-latest-php-asan
+                      ubuntu-latest-php
+                      ubuntu-latest-glide-core
+                      ubuntu-latest
+
+            - name: Build PHP wrapper with ASAN
+              uses: ./.github/workflows/build-php-wrapper
+              with:
+                  os: ubuntu
+                  target: x86_64-unknown-linux-gnu
+                  php-version: ${{ env.BASE_PHP_VERSION }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  engine-version: ${{ matrix.engine.version }}
+
+            - name: Start Valkey servers
+              working-directory: php/tests
+              run: |
+                  set -e  # Exit on any error
+                  
+                  # Ensure /usr/local/bin is in PATH (where valkey-server is installed)
+                  export PATH="/usr/local/bin:$PATH"
+                  
+                  echo "=== Starting Valkey servers for ASAN testing ==="
+                  
+                  # Make scripts executable
+                  chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Start standalone servers (6379, 6380, 6381)
+                  echo "=== Starting standalone Valkey servers ==="
+                  ./start_valkey_with_replicas.sh
+                  
+                  # Wait a moment for servers to start
+                  echo "=== Waiting for standalone servers to start ==="
+                  sleep 3
+                  
+                  # Start cluster servers (7001-7006)
+                  echo "=== Starting Valkey cluster ==="
+                  ./create-valkey-cluster.sh
+                  
+                  # Final server status check
+                  echo "=== Final server status check ==="
+                  ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
+                  echo "=== Valkey servers startup completed ==="
+
+            - name: Run PHP extension tests with ASAN
+              working-directory: php
+              env:
+                  ASAN_OPTIONS: "detect_leaks=1:abort_on_error=1:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs"
+              run: |
+                  echo "=== Running PHP tests with AddressSanitizer ==="
+                  echo "ASAN_OPTIONS: $ASAN_OPTIONS"
+                  
+                  # Create directory for ASAN logs
+                  mkdir -p asan_logs
+                  
+                  # Run tests using direct extension loading with absolute path
+                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+
+            - name: Stop Valkey servers
+              if: always()
+              run: |
+                  # Stop all Valkey server processes
+                  echo "Stopping Valkey servers..."
+                  pkill valkey-server || true
+                  # Clean up data directories
+                  rm -rf $HOME/valkey-cluster || true
+                  rm -rf php/tests/valkey_data || true
+
+            - name: Upload ASAN logs and reports
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: asan-test-report-php-${{ matrix.engine.type }}-${{ matrix.engine.version }}
+                  path: |
+                      utils/clusters/**
+                      php/asan_logs/**
+                      php/tests/**/*.diff
+                      php/tests/**/*.exp
+                      php/tests/**/*.log
+                      php/tests/**/*.out
+
     lint:
         timeout-minutes: 15
         runs-on: ubuntu-latest
