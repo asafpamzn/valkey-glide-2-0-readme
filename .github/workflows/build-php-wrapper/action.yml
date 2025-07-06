@@ -103,7 +103,11 @@ runs:
           shell: bash
           working-directory: ffi
           run: |
-              if [[ "${{ inputs.os }}" == "ubuntu" ]]; then
+              # Check if ASAN flags are present - if so, use regular cargo build to avoid Zig linker issues
+              if [[ "$CFLAGS" == *"-fsanitize=address"* ]] || [[ "$CXXFLAGS" == *"-fsanitize=address"* ]]; then
+                  echo "ASAN flags detected, using regular cargo build to ensure proper ASAN runtime linking"
+                  cargo build --target ${{ inputs.target }} --release
+              elif [[ "${{ inputs.os }}" == "ubuntu" ]]; then
                   cargo zigbuild --target ${{ inputs.target }} --release
               else
                   cargo build --target ${{ inputs.target }} --release
