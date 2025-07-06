@@ -319,8 +319,26 @@ jobs:
                   # Create directory for ASAN logs
                   mkdir -p asan_logs
                   
-                  # Run tests using direct extension loading with absolute path
-                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+                  # Find ASAN library for preloading
+                  echo "=== Locating ASAN library ==="
+                  ASAN_LIB=$(find /usr/lib -name "libasan.so*" 2>/dev/null | head -1)
+                  if [ -z "$ASAN_LIB" ]; then
+                      # Try alternative locations
+                      ASAN_LIB=$(find /usr/lib/gcc -name "libasan.so*" 2>/dev/null | head -1)
+                  fi
+                  if [ -z "$ASAN_LIB" ]; then
+                      # Try with ldconfig
+                      ASAN_LIB=$(ldconfig -p | grep libasan | head -1 | awk '{print $NF}')
+                  fi
+                  
+                  if [ -n "$ASAN_LIB" ]; then
+                      echo "Found ASAN library: $ASAN_LIB"
+                      echo "=== Running PHP tests with ASAN preloaded ==="
+                      LD_PRELOAD="$ASAN_LIB" php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+                  else
+                      echo "WARNING: ASAN library not found, trying without preload"
+                      php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+                  fi
 
             - name: Stop Valkey servers
               if: always()
