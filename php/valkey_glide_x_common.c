@@ -471,19 +471,46 @@ cleanup:
         efree(allocated_strings);
     }
 
-    /* Free command arguments */
-    free_command_args(cmd_args, args_len);
-
-    /* Handle special cleanup for specific commands */
+    /* Handle special cleanup for specific commands that allocate individual strings */
+    /* Note: These are handled before general cleanup to avoid double-free */
     if (cmd_type == XTrim && args->trim_opts.has_limit && cmd_args && arg_count > 0) {
-        /* XTRIM allocates limit string separately */
-        efree((void*)cmd_args[arg_count - 1]);
+        /* XTRIM allocates limit string - find and free it */
+        /* The limit string is added after LIMIT keyword, scan backwards to find it */
+        for (int i = arg_count - 1; i >= 0; i--) {
+            /* Look for the pattern: LIMIT followed by allocated string */
+            if (i > 0 && cmd_args[i - 1] == (uintptr_t)"LIMIT") {
+                /* This should be our allocated limit string */
+                char* potential_str = (char*)cmd_args[i];
+                /* Simple validation: check if it looks like a number string */
+                if (potential_str && potential_str[0] >= '0' && potential_str[0] <= '9') {
+                    efree(potential_str);
+                }
+                break;
+            }
+        }
     }
+
     if ((cmd_type == XRange || cmd_type == XRevRange) && args->range_opts.has_count && cmd_args &&
         arg_count > 0) {
-        /* XRANGE/XREVRANGE allocates count string separately */
-        efree((void*)cmd_args[arg_count - 1]);
+        /* XRANGE/XREVRANGE allocates count string - find and free it */
+        /* The count string is added after COUNT keyword, scan backwards to find it */
+        for (int i = arg_count - 1; i >= 0; i--) {
+            /* Look for the pattern: COUNT followed by allocated string */
+            if (i > 0 && cmd_args[i - 1] == (uintptr_t)"COUNT") {
+                /* This should be our allocated count string */
+                char* potential_str = (char*)cmd_args[i];
+                /* Simple validation: check if it looks like a number string */
+                if (potential_str && potential_str[0] >= '0' && potential_str[0] <= '9') {
+                    efree(potential_str);
+                }
+                break;
+            }
+        }
     }
+
+    /* Free command arguments arrays (but not the individual string contents as they may be
+     * references) */
+    free_command_args(cmd_args, args_len);
 
     return status;
 }
