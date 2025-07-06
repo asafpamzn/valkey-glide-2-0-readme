@@ -324,18 +324,32 @@ jobs:
                   ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
                   echo "=== Valkey servers startup completed ==="
 
-            - name: Build and test PHP extension with ASAN
+            - name: Build PHP extension with ASAN
               working-directory: php
               run: |
-                  echo "=== Building and testing PHP extension with AddressSanitizer ==="
-                  echo "Using Makefile ASAN targets for consistent build process"
+                  echo "=== Building PHP extension with AddressSanitizer ==="
+                  echo "Using Makefile build-asan target for consistent build process"
                   
-                  # Use the Makefile's test-asan target which handles:
-                  # - Clean build environment 
-                  # - Configure with ASAN flags
-                  # - Build with proper ASAN settings
-                  # - Run tests with correct ASAN_OPTIONS
-                  make test-asan
+                  # Use build-asan target which handles all setup internally:
+                  # - Clean build environment (make clean && phpize --clean && phpize)
+                  # - Configure with ASAN flags (./configure --enable-valkey-glide --enable-valkey-glide-asan)
+                  # - Build with proper ASAN settings (make)
+                  make build-asan
+
+            - name: Run PHP extension tests with ASAN
+              working-directory: php
+              run: |
+                  echo "=== Running PHP tests with AddressSanitizer ==="
+                  
+                  # Set up ASAN options for testing
+                  export ASAN_OPTIONS="detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs"
+                  echo "ASAN_OPTIONS: $ASAN_OPTIONS"
+                  
+                  # Create directory for ASAN logs
+                  mkdir -p asan_logs
+                  
+                  # Run tests with ASAN enabled extension
+                  php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
 
             - name: Display ASAN logs if found
               working-directory: php
