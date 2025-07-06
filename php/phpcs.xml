@@ -4,7 +4,6 @@
     
     <!-- Files to check -->
     <file>tests/</file>
-    <file>examples/</file>
     
     <!-- Exclude generated files -->
     <exclude-pattern>*/vendor/*</exclude-pattern>
