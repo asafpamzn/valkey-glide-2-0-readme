@@ -868,7 +868,7 @@ int prepare_bit_operation_args(core_command_args_t* args,
         /* Add BYBIT flag if present */
         if (args->options.bybit) {
             (*cmd_args)[arg_idx]     = (uintptr_t)"BIT";
-            (*cmd_args_len)[arg_idx] = 5;
+            (*cmd_args_len)[arg_idx] = 3;
             arg_idx++;
         }
     }
