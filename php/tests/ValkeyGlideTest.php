@@ -5283,7 +5283,9 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $it = NULL;
         while (true) {
             $keys = $this->valkey_glide->hscan('hash', $it);
-            $i -= count($keys);
+            if ($keys){
+                $i -= count($keys);
+            }
             if ($it == "0")
                 break;                    
         }

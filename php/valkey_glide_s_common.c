@@ -464,7 +464,7 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
         (*args_len_out)[arg_idx] = args->type_len;
         arg_idx++;
     }
-
+    printf("Prepared %lu arguments for scan command, cursor = %s\n", arg_count, args->cursor ? *args->cursor : "NULL");
     return arg_count;
 }
 
@@ -674,7 +674,7 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         else
         {
             /* No elements in final batch - return FALSE to terminate loop */
-            ZVAL_FALSE(return_value);
+            array_init(return_value);
             return 1;
         }
     }
