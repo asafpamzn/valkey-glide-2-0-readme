@@ -11,6 +11,8 @@ The Valkey GLIDE PHP wrapper is implemented as a PHP extension written in C that
 
 The extension follows standard PHP extension development practices and uses the Zend API to expose Valkey GLIDE functionality to PHP applications.
 
+**Important**: The PHP extension depends on the FFI (Foreign Function Interface) library located in the `../ffi` directory. This FFI library provides the bridge between the PHP extension and the Rust-based `glide-core`. You must build the FFI library before attempting to build the PHP extension.
+
 ### Build from source
 
 #### Prerequisites
@@ -116,24 +118,33 @@ Before starting this step, make sure you've installed all software requirements.
     ```bash
     VERSION=2.0.0 # You can modify this to other released version or set it to "main" to get the unstable branch
     git clone --branch ${VERSION} https://github.com/valkey-io/valkey-glide.git
-    cd valkey-glide/php
+    cd valkey-glide
     ```
 
-2. Prepare the build environment:
+2. Build the FFI library (required dependency):
+
+    ```bash
+    # Build the FFI library that the PHP extension depends on
+    cd ffi
+    cargo build --release
+    cd ../php
+    ```
+
+3. Prepare the build environment:
 
     ```bash
     # Initialize the extension build system
     phpize
     ```
 
-3. Configure the build:
+4. Configure the build:
 
     ```bash
     # Configure with Valkey Glide support enabled
     ./configure --enable-valkey-glide
     ```
 
-4. Build the extension:
+5. Build the extension:
 
     ```bash
     # Pre-build step to prepare modules
@@ -143,21 +154,21 @@ Before starting this step, make sure you've installed all software requirements.
     make
     ```
 
-5. Install the extension:
+6. Install the extension:
 
     ```bash
     # Install to PHP extensions directory
     make install
     ```
 
-6. Enable the extension:
+7. Enable the extension:
 
     Add the following line to your `php.ini` file:
     ```ini
     extension=valkey_glide
     ```
 
-7. Verify installation:
+8. Verify installation:
 
     ```bash
     # Check if the extension is loaded
@@ -477,11 +488,20 @@ php benchmark_comparison.php
 
 Common issues and solutions:
 
+#### FFI Build Issues
+
+- **FFI library not found**: Ensure you have built the FFI library with `cargo build --release` in the `../ffi` directory
+- **Rust compiler not found**: Install rustup and ensure `cargo` is in your PATH
+- **FFI build fails on Linux**: Install ziglang and zigbuild: `pip3 install ziglang && cargo install --locked cargo-zigbuild`
+- **Missing protobuf-c libraries**: Install `libprotobuf-c-dev` (Ubuntu) or `protobuf-c-devel` (CentOS/RHEL)
+- **cbindgen not found**: Install with `cargo install cbindgen`
+
 #### Build Issues
 
 - **phpize not found**: Install `php-dev` or `php-devel` package
 - **configure fails**: Check if all dependencies are installed
 - **make fails**: Ensure you have the correct PHP headers version
+- **Link errors with libglide_ffi**: Verify the FFI library was built successfully and exists at `../ffi/target/release/libglide_ffi.a`
 
 #### Runtime Issues
 
