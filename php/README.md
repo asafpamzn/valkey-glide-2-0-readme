@@ -122,7 +122,7 @@ protoc --version
     ```bash
     phpize
     ./configure --enable-valkey-glide
-    make generate-bindings generate-proto
+    make build-modules-pre
     make install
     ```
 
