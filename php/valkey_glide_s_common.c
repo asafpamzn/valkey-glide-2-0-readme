@@ -685,7 +685,10 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         {
             efree(*args->cursor);
         }
-        *args->cursor = estrdup("0");
+        *args->cursor = emalloc(2);
+        strcpy(*args->cursor, "0");
+        
+        fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Set completion cursor = '%s'\n", *args->cursor);
 
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
@@ -705,7 +708,15 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
     {
         efree(*args->cursor);
     }
-    *args->cursor = estrdup(new_cursor_str);
+    
+    /* Use length-controlled string copying to prevent reading beyond string boundary */
+    size_t cursor_len = cursor_resp->string_value_len;
+    *args->cursor = emalloc(cursor_len + 1);
+    memcpy(*args->cursor, new_cursor_str, cursor_len);
+    (*args->cursor)[cursor_len] = '\0';
+    
+    fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Set new cursor = '%s' (len=%zu)\n", 
+            *args->cursor, cursor_len);
 
     /* Use command_response_to_zval for robust element processing */
     return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan || cmd_type == ZScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
