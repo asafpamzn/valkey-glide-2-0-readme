@@ -394,6 +394,9 @@ jobs:
                       libprotobuf-c-dev \
                       libprotobuf-c1
 
+            - name: Check clang-format version
+              run: clang-format --version
+
             - name: Install protoc
               uses: ./.github/workflows/install-rust-and-protoc
               with:
