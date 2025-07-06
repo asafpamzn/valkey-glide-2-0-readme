@@ -107,15 +107,29 @@ int convert_zval_to_string_args(
             zval tmp_zval;
             ZVAL_COPY(&tmp_zval, element);
             zend_std_cast_object_tostring(&tmp_zval, &tmp_zval, IS_STRING);
-            (*args_out)[offset + i]     = (uintptr_t)Z_STRVAL(tmp_zval);
-            (*args_len_out)[offset + i] = Z_STRLEN(tmp_zval);
+
+            /* Create a permanent copy of the string before freeing the zval */
+            size_t str_len  = Z_STRLEN(tmp_zval);
+            char*  str_copy = emalloc(str_len + 1);
+            memcpy(str_copy, Z_STRVAL(tmp_zval), str_len);
+            str_copy[str_len] = '\0';
+
+            (*args_out)[offset + i]     = (uintptr_t)str_copy;
+            (*args_len_out)[offset + i] = str_len;
             zval_dtor(&tmp_zval);
         } else {
             /* Convert other types to string */
             ZVAL_COPY(&temp, element);
             convert_to_string(&temp);
-            (*args_out)[offset + i]     = (uintptr_t)Z_STRVAL(temp);
-            (*args_len_out)[offset + i] = Z_STRLEN(temp);
+
+            /* Create a permanent copy of the string before freeing the zval */
+            size_t str_len  = Z_STRLEN(temp);
+            char*  str_copy = emalloc(str_len + 1);
+            memcpy(str_copy, Z_STRVAL(temp), str_len);
+            str_copy[str_len] = '\0';
+
+            (*args_out)[offset + i]     = (uintptr_t)str_copy;
+            (*args_len_out)[offset + i] = str_len;
             zval_dtor(&temp);
         }
     }
@@ -767,6 +781,40 @@ cleanup:
                 int count_idx = (has_key ? 1 : 0) + 1 + (args->pattern ? 2 : 0) + 1;
                 if (count_idx < arg_count) {
                     efree((void*)cmd_args[count_idx]);
+                }
+            }
+        }
+
+        /* Clean up allocated strings from convert_zval_to_string_args for member-based commands */
+        if (category == S_CMD_KEY_MEMBERS || category == S_CMD_MULTI_KEY ||
+            category == S_CMD_DST_MULTI_KEY) {
+            int start_idx = 0, count = 0;
+
+            if (category == S_CMD_KEY_MEMBERS) {
+                start_idx = 1; /* Skip key, clean up member strings */
+                count     = args->members_count;
+            } else if (category == S_CMD_MULTI_KEY) {
+                start_idx = 0; /* Clean up all key strings */
+                count     = args->keys_count;
+            } else if (category == S_CMD_DST_MULTI_KEY) {
+                start_idx = 1; /* Skip destination key, clean up source key strings */
+                count     = args->keys_count;
+            }
+
+            /* Free converted strings - check if they were allocated by our conversion function */
+            for (int i = 0; i < count && (start_idx + i) < arg_count; i++) {
+                /* Only free if it's not pointing to original string data */
+                if (args->members && category == S_CMD_KEY_MEMBERS) {
+                    zval* element = &args->members[i];
+                    if (Z_TYPE_P(element) != IS_STRING && cmd_args[start_idx + i] != 0) {
+                        efree((void*)cmd_args[start_idx + i]);
+                    }
+                } else if (args->keys &&
+                           (category == S_CMD_MULTI_KEY || category == S_CMD_DST_MULTI_KEY)) {
+                    zval* element = &args->keys[i];
+                    if (Z_TYPE_P(element) != IS_STRING && cmd_args[start_idx + i] != 0) {
+                        efree((void*)cmd_args[start_idx + i]);
+                    }
                 }
             }
         }

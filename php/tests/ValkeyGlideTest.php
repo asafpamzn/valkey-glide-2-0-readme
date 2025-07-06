@@ -5258,7 +5258,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                 }
             }
         }
-        var_dump($ttl);
+        
         $this->assertLT(1000, $ttl);
         set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
