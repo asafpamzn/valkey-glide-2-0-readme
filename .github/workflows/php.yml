@@ -272,12 +272,18 @@ jobs:
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ env.BASE_PHP_VERSION }}
+                  extensions: none
+                  tools: none
+
             - name: Install system dependencies for PHP ASAN build
               run: |
                   sudo apt-get update
                   sudo apt-get install -y \
                       php${{ env.BASE_PHP_VERSION }}-dev \
-                      php${{ env.BASE_PHP_VERSION }}-cli \
                       build-essential \
                       autoconf \
                       automake \
