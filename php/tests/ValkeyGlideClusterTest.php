@@ -283,6 +283,7 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
     }
 
     public function testScan() {   
+        set_time_limit(10); // Enforce a 10-second limit on this test 
         $key_count = 0;
         $scan_count = 0;
 
@@ -302,6 +303,7 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
 
         /* Our total key count should match */
         $this->assertEquals($scan_count, $key_count);
+        set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
 
     public function testScanPrefix() {

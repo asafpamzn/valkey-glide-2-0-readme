@@ -5172,7 +5172,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testScan() {
-        
+        set_time_limit(10); // Enforce a 10-second limit on this test
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
         $ttl = 0;
@@ -5260,10 +5260,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         }
         var_dump($ttl);
         $this->assertLT(1000, $ttl);
+        set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
     
     public function testHScan() {
-         
+        set_time_limit(10); // Enforce a 10-second limit on this test
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
@@ -5308,10 +5309,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         }
 
         $this->assertEquals(0, $foo_mems);
+        set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
 
     public function testSScan() {
-        
+        set_time_limit(10); // Enforce a 10-second limit on this test
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
@@ -5345,10 +5347,11 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
                 break;
         }
         $this->assertEquals(10, $w_zero);
+        set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
 
     public function testZScan() {
-         
+        set_time_limit(10); // Enforce a 10-second limit on this test 
         if (version_compare($this->version, '2.8.0') < 0)
             $this->markTestSkipped();
 
@@ -5420,6 +5423,7 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $this->assertGT(0, $skips);
         $this->assertEquals(0, $p_score);
         $this->assertEquals(0, $p_count);
+        set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
 
     /* Make sure we capture errors when scanning */
