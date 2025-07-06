@@ -42,6 +42,12 @@ abstract class ValkeyGlideBaseTest extends TestSuite {
     public function setUp() {
         $this->valkey_glide = $this->newInstance();
         $info = $this->valkey_glide->info();
+        
+        // Handle case where info() returns false (connection failed)
+        if ($info === false) {
+            throw new Exception("Failed to connect to Valkey/Redis server. Please ensure server is running and accessible.");
+        }
+        
         $this->version = (isset($info['redis_version'])?$info['redis_version']:'0.0.0');
         $this->is_valkey = $this->detectValkey($info);
     }

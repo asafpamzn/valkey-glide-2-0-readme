@@ -420,16 +420,8 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
     }
 
     /* Add cursor */
-    fprintf(stderr, "[SCAN_DEBUG] prepare_s_scan_args: Adding cursor = '%s' (len=%zu, ptr=%p)\n", 
-            *args->cursor, strlen(*args->cursor), *args->cursor);
     
-    /* Debug: hex dump of cursor memory being sent to server */
-    fprintf(stderr, "[SCAN_DEBUG] prepare_s_scan_args: Cursor hex dump: ");
     size_t cursor_len = strlen(*args->cursor);
-    for (size_t i = 0; i < cursor_len && i < 32; i++) {
-        fprintf(stderr, "%02x ", (unsigned char)(*args->cursor)[i]);
-    }
-    fprintf(stderr, "\n");
     
     (*args_out)[arg_idx] = (uintptr_t)*args->cursor;
     (*args_len_out)[arg_idx] = cursor_len;
@@ -653,15 +645,6 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
     if (cursor_resp->response_type == String)
     {
         new_cursor_str = cursor_resp->string_value;
-        fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Received cursor from server = '%s' (len=%zu)\n", 
-                new_cursor_str, cursor_resp->string_value_len);
-        
-        /* Debug: hex dump of received cursor */
-        fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Received cursor hex dump: ");
-        for (size_t i = 0; i < cursor_resp->string_value_len && i < 32; i++) {
-            fprintf(stderr, "%02x ", (unsigned char)new_cursor_str[i]);
-        }
-        fprintf(stderr, "\n");
     }
     else
     {
@@ -688,8 +671,7 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
         *args->cursor = emalloc(2);
         strcpy(*args->cursor, "0");
         
-        fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Set completion cursor = '%s'\n", *args->cursor);
-
+        
         /* If there are elements in this final batch, return them using robust conversion */
         if (elements_resp->array_value_len > 0)
         {
@@ -714,9 +696,7 @@ int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_
     *args->cursor = emalloc(cursor_len + 1);
     memcpy(*args->cursor, new_cursor_str, cursor_len);
     (*args->cursor)[cursor_len] = '\0';
-    
-    fprintf(stderr, "[SCAN_DEBUG] process_s_scan_response: Set new cursor = '%s' (len=%zu)\n", 
-            *args->cursor, cursor_len);
+
 
     /* Use command_response_to_zval for robust element processing */
     return command_response_to_zval(elements_resp, return_value, (cmd_type == HScan || cmd_type == ZScan) ? COMMAND_RESPONSE_SCAN_ASSOSIATIVE_ARRAY : COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
@@ -2416,20 +2396,12 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     {
         /* NULL cursor means start from the beginning (0) */
         cursor_value = "0";
-        fprintf(stderr, "[SCAN_DEBUG] execute_scan_command: Cursor from NULL, set to '0'\n");
+        
     }
     else if (Z_TYPE_P(z_iter) == IS_STRING)
     {
         cursor_value = Z_STRVAL_P(z_iter);
-        fprintf(stderr, "[SCAN_DEBUG] execute_scan_command: Cursor from PHP string = '%s' (len=%zu, ptr=%p)\n", 
-                cursor_value, Z_STRLEN_P(z_iter), cursor_value);
-        
-        /* Debug: hex dump of cursor memory */
-        fprintf(stderr, "[SCAN_DEBUG] execute_scan_command: Cursor hex dump: ");
-        for (size_t i = 0; i < Z_STRLEN_P(z_iter) && i < 32; i++) {
-            fprintf(stderr, "%02x ", (unsigned char)cursor_value[i]);
-        }
-        fprintf(stderr, "\n");
+
     }
     else
     {
@@ -2439,8 +2411,6 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
 
     /* Create a copy of cursor for passing to functions */
     char *cursor_ptr = estrdup(cursor_value);
-    fprintf(stderr, "[SCAN_DEBUG] execute_scan_command: Cursor after estrdup = '%s' (ptr=%p)\n", 
-            cursor_ptr, cursor_ptr);
 
     /* Use empty pattern if not specified */
     const char *scan_pattern = has_pattern ? pattern : "";
