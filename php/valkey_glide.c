@@ -159,6 +159,34 @@ void free_valkey_glide_object(zend_object* object) {
         close_glide_client(valkey_glide->glide_client);
         valkey_glide->glide_client = NULL;
     }
+
+    /* Clean up the standard object */
+    zend_object_std_dtor(&valkey_glide->std);
+}
+
+/**
+ * Helper function to clean up client configuration structures
+ */
+static void cleanup_client_config(valkey_glide_client_configuration_t* config) {
+    if (config->base.addresses) {
+        efree(config->base.addresses);
+        config->base.addresses = NULL;
+    }
+
+    if (config->base.credentials) {
+        efree(config->base.credentials);
+        config->base.credentials = NULL;
+    }
+
+    if (config->base.reconnect_strategy) {
+        efree(config->base.reconnect_strategy);
+        config->base.reconnect_strategy = NULL;
+    }
+
+    if (config->base.advanced_config) {
+        efree(config->base.advanced_config);
+        config->base.advanced_config = NULL;
+    }
 }
 
 /**
@@ -410,10 +438,14 @@ PHP_METHOD(ValkeyGlide, __construct) {
         (client_config.database_id < 0 || client_config.database_id > 15)) {
         // TODO zend_throw_exception(valkey_glide_exception_ce, "Database ID must be between 0 and
         // 15", 0);
+        cleanup_client_config(&client_config);
         return;
     }
 
     valkey_glide->glide_client = create_glide_client(&client_config, false);
+
+    /* Clean up temporary configuration structures */
+    cleanup_client_config(&client_config);
 }
 /* }}} */
 

@@ -1,7 +1,8 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Whether to build valkey_glide as dynamic module */
+/* Define to 1 if the PHP extension 'valkey_glide' is built as a dynamic
+   module. */
 #define COMPILE_DL_VALKEY_GLIDE 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
@@ -56,3 +57,6 @@
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #define STDC_HEADERS 1
+
+/* Define if AddressSanitizer is enabled */
+/* #undef VALKEY_GLIDE_ASAN_ENABLED */

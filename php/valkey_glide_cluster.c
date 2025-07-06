@@ -168,6 +168,11 @@ PHP_METHOD(ValkeyGlideCluster, __construct) {
     /* For now, we'll cast to regular client config */
     valkey_glide->glide_client =
         create_glide_client((valkey_glide_client_configuration_t*)&client_config, true);
+
+    /* Clean up temporary configuration structures */
+    if (client_config.base.addresses) {
+        efree(client_config.base.addresses);
+    }
 }
 
 static zend_function_entry valkey_glide_cluster_methods[] = {

@@ -13,7 +13,7 @@ else
         VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lprotobuf-c
     endif
 endif
-
+INCLUDES += -Iinclude
 PROTOC = protoc
 PROTOC_C_PLUGIN := protoc-c
 PROTO_SRC_DIR = ../glide-core/src/protobuf
@@ -180,4 +180,51 @@ install-lint-tools:
 
 install-tools: install-build-tools install-lint-tools
 
-.PHONY: lint lint-c lint-php lint-fix install-build-tools install-lint-tools install-tools
+# ASAN (AddressSanitizer) targets
+build-asan:
+	@echo "Building with AddressSanitizer..."
+	@$(MAKE) clean
+	@phpize --clean
+	@phpize
+	@./configure --enable-valkey-glide --enable-valkey-glide-asan
+	@$(MAKE)
+	@echo "✓ ASAN build completed"
+
+test-asan: build-asan
+	@echo "Running tests with AddressSanitizer..."
+	@mkdir -p asan_logs
+	@export ASAN_OPTIONS="detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs"; \
+	php -n -d extension=$(shell pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
+		echo "=== ASAN Reports Found ==="; \
+		for log_file in ./asan_logs/*; do \
+			if [ -f "$$log_file" ]; then \
+				echo "=== Contents of $$log_file ==="; \
+				cat "$$log_file"; \
+				echo "=== End of $$log_file ==="; \
+			fi; \
+		done; \
+	else \
+		echo "✓ No ASAN issues detected"; \
+	fi
+
+clean-asan:
+	@echo "Cleaning ASAN artifacts..."
+	@rm -rf asan_logs
+	@$(MAKE) clean
+
+help-asan:
+	@echo "ASAN (AddressSanitizer) targets:"
+	@echo "  build-asan    - Build extension with AddressSanitizer enabled"
+	@echo "  test-asan     - Build and run tests with AddressSanitizer"
+	@echo "  clean-asan    - Clean ASAN artifacts and build files"
+	@echo "  help-asan     - Show this help message"
+	@echo ""
+	@echo "Manual ASAN build steps:"
+	@echo "  1. make clean && phpize --clean && phpize"
+	@echo "  2. ./configure --enable-valkey-glide --enable-valkey-glide-asan"
+	@echo "  3. make"
+	@echo "  4. ASAN_OPTIONS='detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1' \\"
+	@echo "     php -n -d extension=\$$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php"
+
+.PHONY: lint lint-c lint-php lint-fix install-build-tools install-lint-tools install-tools build-asan test-asan clean-asan help-asan

@@ -311,10 +311,10 @@ jobs:
             - name: Run PHP extension tests with ASAN
               working-directory: php
               env:
-                  ASAN_OPTIONS: "detect_leaks=1:abort_on_error=1:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs"
+                  ASAN_OPTIONS: "detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs:halt_on_error=0:exit_code=1"
               run: |
                   echo "=== Running PHP tests with AddressSanitizer ==="
-                  echo "ASAN_OPTIONS: $ASAN_OPTIONS"
+                  echo "ASAN_Options: $ASAN_OPTIONS"
                   
                   # Create directory for ASAN logs
                   mkdir -p asan_logs
@@ -335,6 +335,26 @@ jobs:
                       echo "Found ASAN library: $ASAN_LIB"
                       echo "=== Running PHP tests with ASAN preloaded ==="
                       LD_PRELOAD="$ASAN_LIB" php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+                      TEST_EXIT_CODE=$?
+                      
+                      echo "=== Test completed with exit code: $TEST_EXIT_CODE ==="
+                      
+                      # Display ASAN logs if they exist
+                      if [ -d "./asan_logs" ] && [ "$(ls -A ./asan_logs)" ]; then
+                          echo "=== ASAN Reports Found ==="
+                          for log_file in ./asan_logs/*; do
+                              if [ -f "$log_file" ]; then
+                                  echo "=== Contents of $log_file ==="
+                                  cat "$log_file"
+                                  echo "=== End of $log_file ==="
+                              fi
+                          done
+                      else
+                          echo "=== No ASAN logs found in ./asan_logs ==="
+                      fi
+                      
+                      # Exit with the test's exit code
+                      exit $TEST_EXIT_CODE
                   else
                       echo "WARNING: ASAN library not found, trying without preload"
                       php -n -d extension=$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
