@@ -17,12 +17,13 @@
 #ifndef VALKEY_GLIDE_S_COMMON_H
 #define VALKEY_GLIDE_S_COMMON_H
 
-#include "valkey_glide_commands_common.h"
-#include "command_response.h"
-#include "include/glide_bindings.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
+#include "command_response.h"
+#include "include/glide_bindings.h"
+#include "valkey_glide_commands_common.h"
 
 /* ====================================================================
  * ENUMS AND CONSTANTS
@@ -31,8 +32,7 @@
 /**
  * S command categories based on argument patterns
  */
-typedef enum
-{
+typedef enum {
     S_CMD_KEY_MEMBERS,     /* SADD, SREM, SMISMEMBER - key + array of members */
     S_CMD_KEY_ONLY,        /* SCARD, SMEMBERS - key only */
     S_CMD_KEY_MEMBER,      /* SISMEMBER - key + single member */
@@ -48,8 +48,7 @@ typedef enum
 /**
  * S command response types
  */
-typedef enum
-{
+typedef enum {
     S_RESPONSE_INT,    /* Integer response */
     S_RESPONSE_BOOL,   /* Boolean response (0/1) */
     S_RESPONSE_SET,    /* Set/Array response */
@@ -65,62 +64,60 @@ typedef enum
 /**
  * Generic command arguments structure for S commands
  */
-typedef struct _s_command_args_t
-{
+typedef struct _s_command_args_t {
     /* Common fields */
-    const void *glide_client; /* GlideClient instance */
-    const char *key;          /* Primary key argument */
-    size_t key_len;           /* Primary key length */
+    const void* glide_client; /* GlideClient instance */
+    const char* key;          /* Primary key argument */
+    size_t      key_len;      /* Primary key length */
 
     /* Multi-key commands */
-    zval *keys;     /* Array of keys */
-    int keys_count; /* Number of keys */
+    zval* keys;       /* Array of keys */
+    int   keys_count; /* Number of keys */
 
     /* Member operations */
-    zval *members;         /* Array of members */
-    int members_count;     /* Number of members */
-    HashTable *members_ht; /* HashTable for member operations */
+    zval*      members;       /* Array of members */
+    int        members_count; /* Number of members */
+    HashTable* members_ht;    /* HashTable for member operations */
 
     /* Single member operations */
-    const char *member; /* Single member */
-    size_t member_len;  /* Single member length */
+    const char* member;     /* Single member */
+    size_t      member_len; /* Single member length */
 
     /* Two-key operations */
-    const char *dst_key; /* Destination key (SMOVE, SINTERSTORE, etc.) */
-    size_t dst_key_len;  /* Destination key length */
-    const char *src_key; /* Source key (SMOVE) */
-    size_t src_key_len;  /* Source key length */
+    const char* dst_key;     /* Destination key (SMOVE, SINTERSTORE, etc.) */
+    size_t      dst_key_len; /* Destination key length */
+    const char* src_key;     /* Source key (SMOVE) */
+    size_t      src_key_len; /* Source key length */
 
     /* Numeric parameters */
-    long count;    /* COUNT parameter */
-    long limit;    /* LIMIT parameter */
-    int has_count; /* Whether count is specified */
-    int has_limit; /* Whether limit is specified */
+    long count;     /* COUNT parameter */
+    long limit;     /* LIMIT parameter */
+    int  has_count; /* Whether count is specified */
+    int  has_limit; /* Whether limit is specified */
 
     /* Scan-specific parameters */
-    char **cursor; /* Cursor pointer for scan operations */
+    char** cursor; /* Cursor pointer for scan operations */
 
-    const char *pattern; /* MATCH pattern */
-    size_t pattern_len;  /* Pattern length */
-    const char *type;    /* TYPE filter (SCAN only) */
-    size_t type_len;     /* Type filter length */
-    int has_type;        /* Whether type filter is specified */
+    const char* pattern;     /* MATCH pattern */
+    size_t      pattern_len; /* Pattern length */
+    const char* type;        /* TYPE filter (SCAN only) */
+    size_t      type_len;    /* Type filter length */
+    int         has_type;    /* Whether type filter is specified */
 
     /* Output parameters */
-    long *output_long;         /* For integer outputs */
-    int *output_int;           /* For boolean outputs */
-    char **output_string;      /* For string outputs */
-    size_t *output_string_len; /* For string output length */
+    long*   output_long;       /* For integer outputs */
+    int*    output_int;        /* For boolean outputs */
+    char**  output_string;     /* For string outputs */
+    size_t* output_string_len; /* For string output length */
 } s_command_args_t;
 
 /**
  * Command definition structure
  */
-typedef struct _s_command_def_t
-{
-    enum RequestType cmd_type;       /* ValkeyGlide command type */
-    s_command_category_t category;   /* Command category */
-    s_response_type_t response_type; /* Expected response type */
+typedef struct _s_command_def_t {
+    enum RequestType     cmd_type;      /* ValkeyGlide command type */
+    s_command_category_t category;      /* Command category */
+    s_response_type_t    response_type; /* Expected response type */
 } s_command_def_t;
 
 /* ====================================================================
@@ -128,87 +125,109 @@ typedef struct _s_command_def_t
  * ==================================================================== */
 
 /* Core execution framework */
-int execute_s_generic_command(const void *glide_client,
-                              enum RequestType cmd_type,
+int execute_s_generic_command(const void*          glide_client,
+                              enum RequestType     cmd_type,
                               s_command_category_t category,
-                              s_response_type_t response_type,
-                              s_command_args_t *args,
-                              zval *return_value);
+                              s_response_type_t    response_type,
+                              s_command_args_t*    args,
+                              zval*                return_value);
 
 /* Argument preparation functions */
-int prepare_s_key_members_args(s_command_args_t *args, uintptr_t **args_out,
-                               unsigned long **args_len_out);
-int prepare_s_key_only_args(s_command_args_t *args, uintptr_t **args_out,
-                            unsigned long **args_len_out);
-int prepare_s_key_member_args(s_command_args_t *args, uintptr_t **args_out,
-                              unsigned long **args_len_out);
-int prepare_s_key_count_args(s_command_args_t *args, uintptr_t **args_out,
-                             unsigned long **args_len_out);
-int prepare_s_multi_key_args(s_command_args_t *args, uintptr_t **args_out,
-                             unsigned long **args_len_out);
-int prepare_s_multi_key_limit_args(s_command_args_t *args, uintptr_t **args_out,
-                                   unsigned long **args_len_out);
-int prepare_s_dst_multi_key_args(s_command_args_t *args, uintptr_t **args_out,
-                                 unsigned long **args_len_out);
-int prepare_s_two_key_member_args(s_command_args_t *args, uintptr_t **args_out,
-                                  unsigned long **args_len_out);
-int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out,
-                        unsigned long **args_len_out);
-int prepare_s_server_args(s_command_args_t *args, uintptr_t **args_out,
-                          unsigned long **args_len_out);
+int prepare_s_key_members_args(s_command_args_t* args,
+                               uintptr_t**       args_out,
+                               unsigned long**   args_len_out);
+int prepare_s_key_only_args(s_command_args_t* args,
+                            uintptr_t**       args_out,
+                            unsigned long**   args_len_out);
+int prepare_s_key_member_args(s_command_args_t* args,
+                              uintptr_t**       args_out,
+                              unsigned long**   args_len_out);
+int prepare_s_key_count_args(s_command_args_t* args,
+                             uintptr_t**       args_out,
+                             unsigned long**   args_len_out);
+int prepare_s_multi_key_args(s_command_args_t* args,
+                             uintptr_t**       args_out,
+                             unsigned long**   args_len_out);
+int prepare_s_multi_key_limit_args(s_command_args_t* args,
+                                   uintptr_t**       args_out,
+                                   unsigned long**   args_len_out);
+int prepare_s_dst_multi_key_args(s_command_args_t* args,
+                                 uintptr_t**       args_out,
+                                 unsigned long**   args_len_out);
+int prepare_s_two_key_member_args(s_command_args_t* args,
+                                  uintptr_t**       args_out,
+                                  unsigned long**   args_len_out);
+int prepare_s_scan_args(s_command_args_t* args, uintptr_t** args_out, unsigned long** args_len_out);
+int prepare_s_server_args(s_command_args_t* args,
+                          uintptr_t**       args_out,
+                          unsigned long**   args_len_out);
 
 /* Response processing functions */
-int process_s_int_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_bool_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_set_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_mixed_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_string_response(CommandResult *result, s_command_args_t *args, zval *return_value);
-int process_s_scan_response(CommandResult *result, enum RequestType cmd_type, s_command_args_t *args, zval *return_value);
+int process_s_int_response(CommandResult* result, s_command_args_t* args, zval* return_value);
+int process_s_bool_response(CommandResult* result, s_command_args_t* args, zval* return_value);
+int process_s_set_response(CommandResult* result, s_command_args_t* args, zval* return_value);
+int process_s_mixed_response(CommandResult* result, s_command_args_t* args, zval* return_value);
+int process_s_string_response(CommandResult* result, s_command_args_t* args, zval* return_value);
+int process_s_scan_response(CommandResult*    result,
+                            enum RequestType  cmd_type,
+                            s_command_args_t* args,
+                            zval*             return_value);
 
 /* Utility functions */
-int allocate_s_command_args(int count, uintptr_t **args_out, unsigned long **args_len_out);
-void cleanup_s_command_args(uintptr_t *args, unsigned long *args_len);
-int convert_zval_to_string_args(zval *input, int count, uintptr_t **args_out,
-                                unsigned long **args_len_out, int offset);
-int convert_single_zval_to_string(zval *input, const char **str_out, size_t *len_out,
-                                  zval *temp_storage);
-char *alloc_long_string(long value, size_t *len_out);
+int  allocate_s_command_args(int count, uintptr_t** args_out, unsigned long** args_len_out);
+void cleanup_s_command_args(uintptr_t* args, unsigned long* args_len);
+int  convert_zval_to_string_args(
+     zval* input, int count, uintptr_t** args_out, unsigned long** args_len_out, int offset);
+int   convert_single_zval_to_string(zval*        input,
+                                    const char** str_out,
+                                    size_t*      len_out,
+                                    zval*        temp_storage);
+char* alloc_long_string(long value, size_t* len_out);
 
 /* Specific command implementations */
-int execute_sadd_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sadd_array_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_scard_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_srem_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_smove_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_spop_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_srandmember_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sismember_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_smembers_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_smismember_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sinter_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sintercard_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sinterstore_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sunion_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sunionstore_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sdiff_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sdiffstore_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
+int execute_sadd_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sadd_array_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_scard_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_srem_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_smove_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_spop_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_srandmember_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sismember_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_smembers_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_smismember_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sinter_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sintercard_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sinterstore_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sunion_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sunionstore_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sdiff_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sdiffstore_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
 
 /* Scan command implementations */
-int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_sscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
-int execute_hscan_command(zval *object, int argc, zval *return_value, zend_class_entry *ce);
+int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_sscan_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
+int execute_hscan_command(zval* object, int argc, zval* return_value, zend_class_entry* ce);
 
 /* Internal scan command functions */
-int execute_scan_command_internal(const void *glide_client, long *it, const char *pattern, size_t pattern_len,
-                                  long count, zval *return_value);
-int execute_gen_scan_command_internal(const void *glide_client, enum RequestType cmd_type,
-                                      const char *key, size_t key_len,
-                                      char **cursor, const char *pattern, size_t pattern_len,
-                                      long count, zval *return_value);
+int execute_scan_command_internal(const void* glide_client,
+                                  long*       it,
+                                  const char* pattern,
+                                  size_t      pattern_len,
+                                  long        count,
+                                  zval*       return_value);
+int execute_gen_scan_command_internal(const void*      glide_client,
+                                      enum RequestType cmd_type,
+                                      const char*      key,
+                                      size_t           key_len,
+                                      char**           cursor,
+                                      const char*      pattern,
+                                      size_t           pattern_len,
+                                      long             count,
+                                      zval*            return_value);
 
 /* Generic scan command wrapper for HSCAN, ZSCAN, SSCAN */
-int execute_scan_command_generic(zval *object, int argc, zval *return_value,
-                                 zend_class_entry *ce, enum RequestType cmd_type);
+int execute_scan_command_generic(
+    zval* object, int argc, zval* return_value, zend_class_entry* ce, enum RequestType cmd_type);
 
 /* ====================================================================
  * CONVENIENCE MACROS
@@ -218,8 +237,7 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
  * Initialize s_command_args_t structure with default values
  */
 #define INIT_S_COMMAND_ARGS(args)                     \
-    do                                                \
-    {                                                 \
+    do {                                              \
         memset(&(args), 0, sizeof(s_command_args_t)); \
     } while (0)
 
@@ -227,20 +245,18 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
  * Set basic key arguments
  */
 #define SET_S_KEY_ARGS(args, client, k, k_len) \
-    do                                         \
-    {                                          \
+    do {                                       \
         (args).glide_client = (client);        \
-        (args).key = (k);                      \
-        (args).key_len = (k_len);              \
+        (args).key          = (k);             \
+        (args).key_len      = (k_len);         \
     } while (0)
 
 /**
  * Set member arguments
  */
 #define SET_S_MEMBER_ARGS(args, m, m_count) \
-    do                                      \
-    {                                       \
-        (args).members = (m);               \
+    do {                                    \
+        (args).members       = (m);         \
         (args).members_count = (m_count);   \
     } while (0)
 
@@ -248,9 +264,8 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
  * Set multi-key arguments
  */
 #define SET_S_KEYS_ARGS(args, k, k_count) \
-    do                                    \
-    {                                     \
-        (args).keys = (k);                \
+    do {                                  \
+        (args).keys       = (k);          \
         (args).keys_count = (k_count);    \
     } while (0)
 
@@ -258,197 +273,249 @@ int execute_scan_command_generic(zval *object, int argc, zval *return_value,
  * Execute a simple S command with standard error handling
  */
 #define EXECUTE_S_COMMAND(client, cmd_type, category, response_type, args, return_val) \
-    execute_s_generic_command((client), (cmd_type), (category), (response_type), &(args), (return_val))
+    execute_s_generic_command(                                                         \
+        (client), (cmd_type), (category), (response_type), &(args), (return_val))
 
 /* ====================================================================
  * S COMMAND MACROS
  * ==================================================================== */
 
-#define SADD_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sAdd)                                                                                                                                                    \
-    {                                                                                                                                                                               \
-        if (execute_sadd_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                           \
-            return;                                                                                                                                                                 \
-        }                                                                                                                                                                           \
-        zval_dtor(return_value);                                                                                                                                                    \
-        RETURN_FALSE;                                                                                                                                                               \
+#define SADD_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sAdd) {                                              \
+        if (execute_sadd_command(getThis(),                                     \
+                                 ZEND_NUM_ARGS(),                               \
+                                 return_value,                                  \
+                                 strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                     ? get_valkey_glide_cluster_ce()            \
+                                     : get_valkey_glide_ce())) {                \
+            return;                                                             \
+        }                                                                       \
+        zval_dtor(return_value);                                                \
+        RETURN_FALSE;                                                           \
     }
 
-#define SADD_ARRAY_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sAddArray)                                                                                                                                                     \
-    {                                                                                                                                                                                     \
-        if (execute_sadd_array_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                 \
-            return;                                                                                                                                                                       \
-        }                                                                                                                                                                                 \
-        zval_dtor(return_value);                                                                                                                                                          \
-        RETURN_FALSE;                                                                                                                                                                     \
+#define SADD_ARRAY_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sAddArray) {                                               \
+        if (execute_sadd_array_command(getThis(),                                     \
+                                       ZEND_NUM_ARGS(),                               \
+                                       return_value,                                  \
+                                       strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                           ? get_valkey_glide_cluster_ce()            \
+                                           : get_valkey_glide_ce())) {                \
+            return;                                                                   \
+        }                                                                             \
+        zval_dtor(return_value);                                                      \
+        RETURN_FALSE;                                                                 \
     }
 
-#define SCARD_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, scard)                                                                                                                                                    \
-    {                                                                                                                                                                                \
-        if (execute_scard_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                            \
-            return;                                                                                                                                                                  \
-        }                                                                                                                                                                            \
-        zval_dtor(return_value);                                                                                                                                                     \
-        RETURN_FALSE;                                                                                                                                                                \
+#define SCARD_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, scard) {                                              \
+        if (execute_scard_command(getThis(),                                     \
+                                  ZEND_NUM_ARGS(),                               \
+                                  return_value,                                  \
+                                  strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                      ? get_valkey_glide_cluster_ce()            \
+                                      : get_valkey_glide_ce())) {                \
+            return;                                                              \
+        }                                                                        \
+        zval_dtor(return_value);                                                 \
+        RETURN_FALSE;                                                            \
     }
 
-#define SREM_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, srem)                                                                                                                                                    \
-    {                                                                                                                                                                               \
-        if (execute_srem_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                           \
-            return;                                                                                                                                                                 \
-        }                                                                                                                                                                           \
-        zval_dtor(return_value);                                                                                                                                                    \
-        RETURN_FALSE;                                                                                                                                                               \
+#define SREM_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, srem) {                                              \
+        if (execute_srem_command(getThis(),                                     \
+                                 ZEND_NUM_ARGS(),                               \
+                                 return_value,                                  \
+                                 strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                     ? get_valkey_glide_cluster_ce()            \
+                                     : get_valkey_glide_ce())) {                \
+            return;                                                             \
+        }                                                                       \
+        zval_dtor(return_value);                                                \
+        RETURN_FALSE;                                                           \
     }
 
-#define SMOVE_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sMove)                                                                                                                                                    \
-    {                                                                                                                                                                                \
-        if (execute_smove_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                            \
-            return;                                                                                                                                                                  \
-        }                                                                                                                                                                            \
-        zval_dtor(return_value);                                                                                                                                                     \
-        RETURN_FALSE;                                                                                                                                                                \
+#define SMOVE_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sMove) {                                              \
+        if (execute_smove_command(getThis(),                                     \
+                                  ZEND_NUM_ARGS(),                               \
+                                  return_value,                                  \
+                                  strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                      ? get_valkey_glide_cluster_ce()            \
+                                      : get_valkey_glide_ce())) {                \
+            return;                                                              \
+        }                                                                        \
+        zval_dtor(return_value);                                                 \
+        RETURN_FALSE;                                                            \
     }
 
-#define SPOP_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sPop)                                                                                                                                                    \
-    {                                                                                                                                                                               \
-        if (execute_spop_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                           \
-            return;                                                                                                                                                                 \
-        }                                                                                                                                                                           \
-        zval_dtor(return_value);                                                                                                                                                    \
-        RETURN_FALSE;                                                                                                                                                               \
+#define SPOP_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sPop) {                                              \
+        if (execute_spop_command(getThis(),                                     \
+                                 ZEND_NUM_ARGS(),                               \
+                                 return_value,                                  \
+                                 strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                     ? get_valkey_glide_cluster_ce()            \
+                                     : get_valkey_glide_ce())) {                \
+            return;                                                             \
+        }                                                                       \
+        zval_dtor(return_value);                                                \
+        RETURN_FALSE;                                                           \
     }
 
-#define SRANDMEMBER_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sRandMember)                                                                                                                                                    \
-    {                                                                                                                                                                                      \
-        if (execute_srandmember_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                  \
-            return;                                                                                                                                                                        \
-        }                                                                                                                                                                                  \
-        zval_dtor(return_value);                                                                                                                                                           \
-        RETURN_FALSE;                                                                                                                                                                      \
+#define SRANDMEMBER_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sRandMember) {                                              \
+        if (execute_srandmember_command(getThis(),                                     \
+                                        ZEND_NUM_ARGS(),                               \
+                                        return_value,                                  \
+                                        strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                            ? get_valkey_glide_cluster_ce()            \
+                                            : get_valkey_glide_ce())) {                \
+            return;                                                                    \
+        }                                                                              \
+        zval_dtor(return_value);                                                       \
+        RETURN_FALSE;                                                                  \
     }
 
-#define SISMEMBER_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sismember)                                                                                                                                                    \
-    {                                                                                                                                                                                    \
-        if (execute_sismember_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                \
-            return;                                                                                                                                                                      \
-        }                                                                                                                                                                                \
-        zval_dtor(return_value);                                                                                                                                                         \
-        RETURN_FALSE;                                                                                                                                                                    \
+#define SISMEMBER_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sismember) {                                              \
+        if (execute_sismember_command(getThis(),                                     \
+                                      ZEND_NUM_ARGS(),                               \
+                                      return_value,                                  \
+                                      strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                          ? get_valkey_glide_cluster_ce()            \
+                                          : get_valkey_glide_ce())) {                \
+            return;                                                                  \
+        }                                                                            \
+        zval_dtor(return_value);                                                     \
+        RETURN_FALSE;                                                                \
     }
 
-#define SMEMBERS_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sMembers)                                                                                                                                                    \
-    {                                                                                                                                                                                   \
-        if (execute_smembers_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                               \
-            return;                                                                                                                                                                     \
-        }                                                                                                                                                                               \
-        zval_dtor(return_value);                                                                                                                                                        \
-        RETURN_FALSE;                                                                                                                                                                   \
+#define SMEMBERS_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sMembers) {                                              \
+        if (execute_smembers_command(getThis(),                                     \
+                                     ZEND_NUM_ARGS(),                               \
+                                     return_value,                                  \
+                                     strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                         ? get_valkey_glide_cluster_ce()            \
+                                         : get_valkey_glide_ce())) {                \
+            return;                                                                 \
+        }                                                                           \
+        zval_dtor(return_value);                                                    \
+        RETURN_FALSE;                                                               \
     }
 
-#define SMISMEMBER_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sMisMember)                                                                                                                                                    \
-    {                                                                                                                                                                                     \
-        if (execute_smismember_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                 \
-            return;                                                                                                                                                                       \
-        }                                                                                                                                                                                 \
-        zval_dtor(return_value);                                                                                                                                                          \
-        RETURN_FALSE;                                                                                                                                                                     \
+#define SMISMEMBER_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sMisMember) {                                              \
+        if (execute_smismember_command(getThis(),                                     \
+                                       ZEND_NUM_ARGS(),                               \
+                                       return_value,                                  \
+                                       strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                           ? get_valkey_glide_cluster_ce()            \
+                                           : get_valkey_glide_ce())) {                \
+            return;                                                                   \
+        }                                                                             \
+        zval_dtor(return_value);                                                      \
+        RETURN_FALSE;                                                                 \
     }
 
-#define SINTER_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sInter)                                                                                                                                                    \
-    {                                                                                                                                                                                 \
-        if (execute_sinter_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                             \
-            return;                                                                                                                                                                   \
-        }                                                                                                                                                                             \
-        zval_dtor(return_value);                                                                                                                                                      \
-        RETURN_FALSE;                                                                                                                                                                 \
+#define SINTER_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sInter) {                                              \
+        if (execute_sinter_command(getThis(),                                     \
+                                   ZEND_NUM_ARGS(),                               \
+                                   return_value,                                  \
+                                   strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                       ? get_valkey_glide_cluster_ce()            \
+                                       : get_valkey_glide_ce())) {                \
+            return;                                                               \
+        }                                                                         \
+        zval_dtor(return_value);                                                  \
+        RETURN_FALSE;                                                             \
     }
 
-#define SINTERCARD_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sintercard)                                                                                                                                                    \
-    {                                                                                                                                                                                     \
-        if (execute_sintercard_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                 \
-            return;                                                                                                                                                                       \
-        }                                                                                                                                                                                 \
-        zval_dtor(return_value);                                                                                                                                                          \
-        RETURN_FALSE;                                                                                                                                                                     \
+#define SINTERCARD_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sintercard) {                                              \
+        if (execute_sintercard_command(getThis(),                                     \
+                                       ZEND_NUM_ARGS(),                               \
+                                       return_value,                                  \
+                                       strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                           ? get_valkey_glide_cluster_ce()            \
+                                           : get_valkey_glide_ce())) {                \
+            return;                                                                   \
+        }                                                                             \
+        zval_dtor(return_value);                                                      \
+        RETURN_FALSE;                                                                 \
     }
 
-#define SINTERSTORE_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sInterStore)                                                                                                                                                    \
-    {                                                                                                                                                                                      \
-        if (execute_sinterstore_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                  \
-            return;                                                                                                                                                                        \
-        }                                                                                                                                                                                  \
-        zval_dtor(return_value);                                                                                                                                                           \
-        RETURN_FALSE;                                                                                                                                                                      \
+#define SINTERSTORE_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sInterStore) {                                              \
+        if (execute_sinterstore_command(getThis(),                                     \
+                                        ZEND_NUM_ARGS(),                               \
+                                        return_value,                                  \
+                                        strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                            ? get_valkey_glide_cluster_ce()            \
+                                            : get_valkey_glide_ce())) {                \
+            return;                                                                    \
+        }                                                                              \
+        zval_dtor(return_value);                                                       \
+        RETURN_FALSE;                                                                  \
     }
 
-#define SUNION_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sUnion)                                                                                                                                                    \
-    {                                                                                                                                                                                 \
-        if (execute_sunion_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                             \
-            return;                                                                                                                                                                   \
-        }                                                                                                                                                                             \
-        zval_dtor(return_value);                                                                                                                                                      \
-        RETURN_FALSE;                                                                                                                                                                 \
+#define SUNION_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sUnion) {                                              \
+        if (execute_sunion_command(getThis(),                                     \
+                                   ZEND_NUM_ARGS(),                               \
+                                   return_value,                                  \
+                                   strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                       ? get_valkey_glide_cluster_ce()            \
+                                       : get_valkey_glide_ce())) {                \
+            return;                                                               \
+        }                                                                         \
+        zval_dtor(return_value);                                                  \
+        RETURN_FALSE;                                                             \
     }
 
-#define SDIFF_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sDiff)                                                                                                                                                    \
-    {                                                                                                                                                                                \
-        if (execute_sdiff_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                            \
-            return;                                                                                                                                                                  \
-        }                                                                                                                                                                            \
-        zval_dtor(return_value);                                                                                                                                                     \
-        RETURN_FALSE;                                                                                                                                                                \
+#define SDIFF_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sDiff) {                                              \
+        if (execute_sdiff_command(getThis(),                                     \
+                                  ZEND_NUM_ARGS(),                               \
+                                  return_value,                                  \
+                                  strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                      ? get_valkey_glide_cluster_ce()            \
+                                      : get_valkey_glide_ce())) {                \
+            return;                                                              \
+        }                                                                        \
+        zval_dtor(return_value);                                                 \
+        RETURN_FALSE;                                                            \
     }
 
-#define SDIFFSTORE_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sDiffStore)                                                                                                                                                    \
-    {                                                                                                                                                                                     \
-        if (execute_sdiffstore_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                 \
-            return;                                                                                                                                                                       \
-        }                                                                                                                                                                                 \
-        zval_dtor(return_value);                                                                                                                                                          \
-        RETURN_FALSE;                                                                                                                                                                     \
+#define SDIFFSTORE_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sDiffStore) {                                              \
+        if (execute_sdiffstore_command(getThis(),                                     \
+                                       ZEND_NUM_ARGS(),                               \
+                                       return_value,                                  \
+                                       strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                           ? get_valkey_glide_cluster_ce()            \
+                                           : get_valkey_glide_ce())) {                \
+            return;                                                                   \
+        }                                                                             \
+        zval_dtor(return_value);                                                      \
+        RETURN_FALSE;                                                                 \
     }
 
-#define SUNIONSTORE_METHOD_IMPL(class_name)                                                                                                                                                \
-    PHP_METHOD(class_name, sUnionStore)                                                                                                                                                    \
-    {                                                                                                                                                                                      \
-        if (execute_sunionstore_command(getThis(), ZEND_NUM_ARGS(), return_value, strcmp(#class_name, "ValkeyGlideCluster") == 0 ? get_valkey_glide_cluster_ce() : get_valkey_glide_ce())) \
-        {                                                                                                                                                                                  \
-            return;                                                                                                                                                                        \
-        }                                                                                                                                                                                  \
-        zval_dtor(return_value);                                                                                                                                                           \
-        RETURN_FALSE;                                                                                                                                                                      \
+#define SUNIONSTORE_METHOD_IMPL(class_name)                                            \
+    PHP_METHOD(class_name, sUnionStore) {                                              \
+        if (execute_sunionstore_command(getThis(),                                     \
+                                        ZEND_NUM_ARGS(),                               \
+                                        return_value,                                  \
+                                        strcmp(#class_name, "ValkeyGlideCluster") == 0 \
+                                            ? get_valkey_glide_cluster_ce()            \
+                                            : get_valkey_glide_ce())) {                \
+            return;                                                                    \
+        }                                                                              \
+        zval_dtor(return_value);                                                       \
+        RETURN_FALSE;                                                                  \
     }
 
 #endif /* VALKEY_GLIDE_S_COMMON_H */

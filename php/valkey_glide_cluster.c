@@ -19,28 +19,27 @@
 #include "config.h"
 #endif
 #if 1
-#include "common.h"
-
-#include "ext/standard/info.h"
-
-#include <ext/spl/spl_exceptions.h>
+#include <SAPI.h>
+#include <php_variables.h>
 #include <zend_exceptions.h>
 
-#include <php_variables.h>
-#include <SAPI.h>
+#include <ext/spl/spl_exceptions.h>
+
+#include "common.h"
+#include "ext/standard/info.h"
 #include "valkey_glide_commands_common.h"
-#include "valkey_glide_z_common.h"
 #include "valkey_glide_geo_common.h"
-#include "valkey_glide_x_common.h"
-#include "valkey_glide_s_common.h"
-#include "valkey_glide_list_common.h"
 #include "valkey_glide_hash_common.h" /* Include hash command framework */
+#include "valkey_glide_list_common.h"
+#include "valkey_glide_s_common.h"
+#include "valkey_glide_x_common.h"
+#include "valkey_glide_z_common.h"
 
 #if PHP_VERSION_ID < 80000
 #include "valkey_glide_cluster_legacy_arginfo.h"
 #else
-#include "zend_attributes.h"
 #include "valkey_glide_cluster_arginfo.h"
+#include "zend_attributes.h"
 #endif
 
 /*f
@@ -48,150 +47,138 @@
  */
 
 /* Create a ValkeyGlideCluster Object */
-PHP_METHOD(ValkeyGlideCluster, __construct)
-{
-  zval *addresses = NULL;
-  zend_bool use_tls = 0;
-  zval *credentials = NULL;
-  zend_long read_from = 0; /* PRIMARY by default */
-  zend_long request_timeout = 0;
-  zend_bool request_timeout_is_null = 1;
-  zval *reconnect_strategy = NULL;
-  char *client_name = NULL;
-  size_t client_name_len = 0;
-  zend_long periodic_checks = 0;
-  zend_bool periodic_checks_is_null = 1;
-  zend_long inflight_requests_limit = 1000;
-  zend_bool inflight_requests_limit_is_null = 1;
-  char *client_az = NULL;
-  size_t client_az_len = 0;
-  zval *advanced_config = NULL;
-  zend_bool lazy_connect = 0;
-  zend_bool lazy_connect_is_null = 1;
-  valkey_glide_object *valkey_glide;
+PHP_METHOD(ValkeyGlideCluster, __construct) {
+    zval*                addresses                       = NULL;
+    zend_bool            use_tls                         = 0;
+    zval*                credentials                     = NULL;
+    zend_long            read_from                       = 0; /* PRIMARY by default */
+    zend_long            request_timeout                 = 0;
+    zend_bool            request_timeout_is_null         = 1;
+    zval*                reconnect_strategy              = NULL;
+    char*                client_name                     = NULL;
+    size_t               client_name_len                 = 0;
+    zend_long            periodic_checks                 = 0;
+    zend_bool            periodic_checks_is_null         = 1;
+    zend_long            inflight_requests_limit         = 1000;
+    zend_bool            inflight_requests_limit_is_null = 1;
+    char*                client_az                       = NULL;
+    size_t               client_az_len                   = 0;
+    zval*                advanced_config                 = NULL;
+    zend_bool            lazy_connect                    = 0;
+    zend_bool            lazy_connect_is_null            = 1;
+    valkey_glide_object* valkey_glide;
 
-  ZEND_PARSE_PARAMETERS_START(1, 12)
-  Z_PARAM_ARRAY(addresses)
-  Z_PARAM_OPTIONAL
-  Z_PARAM_BOOL(use_tls)
-  Z_PARAM_ARRAY_OR_NULL(credentials)
-  Z_PARAM_LONG(read_from)
-  Z_PARAM_LONG_OR_NULL(request_timeout, request_timeout_is_null)
-  Z_PARAM_ARRAY_OR_NULL(reconnect_strategy)
-  Z_PARAM_STRING_OR_NULL(client_name, client_name_len)
-  Z_PARAM_LONG_OR_NULL(periodic_checks, periodic_checks_is_null)
-  Z_PARAM_LONG_OR_NULL(inflight_requests_limit, inflight_requests_limit_is_null)
-  Z_PARAM_STRING_OR_NULL(client_az, client_az_len)
-  Z_PARAM_ARRAY_OR_NULL(advanced_config)
-  Z_PARAM_BOOL_OR_NULL(lazy_connect, lazy_connect_is_null)
-  ZEND_PARSE_PARAMETERS_END_EX(RETURN_THROWS());
+    ZEND_PARSE_PARAMETERS_START(1, 12)
+    Z_PARAM_ARRAY(addresses)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_BOOL(use_tls)
+    Z_PARAM_ARRAY_OR_NULL(credentials)
+    Z_PARAM_LONG(read_from)
+    Z_PARAM_LONG_OR_NULL(request_timeout, request_timeout_is_null)
+    Z_PARAM_ARRAY_OR_NULL(reconnect_strategy)
+    Z_PARAM_STRING_OR_NULL(client_name, client_name_len)
+    Z_PARAM_LONG_OR_NULL(periodic_checks, periodic_checks_is_null)
+    Z_PARAM_LONG_OR_NULL(inflight_requests_limit, inflight_requests_limit_is_null)
+    Z_PARAM_STRING_OR_NULL(client_az, client_az_len)
+    Z_PARAM_ARRAY_OR_NULL(advanced_config)
+    Z_PARAM_BOOL_OR_NULL(lazy_connect, lazy_connect_is_null)
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_THROWS());
 
-  valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, getThis());
+    valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, getThis());
 
-  /* Build cluster client configuration from individual parameters */
-  valkey_glide_cluster_client_configuration_t client_config;
-  memset(&client_config, 0, sizeof(client_config));
+    /* Build cluster client configuration from individual parameters */
+    valkey_glide_cluster_client_configuration_t client_config;
+    memset(&client_config, 0, sizeof(client_config));
 
-  /* Basic configuration */
-  client_config.base.use_tls = use_tls;
-  client_config.base.request_timeout = request_timeout_is_null ? -1 : request_timeout;
-  client_config.base.inflight_requests_limit = inflight_requests_limit_is_null ? -1 : inflight_requests_limit; /* -1 means not set */
-  client_config.base.client_name = client_name ? client_name : "valkey-glide-cluster-php";
+    /* Basic configuration */
+    client_config.base.use_tls         = use_tls;
+    client_config.base.request_timeout = request_timeout_is_null ? -1 : request_timeout;
+    client_config.base.inflight_requests_limit =
+        inflight_requests_limit_is_null ? -1 : inflight_requests_limit; /* -1 means not set */
+    client_config.base.client_name = client_name ? client_name : "valkey-glide-cluster-php";
 
-  /* Set periodic checks */
-  client_config.periodic_checks_status = periodic_checks_is_null ? VALKEY_GLIDE_PERIODIC_CHECKS_ENABLED_DEFAULT : periodic_checks;
-  client_config.base.lazy_connect = lazy_connect_is_null ? false : lazy_connect;
-  client_config.periodic_checks_manual = NULL;
+    /* Set periodic checks */
+    client_config.periodic_checks_status =
+        periodic_checks_is_null ? VALKEY_GLIDE_PERIODIC_CHECKS_ENABLED_DEFAULT : periodic_checks;
+    client_config.base.lazy_connect      = lazy_connect_is_null ? false : lazy_connect;
+    client_config.periodic_checks_manual = NULL;
 
-  /* Map read_from enum value to client's ReadFrom enum */
-  switch (read_from)
-  {
-  case 1: /* PREFER_REPLICA */
-    client_config.base.read_from = VALKEY_GLIDE_READ_FROM_PREFER_REPLICA;
-    break;
-  case 2: /* AZ_AFFINITY */
-    client_config.base.read_from = VALKEY_GLIDE_READ_FROM_AZ_AFFINITY;
-    break;
-  case 3: /* AZ_AFFINITY_REPLICAS_AND_PRIMARY */
-    client_config.base.read_from = VALKEY_GLIDE_READ_FROM_AZ_AFFINITY_REPLICAS_AND_PRIMARY;
-    break;
-  case 0: /* PRIMARY */
-  default:
-    client_config.base.read_from = VALKEY_GLIDE_READ_FROM_PRIMARY;
-    break;
-  }
-
-  /* Process addresses array - handle multiple addresses */
-  if (addresses && zend_hash_num_elements(Z_ARRVAL_P(addresses)) > 0)
-  {
-    HashTable *addresses_ht = Z_ARRVAL_P(addresses);
-    zend_ulong num_addresses = zend_hash_num_elements(addresses_ht);
-
-    /* Allocate addresses array */
-    client_config.base.addresses = ecalloc(num_addresses, sizeof(valkey_glide_node_address_t));
-    client_config.base.addresses_count = num_addresses;
-
-    /* Process each address */
-    zend_ulong i = 0;
-    zval *addr_val;
-    ZEND_HASH_FOREACH_VAL(addresses_ht, addr_val)
-    {
-      if (Z_TYPE_P(addr_val) == IS_ARRAY)
-      {
-        HashTable *addr_ht = Z_ARRVAL_P(addr_val);
-
-        /* Extract host */
-        zval *host_val = zend_hash_str_find(addr_ht, "host", 4);
-        if (host_val && Z_TYPE_P(host_val) == IS_STRING)
-        {
-          client_config.base.addresses[i].host = Z_STRVAL_P(host_val);
-        }
-        else
-        {
-          client_config.base.addresses[i].host = "localhost";
-        }
-
-        /* Extract port */
-        zval *port_val = zend_hash_str_find(addr_ht, "port", 4);
-        if (port_val && Z_TYPE_P(port_val) == IS_LONG)
-        {
-          client_config.base.addresses[i].port = Z_LVAL_P(port_val);
-        }
-        else
-        {
-          client_config.base.addresses[i].port = 7001; /* Default cluster port */
-        }
-
-        i++;
-      }
+    /* Map read_from enum value to client's ReadFrom enum */
+    switch (read_from) {
+        case 1: /* PREFER_REPLICA */
+            client_config.base.read_from = VALKEY_GLIDE_READ_FROM_PREFER_REPLICA;
+            break;
+        case 2: /* AZ_AFFINITY */
+            client_config.base.read_from = VALKEY_GLIDE_READ_FROM_AZ_AFFINITY;
+            break;
+        case 3: /* AZ_AFFINITY_REPLICAS_AND_PRIMARY */
+            client_config.base.read_from = VALKEY_GLIDE_READ_FROM_AZ_AFFINITY_REPLICAS_AND_PRIMARY;
+            break;
+        case 0: /* PRIMARY */
+        default:
+            client_config.base.read_from = VALKEY_GLIDE_READ_FROM_PRIMARY;
+            break;
     }
-    ZEND_HASH_FOREACH_END();
-  }
-  else
-  {
-    /* No addresses provided - set default */
-    client_config.base.addresses = ecalloc(1, sizeof(valkey_glide_node_address_t));
-    client_config.base.addresses_count = 1;
-    client_config.base.addresses[0].host = "localhost";
-    client_config.base.addresses[0].port = 7001;
-  }
 
-  /* Note: This should use a cluster-specific create function */
-  /* For now, we'll cast to regular client config */
-  valkey_glide->glide_client = create_glide_client((valkey_glide_client_configuration_t *)&client_config, true);
+    /* Process addresses array - handle multiple addresses */
+    if (addresses && zend_hash_num_elements(Z_ARRVAL_P(addresses)) > 0) {
+        HashTable* addresses_ht  = Z_ARRVAL_P(addresses);
+        zend_ulong num_addresses = zend_hash_num_elements(addresses_ht);
+
+        /* Allocate addresses array */
+        client_config.base.addresses = ecalloc(num_addresses, sizeof(valkey_glide_node_address_t));
+        client_config.base.addresses_count = num_addresses;
+
+        /* Process each address */
+        zend_ulong i = 0;
+        zval*      addr_val;
+        ZEND_HASH_FOREACH_VAL(addresses_ht, addr_val) {
+            if (Z_TYPE_P(addr_val) == IS_ARRAY) {
+                HashTable* addr_ht = Z_ARRVAL_P(addr_val);
+
+                /* Extract host */
+                zval* host_val = zend_hash_str_find(addr_ht, "host", 4);
+                if (host_val && Z_TYPE_P(host_val) == IS_STRING) {
+                    client_config.base.addresses[i].host = Z_STRVAL_P(host_val);
+                } else {
+                    client_config.base.addresses[i].host = "localhost";
+                }
+
+                /* Extract port */
+                zval* port_val = zend_hash_str_find(addr_ht, "port", 4);
+                if (port_val && Z_TYPE_P(port_val) == IS_LONG) {
+                    client_config.base.addresses[i].port = Z_LVAL_P(port_val);
+                } else {
+                    client_config.base.addresses[i].port = 7001; /* Default cluster port */
+                }
+
+                i++;
+            }
+        }
+        ZEND_HASH_FOREACH_END();
+    } else {
+        /* No addresses provided - set default */
+        client_config.base.addresses         = ecalloc(1, sizeof(valkey_glide_node_address_t));
+        client_config.base.addresses_count   = 1;
+        client_config.base.addresses[0].host = "localhost";
+        client_config.base.addresses[0].port = 7001;
+    }
+
+    /* Note: This should use a cluster-specific create function */
+    /* For now, we'll cast to regular client config */
+    valkey_glide->glide_client =
+        create_glide_client((valkey_glide_client_configuration_t*)&client_config, true);
 }
 
 static zend_function_entry valkey_glide_cluster_methods[] = {
-    PHP_ME(ValkeyGlideCluster, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_FE_END};
+    PHP_ME(ValkeyGlideCluster, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR) PHP_FE_END};
 /*
  * ValkeyGlideCluster method implementation
  */
 
 /* {{{ proto bool ValkeyGlideCluster::close() */
-PHP_METHOD(ValkeyGlideCluster, close)
-{
-  RETURN_TRUE;
+PHP_METHOD(ValkeyGlideCluster, close) {
+    RETURN_TRUE;
 }
 
 /* {{{ proto string ValkeyGlideCluster::get(string key) */
@@ -582,19 +569,23 @@ GETRANGE_METHOD_IMPL(ValkeyGlideCluster)
 /* {{{ prot ValkeyGlideCluster::lcs(string $key1, string $key2, ?array $options = NULL): mixed; */
 LCS_METHOD_IMPL(ValkeyGlideCluster)
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::lmpop(array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::lmpop(array $keys, string $from, int $count = 1)
+ */
 LMPOP_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::blmpop(double $timeout, array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::blmpop(double $timeout, array $keys, string $from,
+ * int $count = 1) */
 BLMPOP_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::zmpop(array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::zmpop(array $keys, string $from, int $count = 1)
+ */
 ZMPOP_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::bzmpop(double $timeout, array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::bzmpop(double $timeout, array $keys, string $from,
+ * int $count = 1) */
 BZMPOP_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
@@ -611,8 +602,7 @@ ZREMRANGEBYRANK_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
 /* {{{ proto long ValkeyGlideCluster::publish(string key, string msg) */
-PHP_METHOD(ValkeyGlideCluster, publish)
-{
+PHP_METHOD(ValkeyGlideCluster, publish) {
 }
 /* }}} */
 
@@ -650,7 +640,8 @@ ZRANGE_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
 /* {{{ proto
- *     array ValkeyGlideCluster::zrange(string $dstkey, string $srckey, long s, long e, array|bool $options = false) */
+ *     array ValkeyGlideCluster::zrange(string $dstkey, string $srckey, long s, long e, array|bool
+ * $options = false) */
 ZRANGESTORE_METHOD_IMPL(ValkeyGlideCluster)
 
 /* }}} */
@@ -741,50 +732,42 @@ SORT_RO_METHOD_IMPL(ValkeyGlideCluster)
 OBJECT_METHOD_IMPL(ValkeyGlideCluster)
 
 /* {{{ proto null ValkeyGlideCluster::subscribe(array chans, callable cb) */
-PHP_METHOD(ValkeyGlideCluster, subscribe)
-{
+PHP_METHOD(ValkeyGlideCluster, subscribe) {
 }
 /* }}} */
 
 /* {{{ proto null ValkeyGlideCluster::psubscribe(array pats, callable cb) */
-PHP_METHOD(ValkeyGlideCluster, psubscribe)
-{
+PHP_METHOD(ValkeyGlideCluster, psubscribe) {
 }
 /* }}} */
 
 /* {{{ proto array ValkeyGlideCluster::unsubscribe(array chans) */
-PHP_METHOD(ValkeyGlideCluster, unsubscribe)
-{
+PHP_METHOD(ValkeyGlideCluster, unsubscribe) {
 }
 /* }}} */
 
 /* {{{ proto array ValkeyGlideCluster::punsubscribe(array pats) */
-PHP_METHOD(ValkeyGlideCluster, punsubscribe)
-{
+PHP_METHOD(ValkeyGlideCluster, punsubscribe) {
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster::eval(string script, [array args, int numkeys) */
-PHP_METHOD(ValkeyGlideCluster, eval)
-{
+PHP_METHOD(ValkeyGlideCluster, eval) {
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster::eval_ro(string script, [array args, int numkeys) */
-PHP_METHOD(ValkeyGlideCluster, eval_ro)
-{
+PHP_METHOD(ValkeyGlideCluster, eval_ro) {
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster::evalsha(string sha, [array args, int numkeys]) */
-PHP_METHOD(ValkeyGlideCluster, evalsha)
-{
+PHP_METHOD(ValkeyGlideCluster, evalsha) {
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster::evalsha_ro(string sha, [array args, int numkeys]) */
-PHP_METHOD(ValkeyGlideCluster, evalsha_ro)
-{
+PHP_METHOD(ValkeyGlideCluster, evalsha_ro) {
 }
 
 /* }}} */
@@ -861,15 +844,13 @@ CONFIG_METHOD_IMPL(ValkeyGlideCluster)
 
 /* {{{ proto mixed ValkeyGlideCluster::pubsub(string key, ...)
  *     proto mixed ValkeyGlideCluster::pubsub(array host_port, ...) */
-PHP_METHOD(ValkeyGlideCluster, pubsub)
-{
+PHP_METHOD(ValkeyGlideCluster, pubsub) {
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster::script(string key, ...)
  *     proto mixed ValkeyGlideCluster::script(array host_port, ...) */
-PHP_METHOD(ValkeyGlideCluster, script)
-{
+PHP_METHOD(ValkeyGlideCluster, script) {
 }
 /* }}} */
 
@@ -882,7 +863,8 @@ GEOADD_METHOD_IMPL(ValkeyGlideCluster)
 /* {{{ proto array ValkeyGlideCluster::geopos(string key, string mem1, [string mem2...]) */
 GEOPOS_METHOD_IMPL(ValkeyGlideCluster)
 
-/* {{{ proto array ValkeyGlideCluster::geodist(string key, string mem1, string mem2 [string unit]) */
+/* {{{ proto array ValkeyGlideCluster::geodist(string key, string mem1, string mem2 [string unit])
+ */
 GEODIST_METHOD_IMPL(ValkeyGlideCluster)
 
 /* {{{ proto array ValkeyGlideCluster::georadius() }}} */
@@ -892,13 +874,11 @@ GEORADIUS_METHOD_IMPL(ValkeyGlideCluster)
 GEORADIUS_RO_METHOD_IMPL(ValkeyGlideCluster)
 
 /* {{{ proto array ValkeyGlideCluster::georadiusbymember() }}} */
-PHP_METHOD(ValkeyGlideCluster, georadiusbymember)
-{
+PHP_METHOD(ValkeyGlideCluster, georadiusbymember) {
 }
 
 /* {{{ proto array ValkeyGlideCluster::georadiusbymember() }}} */
-PHP_METHOD(ValkeyGlideCluster, georadiusbymember_ro)
-{
+PHP_METHOD(ValkeyGlideCluster, georadiusbymember_ro) {
 }
 
 GEOSEARCH_METHOD_IMPL(ValkeyGlideCluster)
@@ -938,7 +918,8 @@ XAUTOCLAIM_METHOD_IMPL(ValkeyGlideCluster)
 
 XDEL_METHOD_IMPL(ValkeyGlideCluster)
 
-/* {{{ proto variant ValkeyGlideCluster::xgroup(string op, [string key, string arg1, string arg2]) }}} */
+/* {{{ proto variant ValkeyGlideCluster::xgroup(string op, [string key, string arg1, string arg2])
+ * }}} */
 XGROUP_METHOD_IMPL(ValkeyGlideCluster)
 
 /* {{{ proto variant ValkeyGlideCluster::xinfo(string op, [string arg1, string arg2]); */
@@ -965,15 +946,15 @@ ECHO_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlideCluster:: command(string $key, string $cmd, [ $argv1 .. $argvN])
- *     proto mixed ValkeyGlideCluster::rawcommand(array $host_port, string $cmd, [ $argv1 .. $argvN]) */
+ *     proto mixed ValkeyGlideCluster::rawcommand(array $host_port, string $cmd, [ $argv1 ..
+ * $argvN]) */
 RAWCOMMAND_METHOD_IMPL(ValkeyGlideCluster)
 /* }}} */
 
 /* {{{ proto array ValkeyGlideCluster::command()
  *     proto array ValkeyGlideCluster::command('INFO', string cmd)
  *     proto array ValkeyGlideCluster::command('GETKEYS', array cmd_args) */
-PHP_METHOD(ValkeyGlideCluster, command)
-{
+PHP_METHOD(ValkeyGlideCluster, command) {
 }
 
 COPY_METHOD_IMPL(ValkeyGlideCluster)

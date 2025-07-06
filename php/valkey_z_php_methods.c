@@ -21,19 +21,22 @@
 #include "config.h"
 #endif
 
-#include "valkey_glide_commands_common.h"
-#include "valkey_glide_z_common.h"
-#include "valkey_glide_geo_common.h"
-#include "valkey_glide_x_common.h"
-#include "valkey_glide_s_common.h"
-#include "valkey_glide_list_common.h"
-#include "valkey_glide_hash_common.h" /* Include hash command framework */
+#include <zend.h>
+#include <zend_API.h>
+#include <zend_exceptions.h>
+
+#include <ext/hash/php_hash.h>
+#include <ext/spl/spl_exceptions.h>
+#include <ext/standard/info.h>
 
 #include "command_response.h" /* Include command_response.h for string conversion functions */
-#include <ext/spl/spl_exceptions.h>
-#include <zend_exceptions.h>
-#include <ext/standard/info.h>
-#include <ext/hash/php_hash.h>
+#include "valkey_glide_commands_common.h"
+#include "valkey_glide_geo_common.h"
+#include "valkey_glide_hash_common.h" /* Include hash command framework */
+#include "valkey_glide_list_common.h"
+#include "valkey_glide_s_common.h"
+#include "valkey_glide_x_common.h"
+#include "valkey_glide_z_common.h"
 
 #if PHP_VERSION_ID < 80400
 #include <ext/standard/php_random.h>
@@ -46,8 +49,8 @@
 #endif
 
 /* Import the string conversion functions from command_response.c */
-extern char *long_to_string(long value, size_t *len);
-extern char *double_to_string(double value, size_t *len);
+extern char* long_to_string(long value, size_t* len);
+extern char* double_to_string(double value, size_t* len);
 
 /* {{{ proto mixed ValkeyGlide::object(string subcommand, string key) */
 OBJECT_METHOD_IMPL(ValkeyGlide)
@@ -57,7 +60,8 @@ OBJECT_METHOD_IMPL(ValkeyGlide)
 ZRANGE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto int ValkeyGlide::zRangeStore(string dest, string src, mixed start, mixed end [, array options]) */
+/* {{{ proto int ValkeyGlide::zRangeStore(string dest, string src, mixed start, mixed end [, array
+ * options]) */
 ZRANGESTORE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -69,15 +73,18 @@ ZREVRANGE_METHOD_IMPL(ValkeyGlide)
 ZRANGEBYSCORE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::zRevRangeByScore(string key, mixed max, mixed min [, array options]) */
+/* {{{ proto array ValkeyGlide::zRevRangeByScore(string key, mixed max, mixed min [, array options])
+ */
 ZREVRANGEBYSCORE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::zRangeByLex(string key, mixed min, mixed max [, array options | long offset, long count]) */
+/* {{{ proto array ValkeyGlide::zRangeByLex(string key, mixed min, mixed max [, array options | long
+ * offset, long count]) */
 ZRANGEBYLEX_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::zRevRangeByLex(string key, mixed max, mixed min [, array options]) */
+/* {{{ proto array ValkeyGlide::zRevRangeByLex(string key, mixed max, mixed min [, array options])
+ */
 ZREVRANGEBYLEX_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -138,11 +145,13 @@ ZDIFF_METHOD_IMPL(ValkeyGlide)
 ZINTER_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::bzPopMax(string|array key [, string otherkeys, ...,], float timeout) */
+/* {{{ proto array ValkeyGlide::bzPopMax(string|array key [, string otherkeys, ...,], float timeout)
+ */
 BZPOPMAX_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::bzPopMin(string|array key [, string otherkeys, ...,], float timeout) */
+/* {{{ proto array ValkeyGlide::bzPopMin(string|array key [, string otherkeys, ...,], float timeout)
+ */
 BZPOPMIN_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -178,7 +187,8 @@ ZPOPMIN_METHOD_IMPL(ValkeyGlide)
 ZSCAN_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::zmpop(array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::zmpop(array $keys, string $from, int $count = 1)
+ */
 ZMPOP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -190,13 +200,15 @@ ZADD_METHOD_IMPL(ValkeyGlide)
 ZRANDMEMBER_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::bzmpop(double $timeout, array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::bzmpop(double $timeout, array $keys, string $from,
+ * int $count = 1) */
 BZMPOP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
 // GEO commands
 
-/* {{{ proto long ValkeyGlide::geoadd(string key, float longitude, float latitude, string member, ...) */
+/* {{{ proto long ValkeyGlide::geoadd(string key, float longitude, float latitude, string member,
+ * ...) */
 GEOADD_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -212,65 +224,62 @@ GEOHASH_METHOD_IMPL(ValkeyGlide)
 GEOPOS_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::georadius(string key, float lng, float lat, float radius, string unit [, array options]) */
+/* {{{ proto array ValkeyGlide::georadius(string key, float lng, float lat, float radius, string
+ * unit [, array options]) */
 GEORADIUS_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::georadius_ro(string key, float lng, float lat, float radius, string unit [, array options]) */
+/* {{{ proto array ValkeyGlide::georadius_ro(string key, float lng, float lat, float radius, string
+ * unit [, array options]) */
 GEORADIUS_RO_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::georadiusbymember(string key, string member, float radius, string unit [, array options]) */
-PHP_METHOD(ValkeyGlide, georadiusbymember)
-{
-
+/* {{{ proto array ValkeyGlide::georadiusbymember(string key, string member, float radius, string
+ * unit [, array options]) */
+PHP_METHOD(ValkeyGlide, georadiusbymember) {
     RETURN_FALSE;
 }
 /* }}} */
 
 /* {{{ proto string ValkeyGlide::getPersistentID() */
-PHP_METHOD(ValkeyGlide, getPersistentID)
-{
-
+PHP_METHOD(ValkeyGlide, getPersistentID) {
     RETURN_FALSE;
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlide::getAuth() */
-PHP_METHOD(ValkeyGlide, getAuth)
-{
+PHP_METHOD(ValkeyGlide, getAuth) {
     RETURN_FALSE;
 }
 /* }}} */
 
 /* {{{ proto mixed ValkeyGlide::command(...) */
-PHP_METHOD(ValkeyGlide, command)
-{
-
+PHP_METHOD(ValkeyGlide, command) {
     RETURN_FALSE;
 }
 /* }}} */
 
 /* {{{ proto boolean ValkeyGlide::auth(string password [, string username]) */
-PHP_METHOD(ValkeyGlide, auth)
-{
+PHP_METHOD(ValkeyGlide, auth) {
     RETURN_FALSE;
 }
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::georadiusbymember_ro(string key, string member, float radius, string unit [, array options]) */
-PHP_METHOD(ValkeyGlide, georadiusbymember_ro)
-{
-
+/* {{{ proto array ValkeyGlide::georadiusbymember_ro(string key, string member, float radius, string
+ * unit [, array options]) */
+PHP_METHOD(ValkeyGlide, georadiusbymember_ro) {
     RETURN_FALSE;
 }
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::geosearch(string key, array|string from, array|string by, string|null radius_unit, string|null count, string|null sorting, string|null pattern) */
+/* {{{ proto array ValkeyGlide::geosearch(string key, array|string from, array|string by,
+ * string|null radius_unit, string|null count, string|null sorting, string|null pattern) */
 GEOSEARCH_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto long ValkeyGlide::geosearchstore(string dst, string src, array|string from, array|string by, string|null radius_unit, string|null count, string|null sorting, string|null storedist) */
+/* {{{ proto long ValkeyGlide::geosearchstore(string dst, string src, array|string from,
+ * array|string by, string|null radius_unit, string|null count, string|null sorting, string|null
+ * storedist) */
 GEOSEARCHSTORE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -278,15 +287,18 @@ GEOSEARCHSTORE_METHOD_IMPL(ValkeyGlide)
 XACK_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto string ValkeyGlide::xadd(string key, string id, array field_values [, int maxlen [, bool approximate]]) */
+/* {{{ proto string ValkeyGlide::xadd(string key, string id, array field_values [, int maxlen [,
+ * bool approximate]]) */
 XADD_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xautoclaim(string key, string group, string consumer, int min_idle_time, string start [, array options]) */
+/* {{{ proto array ValkeyGlide::xautoclaim(string key, string group, string consumer, int
+ * min_idle_time, string start [, array options]) */
 XAUTOCLAIM_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xclaim(string key, string group, string consumer, int min_idle_time, array ids [, array options]) */
+/* {{{ proto array ValkeyGlide::xclaim(string key, string group, string consumer, int min_idle_time,
+ * array ids [, array options]) */
 XCLAIM_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -306,11 +318,13 @@ XINFO_METHOD_IMPL(ValkeyGlide)
 XLEN_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xpending(string key, string group [, array options OR string start, string end, int count [, string consumer]]) */
+/* {{{ proto array ValkeyGlide::xpending(string key, string group [, array options OR string start,
+ * string end, int count [, string consumer]]) */
 XPENDING_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xrange(string key, string start, string end [, int count [, array options]]) */
+/* {{{ proto array ValkeyGlide::xrange(string key, string start, string end [, int count [, array
+ * options]]) */
 XRANGE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -318,15 +332,18 @@ XRANGE_METHOD_IMPL(ValkeyGlide)
 XREAD_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xreadgroup(string group, string consumer, array streams [, int count [, array options]]) */
+/* {{{ proto array ValkeyGlide::xreadgroup(string group, string consumer, array streams [, int count
+ * [, array options]]) */
 XREADGROUP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto array ValkeyGlide::xrevrange(string key, string end, string start [, int count [, array options]]) */
+/* {{{ proto array ValkeyGlide::xrevrange(string key, string end, string start [, int count [, array
+ * options]]) */
 XREVRANGE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto long ValkeyGlide::xtrim(string key, string threshold, bool approx = false, bool minid = false, int limit = -1) */
+/* {{{ proto long ValkeyGlide::xtrim(string key, string threshold, bool approx = false, bool minid =
+ * false, int limit = -1) */
 XTRIM_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -432,11 +449,13 @@ RPUSH_METHOD_IMPL(ValkeyGlide)
 /* {{{ proto array ValkeyGlide::lrange(string key, long start, long end) */
 LRANGE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::lmpop(array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::lmpop(array $keys, string $from, int $count = 1)
+ */
 LMPOP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto ValkeyGlide|array|false ValkeyGlide::blmpop(double $timeout, array $keys, string $from, int $count = 1) */
+/* {{{ proto ValkeyGlide|array|false ValkeyGlide::blmpop(double $timeout, array $keys, string $from,
+ * int $count = 1) */
 BLMPOP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 /* {{{ proto long ValkeyGlide::lInsert(string key, string position, string pivot, string value) */
@@ -460,7 +479,8 @@ RPOPLPUSH_METHOD_IMPL(ValkeyGlide)
 BRPOPLPUSH_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto string ValkeyGlide::blmove(string src, string dst, string wherefrom, string whereto, int timeout) */
+/* {{{ proto string ValkeyGlide::blmove(string src, string dst, string wherefrom, string whereto,
+ * int timeout) */
 BLMOVE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
@@ -641,16 +661,14 @@ PING_METHOD_IMPL(ValkeyGlide)
 
 /** {{{ proto bool ValkeyGlide::reset()
  */
-PHP_METHOD(ValkeyGlide, reset)
-{
+PHP_METHOD(ValkeyGlide, reset) {
     RETURN_FALSE;
     // TODO
 }
 /* }}} */
 
 /* {{{ proto boolean ValkeyGlide::setOption(long option, mixed value) */
-PHP_METHOD(ValkeyGlide, setOption)
-{
+PHP_METHOD(ValkeyGlide, setOption) {
     RETURN_FALSE;
 }
 /* }}} */
@@ -715,7 +733,8 @@ FCALL_RO_METHOD_IMPL(ValkeyGlide)
 DUMP_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
-/* {{{ proto bool ValkeyGlide::restore(string key, int ttl, string serialized_value [, array options]) */
+/* {{{ proto bool ValkeyGlide::restore(string key, int ttl, string serialized_value [, array
+ * options]) */
 RESTORE_METHOD_IMPL(ValkeyGlide)
 /* }}} */
 
