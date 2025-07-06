@@ -622,7 +622,7 @@ int process_s_scan_response(CommandResult*    result,
     }
 
     /* Handle scan completion: when server returns cursor="0", scan is complete */
-    if (strcmp(new_cursor_str, "0") == 0) {
+    if (cursor_resp->string_value_len == 1 && cursor_resp->string_value[0] == '0') {
         /* Free old cursor and keep it as "0" to indicate completion */
         if (*args->cursor) {
             efree(*args->cursor);
