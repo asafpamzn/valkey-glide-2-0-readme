@@ -464,7 +464,7 @@ int prepare_s_scan_args(s_command_args_t *args, uintptr_t **args_out, unsigned l
         (*args_len_out)[arg_idx] = args->type_len;
         arg_idx++;
     }
-    printf("Prepared %lu arguments for scan command, cursor = %s\n", arg_count, args->cursor ? *args->cursor : "NULL");
+
     return arg_count;
 }
 
@@ -2341,18 +2341,25 @@ int execute_scan_command(zval *object, int argc, zval *return_value, zend_class_
     zend_long count = 0;
     int has_count = 0;
 
-    /* Parse parameters */
+    /* Initialize optional parameters to safe defaults */
+    pattern = NULL;
+    pattern_len = 0;
+    count = 10;
+    type = NULL;
+    type_len = 0;
+
+    /* Single parse call with standard optional parameter handling */
     if (zend_parse_method_parameters(argc, object, "Oz|sls",
-                                     &object, ce, &z_iter, &pattern, &pattern_len,
-                                     &count, &type, &type_len) == FAILURE)
-    {
+                                     &object, ce, &z_iter,
+                                     &pattern, &pattern_len,
+                                     &count, &type, &type_len) == FAILURE) {
         return 0;
     }
 
-    /* Check if optional parameters are provided */
-    has_pattern = (pattern != NULL && pattern_len > 0);
-    has_count = (argc > 2);
-    has_type = (argc > 3 && type != NULL && type_len > 0);
+    /* Determine what was actually provided based on argc */
+    has_pattern = (argc >= 2 && pattern != NULL && pattern_len > 0);
+    has_count = (argc >= 3);
+    has_type = (argc >= 4 && type != NULL && type_len > 0);
 
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
