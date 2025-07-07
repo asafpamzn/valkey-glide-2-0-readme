@@ -275,6 +275,10 @@ jobs:
             - name: Install cbindgen
               run: cargo install cbindgen
 
+            - name: Build FFI library
+              working-directory: ffi
+              run: cargo build --release
+
             - name: Set up PHP
               uses: shivammathur/setup-php@v2
               with:
