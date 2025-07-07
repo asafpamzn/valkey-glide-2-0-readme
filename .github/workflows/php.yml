@@ -272,6 +272,9 @@ jobs:
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Install cbindgen
+              run: cargo install cbindgen
+
             - name: Set up PHP
               uses: shivammathur/setup-php@v2
               with:
