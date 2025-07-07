@@ -217,48 +217,22 @@ test-asan: build-asan
 	ls -la $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "Extension file not found!"; \
 	echo "Test file: tests/TestValkeyGlide.php"; \
 	ls -la tests/TestValkeyGlide.php 2>/dev/null || echo "Test file not found!"; \
-	echo "Checking PHP extension loading..."; \
-	if [ -n "$$ASAN_LIB" ]; then \
-		echo "Testing PHP extension loading with ASAN LD_PRELOAD..."; \
-		if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with ASAN LD_PRELOAD\n';" 2>&1; then \
-			echo "✓ Extension loads with LD_PRELOAD, running full test suite..."; \
+	echo "Checking if extension is ASAN-compiled..."; \
+	if ldd $(CURDIR)/modules/valkey_glide.so | grep -q libasan; then \
+		echo "✓ Extension is ASAN-compiled (libasan.so detected in dependencies)"; \
+		if [ -n "$$ASAN_LIB" ]; then \
+			echo "✓ ASAN library found: $$ASAN_LIB"; \
+			echo "ASAN-compiled extensions MUST use LD_PRELOAD. Running tests with LD_PRELOAD..."; \
 			env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
 		else \
-			echo "⚠ Extension failed to load with LD_PRELOAD, trying to show error:"; \
-			env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
-			echo "Falling back to compiled ASAN flags..."; \
-			echo "Testing PHP extension loading without LD_PRELOAD..."; \
-			if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>&1; then \
-				echo "✓ Extension loads without LD_PRELOAD, running tests with compiled ASAN flags..."; \
-				env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
-			else \
-				echo "✗ Extension failed to load even without LD_PRELOAD, showing error:"; \
-				env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
-				echo "Debugging information:"; \
-				echo "PHP version: $$(php --version | head -n1)"; \
-				echo "Extension dependencies (ldd):"; \
-				ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "ldd failed"; \
-				echo "Extension file type:"; \
-				file $(CURDIR)/modules/valkey_glide.so; \
-				exit 1; \
-			fi; \
-		fi; \
-	else \
-		echo "No ASAN library found for LD_PRELOAD, testing extension loading with compiled ASAN flags..."; \
-		if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>&1; then \
-			echo "✓ Extension loads with compiled ASAN flags, running tests..."; \
-			env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
-		else \
-			echo "✗ Extension failed to load, showing error:"; \
-			env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
-			echo "Debugging information:"; \
-			echo "PHP version: $$(php --version | head -n1)"; \
-			echo "Extension dependencies (ldd):"; \
-			ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "ldd failed"; \
-			echo "Extension file type:"; \
-			file $(CURDIR)/modules/valkey_glide.so; \
+			echo "✗ Extension is ASAN-compiled but no ASAN library found for LD_PRELOAD"; \
+			echo "ASAN-compiled extensions require LD_PRELOAD with ASAN runtime library"; \
+			echo "Please install ASAN development packages or use non-ASAN build"; \
 			exit 1; \
 		fi; \
+	else \
+		echo "Extension is not ASAN-compiled, running without LD_PRELOAD..."; \
+		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
 	fi
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
@@ -290,6 +264,7 @@ help-asan:
 	@echo "  2. ./configure --enable-valkey-glide --enable-valkey-glide-asan"
 	@echo "  3. make"
 	@echo "  4. ASAN_OPTIONS='detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1' \\"
+	@echo "     LD_PRELOAD=/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so \\"
 	@echo "     php -n -d extension=\$$(pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php"
 
 .PHONY: lint lint-c lint-php lint-fix install-build-tools install-lint-tools install-tools build-asan test-asan clean-asan help-asan
