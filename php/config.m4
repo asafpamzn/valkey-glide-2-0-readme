@@ -10,11 +10,18 @@ if test "$PHP_VALKEY_GLIDE" != "no"; then
   if test "$PHP_VALKEY_GLIDE_ASAN" = "yes"; then
     AC_MSG_CHECKING([for AddressSanitizer support])
     
-    dnl Add ASAN flags
-    ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g -O1"
-    ASAN_LDFLAGS="-fsanitize=address"
-    
-    dnl Test if compiler supports ASAN
+    dnl Detect platform to skip -fsanitize=address on macOS
+    UNAME_S=`uname -s`
+    if test "$UNAME_S" = "Darwin"; then
+      AC_MSG_RESULT([detected macOS, skipping -fsanitize=address])
+      ASAN_CFLAGS="-fno-omit-frame-pointer -g -O1"
+      ASAN_LDFLAGS=""
+    else
+      ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g -O1"
+      ASAN_LDFLAGS="-fsanitize=address"
+    fi
+
+    dnl Test if compiler supports the flags
     old_CFLAGS="$CFLAGS"
     old_LDFLAGS="$LDFLAGS"
     CFLAGS="$CFLAGS $ASAN_CFLAGS"

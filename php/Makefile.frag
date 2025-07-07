@@ -180,20 +180,28 @@ install-lint-tools:
 
 install-tools: install-build-tools install-lint-tools
 
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+    ASAN_OPTIONS_ENV = abort_on_error=0:symbolize=1:print_stacktrace=1:log_path=./asan_logs
+else
+    ASAN_OPTIONS_ENV = detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:log_path=./asan_logs
+endif
+
 # ASAN (AddressSanitizer) targets
 build-asan:
 	@echo "Building with AddressSanitizer..."
 	@$(MAKE) clean	
 	@phpize
 	@./configure --enable-valkey-glide --enable-valkey-glide-asan
+	@$(MAKE) build-modules-pre $(ARGINFO_HEADERS)
 	@$(MAKE)
 	@echo "✓ ASAN build completed"
 
 test-asan: build-asan
 	@echo "Running tests with AddressSanitizer..."
 	@mkdir -p asan_logs
-	@export ASAN_OPTIONS="detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs"; \
-	php -n -d extension=$(shell pwd)/modules/valkey_glide.so tests/TestValkeyGlide.php
+	@env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
 		for log_file in ./asan_logs/*; do \
