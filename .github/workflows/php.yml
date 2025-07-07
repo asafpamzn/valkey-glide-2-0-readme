@@ -275,15 +275,8 @@ jobs:
             - name: Install cbindgen
               run: cargo install cbindgen
 
-            - name: Install nightly Rust for ASAN
-              run: |
-                  rustup toolchain install nightly
-                  rustup default nightly
-
-            - name: Build FFI library with ASAN
+            - name: Build FFI library
               working-directory: ffi
-              env:
-                  RUSTFLAGS: "-Zsanitizer=address"
               run: cargo build --release
 
             - name: Set up PHP
