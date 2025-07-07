@@ -198,7 +198,7 @@ build-asan:
 test-asan: build-asan
 	@echo "Running tests with AddressSanitizer..."
 	@mkdir -p asan_logs
-	@env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php
+	@env LD_PRELOAD="$(shell gcc -print-file-name=libasan.so)" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
 		for log_file in ./asan_logs/*; do \
