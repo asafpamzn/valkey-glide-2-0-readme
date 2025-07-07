@@ -183,17 +183,14 @@ install-tools: install-build-tools install-lint-tools
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-    ASAN_OPTIONS_ENV = abort_on_error=0:symbolize=1:print_stacktrace=1:log_path=./asan_logs
+    ASAN_OPTIONS_ENV = halt_on_error=0:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs:fast_unwind_on_malloc=0:print_module_map=1
 else
-    ASAN_OPTIONS_ENV = detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:log_path=./asan_logs
+    ASAN_OPTIONS_ENV = halt_on_error=0:detect_leaks=1:abort_on_error=0:symbolize=1:print_stacktrace=1:detect_stack_use_after_return=1:log_path=./asan_logs:fast_unwind_on_malloc=0:print_module_map=1
 endif
 
 # ASAN (AddressSanitizer) targets
 build-asan:
 	@echo "Building with AddressSanitizer..."
-	@$(MAKE) clean	
-	@phpize
-	@./configure --enable-valkey-glide --enable-valkey-glide-asan
 	@$(MAKE) build-modules-pre $(ARGINFO_HEADERS)
 	@$(MAKE)
 	@echo "✓ ASAN build completed"

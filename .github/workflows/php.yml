@@ -336,17 +336,28 @@ jobs:
               run: |
                   echo "=== Setting up PHP extension build system and running ASAN tests ==="
                   
-                  # Step 1: Initialize PHP extension build system
-                  echo "=== Step 1: Initializing PHP extension build system ==="
+                  # Step 1: Clean previous builds
+                  echo "=== Step 1: Cleaning previous builds ==="
+                  make clean || true
+                  
+                  # Step 2: Initialize PHP extension build system
+                  echo "=== Step 2: Initializing PHP extension build system ==="
                   phpize
                   
-                  # Step 2: Configure with ASAN flags - this generates Makefile with ASAN targets
-                  echo "=== Step 2: Configuring with ASAN flags ==="
+                  # Step 3: Configure with ASAN flags - this generates Makefile with ASAN targets
+                  echo "=== Step 3: Configuring with ASAN flags ==="
                   ./configure --enable-valkey-glide --enable-valkey-glide-asan
                   
-                  # Step 3: Use the proven test-asan target (handles build + test + ASAN options automatically)
-                  echo "=== Step 3: Building and testing with AddressSanitizer ==="
+                  # Step 4: Enhanced ASAN configuration for detailed debugging
+                  echo "=== Step 4: Building and testing with enhanced AddressSanitizer ==="
                   export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+                  
+                  # Create clean log directory
+                  rm -rf ./asan_logs
+                  mkdir -p ./asan_logs
+                  
+                  # Run ASAN tests with enhanced debugging using simplified make target
+                  echo "=== Running make test-asan with enhanced debugging ==="
                   make test-asan
 
             - name: Display ASAN logs if found
