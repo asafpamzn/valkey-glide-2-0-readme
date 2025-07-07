@@ -98,9 +98,39 @@ READ of size 8 at 0x... thread T0:
 - Install protobuf-c development libraries (see Prerequisites)
 - On macOS, you might need: `export PKG_CONFIG_PATH="$(brew --prefix protobuf-c)/lib/pkgconfig:${PKG_CONFIG_PATH}"`
 
+### Ubuntu-specific Issues
+
+#### "make: *** [Makefile:411: test-asan] Error 1" on Ubuntu
+This was a common issue where the `test-asan` target failed to locate the AddressSanitizer library for `LD_PRELOAD`. The issue has been fixed in `Makefile.frag` (the template used to generate the final Makefile), which now:
+
+1. **Auto-detects ASAN library**: Tries multiple common Ubuntu locations:
+   - `/usr/lib/x86_64-linux-gnu/libasan.so`
+   - `/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so` 
+   - `/usr/lib64/libasan.so`
+   - Plus standard gcc/clang detection methods
+
+2. **Fallback behavior**: If no ASAN library is found for `LD_PRELOAD`, tests still run with ASAN enabled via compiled flags
+
+3. **Better diagnostics**: Shows which ASAN library is being used or if fallback mode is active
+
+4. **CI-compatible**: Since the fix is in `Makefile.frag`, it persists when CI runs `./configure` to regenerate the Makefile
+
+#### Testing ASAN Setup
+Use the provided test script to verify your ASAN setup:
+```bash
+cd php/
+./test_asan_setup.sh
+```
+
+This script will check:
+- ASAN library availability
+- Extension build status
+- PHP compatibility
+
 ### No ASAN reports but expecting issues
 - Verify ASAN is actually enabled: check that compilation shows ASAN flags
 - Try running a simple test that should trigger ASAN (like accessing freed memory)
+- Use `./test_asan_setup.sh` to verify your setup
 
 ## Performance Impact
 

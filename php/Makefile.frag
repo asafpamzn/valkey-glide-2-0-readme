@@ -198,7 +198,28 @@ build-asan:
 test-asan: build-asan
 	@echo "Running tests with AddressSanitizer..."
 	@mkdir -p asan_logs
-	@env LD_PRELOAD="$(shell gcc -print-file-name=libasan.so)" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php
+	@echo "Detecting AddressSanitizer library..."
+	@ASAN_LIB=""; \
+	for lib_path in \
+		"$$(gcc -print-file-name=libasan.so)" \
+		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+		"/usr/lib/x86_64-linux-gnu/libasan.so" \
+		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+		"/usr/lib64/libasan.so" \
+		"/usr/local/lib/libasan.so"; do \
+		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+			ASAN_LIB="$$lib_path"; \
+			echo "Found ASAN library: $$ASAN_LIB"; \
+			break; \
+		fi; \
+	done; \
+	if [ -n "$$ASAN_LIB" ]; then \
+		echo "Running tests with LD_PRELOAD=$$ASAN_LIB..."; \
+		env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+	else \
+		echo "ASAN library not found, running without LD_PRELOAD (ASAN still active via compiled flags)..."; \
+		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+	fi
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
 		for log_file in ./asan_logs/*; do \
