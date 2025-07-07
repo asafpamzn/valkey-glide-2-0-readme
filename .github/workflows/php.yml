@@ -348,15 +348,14 @@ jobs:
                   echo "=== Step 3: Configuring with ASAN flags ==="
                   ./configure --enable-valkey-glide --enable-valkey-glide-asan
                   
-                  # Step 4: Enhanced ASAN configuration for detailed debugging
+                  # Step 4: Build and test with enhanced AddressSanitizer
                   echo "=== Step 4: Building and testing with enhanced AddressSanitizer ==="
-                  export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
                   
                   # Create clean log directory
                   rm -rf ./asan_logs
                   mkdir -p ./asan_logs
                   
-                  # Run ASAN tests with enhanced debugging using simplified make target
+                  # Run ASAN tests - let make target handle LD_PRELOAD internally
                   echo "=== Running make test-asan with enhanced debugging ==="
                   make test-asan
 
