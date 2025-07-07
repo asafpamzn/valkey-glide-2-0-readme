@@ -1,4 +1,3 @@
-
 # Platform-specific configuration
 ifeq ($(shell uname),Darwin)
     INCLUDES += -I/opt/homebrew/include
@@ -221,27 +220,43 @@ test-asan: build-asan
 	echo "Checking PHP extension loading..."; \
 	if [ -n "$$ASAN_LIB" ]; then \
 		echo "Testing PHP extension loading with ASAN LD_PRELOAD..."; \
-		if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with ASAN LD_PRELOAD\n';" 2>/dev/null; then \
+		if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with ASAN LD_PRELOAD\n';" 2>&1; then \
 			echo "✓ Extension loads with LD_PRELOAD, running full test suite..."; \
 			env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
 		else \
-			echo "⚠ Extension failed to load with LD_PRELOAD, falling back to compiled ASAN flags..."; \
+			echo "⚠ Extension failed to load with LD_PRELOAD, trying to show error:"; \
+			env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
+			echo "Falling back to compiled ASAN flags..."; \
 			echo "Testing PHP extension loading without LD_PRELOAD..."; \
-			if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>/dev/null; then \
+			if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>&1; then \
 				echo "✓ Extension loads without LD_PRELOAD, running tests with compiled ASAN flags..."; \
 				env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
 			else \
-				echo "✗ Extension failed to load even without LD_PRELOAD"; \
+				echo "✗ Extension failed to load even without LD_PRELOAD, showing error:"; \
+				env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
+				echo "Debugging information:"; \
+				echo "PHP version: $$(php --version | head -n1)"; \
+				echo "Extension dependencies (ldd):"; \
+				ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "ldd failed"; \
+				echo "Extension file type:"; \
+				file $(CURDIR)/modules/valkey_glide.so; \
 				exit 1; \
 			fi; \
 		fi; \
 	else \
 		echo "No ASAN library found for LD_PRELOAD, testing extension loading with compiled ASAN flags..."; \
-		if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>/dev/null; then \
+		if env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with compiled ASAN\n';" 2>&1; then \
 			echo "✓ Extension loads with compiled ASAN flags, running tests..."; \
 			env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
 		else \
-			echo "✗ Extension failed to load"; \
+			echo "✗ Extension failed to load, showing error:"; \
+			env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'This should not print if extension loading fails\n';" 2>&1 || true; \
+			echo "Debugging information:"; \
+			echo "PHP version: $$(php --version | head -n1)"; \
+			echo "Extension dependencies (ldd):"; \
+			ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "ldd failed"; \
+			echo "Extension file type:"; \
+			file $(CURDIR)/modules/valkey_glide.so; \
 			exit 1; \
 		fi; \
 	fi
