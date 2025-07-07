@@ -213,12 +213,22 @@ test-asan: build-asan
 			break; \
 		fi; \
 	done; \
+	echo "=== Pre-test diagnostics ==="; \
+	echo "Extension file: $(CURDIR)/modules/valkey_glide.so"; \
+	ls -la $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "Extension file not found!"; \
+	echo "Test file: tests/TestValkeyGlide.php"; \
+	ls -la tests/TestValkeyGlide.php 2>/dev/null || echo "Test file not found!"; \
+	echo "Checking PHP extension loading..."; \
 	if [ -n "$$ASAN_LIB" ]; then \
-		echo "Running tests with LD_PRELOAD=$$ASAN_LIB..."; \
-		env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+		echo "Testing PHP extension loading with ASAN..."; \
+		env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully with ASAN\n';" || echo "ERROR: PHP extension failed to load with ASAN"; \
+		echo "Running full test suite with LD_PRELOAD=$$ASAN_LIB..."; \
+		env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php 2>&1 || echo "ERROR: Test execution failed with exit code $$?"; \
 	else \
+		echo "Testing PHP extension loading without LD_PRELOAD..."; \
+		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'PHP extension loads successfully\n';" || echo "ERROR: PHP extension failed to load"; \
 		echo "ASAN library not found, running without LD_PRELOAD (ASAN still active via compiled flags)..."; \
-		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php 2>&1 || echo "ERROR: Test execution failed with exit code $$?"; \
 	fi
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
@@ -230,7 +240,7 @@ test-asan: build-asan
 			fi; \
 		done; \
 	else \
-		echo "✓ No ASAN issues detected"; \
+		echo "✓ No ASAN issues detected in log files"; \
 	fi
 
 clean-asan:
