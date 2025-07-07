@@ -346,6 +346,7 @@ jobs:
                   
                   # Step 3: Use the proven test-asan target (handles build + test + ASAN options automatically)
                   echo "=== Step 3: Building and testing with AddressSanitizer ==="
+                  export LD_PRELOAD=$(gcc -print-file-name=libasan.so)
                   make test-asan
 
             - name: Display ASAN logs if found
