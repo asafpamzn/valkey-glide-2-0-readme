@@ -17,6 +17,8 @@
 
 #include <ext/standard/info.h>
 
+#include "cluster_scan_cursor_arginfo.h"
+
 /* Global variables */
 zend_class_entry*    cluster_scan_cursor_ce;
 zend_object_handlers cluster_scan_cursor_object_handlers;
@@ -140,21 +142,9 @@ PHP_METHOD(ClusterScanCursor, isFinished) {
     RETURN_FALSE;
 }
 
-/* Method table */
-static const zend_function_entry cluster_scan_cursor_methods[] = {
-    PHP_ME(ClusterScanCursor, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_ME(ClusterScanCursor, __destruct, NULL, ZEND_ACC_PUBLIC)
-            PHP_ME(ClusterScanCursor, getCursor, NULL, ZEND_ACC_PUBLIC)
-                PHP_ME(ClusterScanCursor, isFinished, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
-
-/* Class registration function */
+/* Class registration function using generated arginfo */
 void register_cluster_scan_cursor_class(void) {
-    zend_class_entry ce;
-
-    INIT_CLASS_ENTRY(ce, "ClusterScanCursor", cluster_scan_cursor_methods);
-    cluster_scan_cursor_ce                = zend_register_internal_class(&ce);
+    /* Use the generated registration function */
+    cluster_scan_cursor_ce                = register_class_ClusterScanCursor();
     cluster_scan_cursor_ce->create_object = create_cluster_scan_cursor_object;
-
-    /* Make the class final (cannot be extended) */
-    cluster_scan_cursor_ce->ce_flags |= ZEND_ACC_FINAL;
 }
