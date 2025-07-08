@@ -397,6 +397,220 @@ jobs:
                       php/tests/**/*.log
                       php/tests/**/*.out
 
+    test-php-valgrind:
+        name: PHP Valgrind Tests - EngineVersion ${{ matrix.engine.version }} (Ubuntu)
+        needs: get-matrices
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        strategy:
+            fail-fast: false
+            matrix:
+                engine: ${{ fromJson(needs.get-matrices.outputs.engine-matrix-output) }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Output Matrix Parameters for this job
+              run: |
+                  echo "Job running with the following matrix configuration:"
+                  echo "${{ toJson(matrix) }}"
+
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ffi/target
+                      glide-core/src/generated
+                      php/include/
+                      php/src/*.pb-c.c
+                      php/src/*.pb-c.h
+                  key: ubuntu-latest-php-valgrind-${{ env.BASE_PHP_VERSION }}
+                  restore-keys: |
+                      ubuntu-latest-php-valgrind
+                      ubuntu-latest-php
+                      ubuntu-latest-glide-core
+                      ubuntu-latest
+
+            - name: Install shared dependencies
+              uses: ./.github/workflows/install-shared-dependencies
+              with:
+                  target: x86_64-unknown-linux-gnu
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  engine-version: ${{ matrix.engine.version }}
+
+            - name: Install Rust and protoc
+              uses: ./.github/workflows/install-rust-and-protoc
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Install cbindgen
+              run: cargo install cbindgen
+
+            - name: Build FFI library with debug symbols
+              working-directory: ffi
+              run: |
+                  # Build with debug symbols for better Valgrind analysis
+                  CFLAGS="-g -O0" cargo build --release
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ env.BASE_PHP_VERSION }}
+                  extensions: none
+                  tools: none
+
+            - name: Install system dependencies for PHP Valgrind build
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                      php${{ env.BASE_PHP_VERSION }}-dev \
+                      build-essential \
+                      autoconf \
+                      automake \
+                      libtool \
+                      pkg-config \
+                      libssl-dev \
+                      protobuf-c-compiler \
+                      libprotobuf-c-dev \
+                      libprotobuf-c1 \
+                      valgrind
+
+            - name: Start Valkey servers
+              working-directory: php/tests
+              run: |
+                  set -e  # Exit on any error
+                  
+                  # Ensure /usr/local/bin is in PATH (where valkey-server is installed)
+                  export PATH="/usr/local/bin:$PATH"
+                  
+                  echo "=== Starting Valkey servers for Valgrind testing ==="
+                  
+                  # Make scripts executable
+                  chmod +x start_valkey_with_replicas.sh create-valkey-cluster.sh
+                  
+                  # Start standalone servers (6379, 6380, 6381)
+                  echo "=== Starting standalone Valkey servers ==="
+                  ./start_valkey_with_replicas.sh
+                  
+                  # Wait a moment for servers to start
+                  echo "=== Waiting for standalone servers to start ==="
+                  sleep 3
+                  
+                  # Start cluster servers (7001-7006)
+                  echo "=== Starting Valkey cluster ==="
+                  ./create-valkey-cluster.sh
+                  
+                  # Final server status check
+                  echo "=== Final server status check ==="
+                  ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
+                  echo "=== Valkey servers startup completed ==="
+
+            - name: Setup and run Valgrind tests
+              working-directory: php
+              run: |
+                  echo "=== Setting up PHP extension build system for Valgrind testing ==="
+                  
+                  # Step 1: Clean any existing files
+                  echo "=== Step 1: Cleaning previous builds ==="
+                  rm -rf ./modules/ ./libs/ ./.libs/ ./tmp-php.ini ./valgrind_logs/
+                  find . -name "*.lo" -o -name "*.o" -o -name "*.la" | xargs rm -f 2>/dev/null || true
+                  
+                  # Step 2: Initialize PHP extension build system
+                  echo "=== Step 2: Initializing PHP extension build system ==="
+                  phpize
+                  
+                  # Step 3: Configure with debug flags for better Valgrind analysis
+                  echo "=== Step 3: Configuring with debug flags ==="
+                  CFLAGS="-g -O0" ./configure --enable-valkey-glide --enable-debug
+                  
+                  # Step 4: Clean using make
+                  echo "=== Step 4: Clean using make ==="
+                  make clean || true
+                  
+                  # Step 5: Build extension with debug symbols
+                  echo "=== Step 5: Building extension with debug symbols ==="
+                  CFLAGS="-g -O0" make
+                  
+                  # Step 6: Create valgrind logs directory
+                  mkdir -p ./valgrind_logs
+                  
+                  # Step 7: Run Valgrind tests
+                  echo "=== Step 7: Running Valgrind memory analysis ==="
+                  echo "Extension path: $(pwd)/modules/valkey_glide.so"
+                  echo "Config file: $(pwd)/ext.ini"
+                  echo "Test file: tests/TestValkeyGlide.php"
+                  echo ""
+                  
+                  # Update the ext.ini file to use absolute path for extension
+                  sed -i "s|extension=valkey_glide.so|extension=$(pwd)/modules/valkey_glide.so|" ext.ini
+                  
+                  # Run Valgrind with comprehensive memory checking
+                  valgrind \
+                      --tool=memcheck \
+                      --leak-check=full \
+                      --show-leak-kinds=all \
+                      --track-origins=yes \
+                      --verbose \
+                      --log-file=./valgrind_logs/valgrind_output.log \
+                      --suppressions=valgrind.supp \
+                      php -n -c ext.ini tests/TestValkeyGlide.php || true
+                  
+                  echo ""
+                  echo "=== Valgrind analysis completed ==="
+
+            - name: Display Valgrind results
+              working-directory: php
+              if: always()
+              run: |
+                  echo "=== Valgrind Analysis Results ==="
+                  if [ -f "./valgrind_logs/valgrind_output.log" ]; then
+                      echo "=== Valgrind Output ==="
+                      cat ./valgrind_logs/valgrind_output.log
+                      echo ""
+                      
+                      # Check for memory leaks in the output
+                      if grep -q "definitely lost:" ./valgrind_logs/valgrind_output.log; then
+                          echo "⚠️  Memory leaks detected by Valgrind"
+                          grep -A 5 -B 5 "definitely lost:" ./valgrind_logs/valgrind_output.log || true
+                      else
+                          echo "✅ No definite memory leaks detected"
+                      fi
+                      
+                      # Show leak summary
+                      if grep -q "LEAK SUMMARY:" ./valgrind_logs/valgrind_output.log; then
+                          echo ""
+                          echo "=== Leak Summary ==="
+                          grep -A 10 "LEAK SUMMARY:" ./valgrind_logs/valgrind_output.log || true
+                      fi
+                  else
+                      echo "❌ No Valgrind output file found"
+                      echo "Checking for any log files:"
+                      ls -la ./valgrind_logs/ || echo "No valgrind_logs directory"
+                  fi
+
+            - name: Stop Valkey servers
+              if: always()
+              run: |
+                  # Stop all Valkey server processes
+                  echo "Stopping Valkey servers..."
+                  pkill valkey-server || true
+                  # Clean up data directories
+                  rm -rf $HOME/valkey-cluster || true
+                  rm -rf php/tests/valkey_data || true
+
+            - name: Upload Valgrind logs and reports
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: valgrind-test-report-php-${{ matrix.engine.type }}-${{ matrix.engine.version }}
+                  path: |
+                      utils/clusters/**
+                      php/valgrind_logs/**
+                      php/tests/**/*.diff
+                      php/tests/**/*.exp
+                      php/tests/**/*.log
+                      php/tests/**/*.out
+
     lint:
         timeout-minutes: 15
         runs-on: ubuntu-latest
