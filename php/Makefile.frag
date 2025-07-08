@@ -422,13 +422,36 @@ test-asan: build-asan
 			echo "    Command: php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded without ASAN: OK';\""; \
 			php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded without ASAN: OK';" 2>&1 || echo "    ❌ Extension loading failed without ASAN"; \
 			echo "  • Testing PHP Extension Loading (WITH ASAN LD_PRELOAD):"; \
-			echo "    Command: env LD_PRELOAD=\"$$ASAN_LIB\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded with ASAN: OK';\""; \
-			if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1; then \
-				echo "    ✅ Extension loads successfully with ASAN LD_PRELOAD"; \
-			else \
-				echo "    ❌ Extension failed to load with ASAN LD_PRELOAD"; \
+			echo "    🔍 Analyzing extension dependencies to find exact ASAN library path..."; \
+			EXTENSION_ASAN_PATH=$$(ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null | grep libasan | awk '{print $$3}' | head -1); \
+			echo "    Extension expects ASAN library at: $$EXTENSION_ASAN_PATH"; \
+			echo "    Our resolved ASAN library path: $$ASAN_LIB"; \
+			echo ""; \
+			echo "    🧪 Testing different ASAN library paths:"; \
+			ASAN_SUCCESS=0; \
+			for test_lib in "$$EXTENSION_ASAN_PATH" "$$ASAN_LIB" "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
+				if [ -n "$$test_lib" ] && [ -f "$$test_lib" ]; then \
+					echo "      Trying: $$test_lib"; \
+					echo "      Command: env LD_PRELOAD=\"$$test_lib\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded with ASAN: OK';\""; \
+					if env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1; then \
+						echo "      ✅ SUCCESS with $$test_lib"; \
+						ASAN_LIB="$$test_lib"; \
+						ASAN_SUCCESS=1; \
+						break; \
+					else \
+						echo "      ❌ Failed with $$test_lib"; \
+						echo "      Error output:"; \
+						env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1 | head -5 | sed 's/^/        /'; \
+					fi; \
+					echo ""; \
+				fi; \
+			done; \
+			if [ $$ASAN_SUCCESS -eq 0 ]; then \
+				echo "    ❌ All ASAN library paths failed!"; \
 				echo "    This will cause the main test to fail."; \
 				exit 1; \
+			else \
+				echo "    ✅ Found working ASAN library: $$ASAN_LIB"; \
 			fi; \
 			echo ""; \
 			echo "🚀 LAUNCHING MAIN TEST EXECUTION"; \
