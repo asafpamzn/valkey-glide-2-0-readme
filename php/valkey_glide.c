@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include "cluster_scan_cursor.h"          // Include ClusterScanCursor class
+#include "cluster_scan_cursor_arginfo.h"  // Include ClusterScanCursor arginfo header
 #include "common.h"
 #include "php_valkey_glide.h"
 #include "valkey_glide_arginfo.h"          // Include generated arginfo header
@@ -126,6 +128,9 @@ PHP_MINIT_FUNCTION(valkey_glide) {
     /* ValkeyGlideCluster class - manual registration for now */
 
     valkey_glide_cluster_ce = register_class_ValkeyGlideCluster();
+
+    /* Register ClusterScanCursor class */
+    register_cluster_scan_cursor_class();
 
     /* ValkeyGlideException class */
     // TODO   valkey_glide_exception_ce =
