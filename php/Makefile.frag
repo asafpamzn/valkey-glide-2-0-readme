@@ -374,7 +374,7 @@ test-asan: build-asan
 				nm -D $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || objdump -tT $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || echo "    Symbol analysis not available"; \
 				echo "  • Extension Strings (first 10 relevant):"; \
 				strings $(CURDIR)/modules/valkey_glide.so 2>/dev/null | grep -E "(php|valkey|glide|version)" | head -10 || echo "    String analysis not available"; \
-			fi; \
+			fi; \2>
 			echo ""; \
 			echo "📄 TEST FILE ANALYSIS:"; \
 			echo "  • Test File Path: tests/TestValkeyGlide.php"; \
@@ -433,15 +433,20 @@ test-asan: build-asan
 				if [ -n "$$test_lib" ] && [ -f "$$test_lib" ]; then \
 					echo "      Trying: $$test_lib"; \
 					echo "      Command: env LD_PRELOAD=\"$$test_lib\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded with ASAN: OK';\""; \
-					if env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1; then \
+					set +e; \
+					TEST_OUTPUT=$$(env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1); \
+					TEST_RESULT=$$?; \
+					set -e; \
+					if [ $$TEST_RESULT -eq 0 ]; then \
 						echo "      ✅ SUCCESS with $$test_lib"; \
+						echo "      Output: $$TEST_OUTPUT"; \
 						ASAN_LIB="$$test_lib"; \
 						ASAN_SUCCESS=1; \
 						break; \
 					else \
-						echo "      ❌ Failed with $$test_lib"; \
-						echo "      Error output:"; \
-						env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1 | head -5 | sed 's/^/        /'; \
+						echo "      ❌ Failed with $$test_lib (exit code: $$TEST_RESULT)"; \
+						echo "      Full error output:"; \
+						echo "$$TEST_OUTPUT" | sed 's/^/        /'; \
 					fi; \
 					echo ""; \
 				fi; \
