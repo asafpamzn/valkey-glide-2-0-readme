@@ -207,8 +207,21 @@ test-asan: build-asan
 		"/usr/lib64/libasan.so" \
 		"/usr/local/lib/libasan.so"; do \
 		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
-			ASAN_LIB="$$lib_path"; \
-			echo "Found ASAN library: $$ASAN_LIB"; \
+			echo "Found ASAN candidate: $$lib_path"; \
+			if [ -L "$$lib_path" ]; then \
+				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+				echo "  -> Symbolic link detected, resolving: $$lib_path -> $$RESOLVED_PATH"; \
+				if [ -f "$$RESOLVED_PATH" ]; then \
+					ASAN_LIB="$$RESOLVED_PATH"; \
+					echo "✓ Using resolved ASAN library: $$ASAN_LIB"; \
+				else \
+					echo "⚠ Resolved path not found, using original: $$lib_path"; \
+					ASAN_LIB="$$lib_path"; \
+				fi; \
+			else \
+				ASAN_LIB="$$lib_path"; \
+				echo "✓ Using direct ASAN library: $$ASAN_LIB"; \
+			fi; \
 			break; \
 		fi; \
 	done; \
