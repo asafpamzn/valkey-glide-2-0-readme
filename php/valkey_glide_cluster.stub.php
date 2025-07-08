@@ -728,7 +728,7 @@ class ValkeyGlideCluster {
     /**
      * @see ValkeyGlide::scan
      */
-    public function scan(null|string &$iterator, ?string $pattern = null, int $count = 0, ?string $type = null): bool|array;
+    public function scan(ClusterScanCursor $iterator, ?string $pattern = null, int $count = 0, ?string $type = null): bool|array;
 
     /**
      * @see ValkeyGlide::scard

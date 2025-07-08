@@ -15,6 +15,7 @@
 */
 #include "valkey_glide_s_common.h"
 
+#include "cluster_scan_cursor.h"
 #include "command_response.h"
 #include "common.h"
 
@@ -2265,6 +2266,15 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
     zend_long            count     = 0;
     int                  has_count = 0;
 
+    /* Get ValkeyGlide object first */
+    valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
+    if (!valkey_glide || !valkey_glide->glide_client) {
+        return 0;
+    }
+
+    /* Check if this is cluster mode */
+    int is_cluster = (ce == get_valkey_glide_cluster_ce());
+
     /* Initialize optional parameters to safe defaults */
     pattern     = NULL;
     pattern_len = 0;
@@ -2272,71 +2282,56 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
     type        = NULL;
     type_len    = 0;
 
-    /* Single parse call with standard optional parameter handling */
-    if (zend_parse_method_parameters(argc,
-                                     object,
-                                     "Oz|sls",
-                                     &object,
-                                     ce,
-                                     &z_iter,
-                                     &pattern,
-                                     &pattern_len,
-                                     &count,
-                                     &type,
-                                     &type_len) == FAILURE) {
-        return 0;
-    }
-
-    /* Determine what was actually provided based on argc */
-    has_pattern = (argc >= 2 && pattern != NULL && pattern_len > 0);
-    has_count   = (argc >= 3);
-    has_type    = (argc >= 4 && type != NULL && type_len > 0);
-
-    /* Get ValkeyGlide object */
-    valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
-    if (!valkey_glide || !valkey_glide->glide_client) {
-        return 0;
-    }
-
-    /* Dereference if it's a reference */
-    ZVAL_DEREF(z_iter);
-
-    /* Make sure we have a valid cursor - accept NULL, numeric, or string */
-    if (Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL) {
-        php_error_docref(NULL, E_WARNING, "Cursor must be string");
-        return 0;
-    }
-
-    /* Get cursor string */
-    char* cursor_value;
-    if (Z_TYPE_P(z_iter) == IS_NULL) {
-        /* NULL cursor means start from the beginning (0) */
-        cursor_value = "0";
-
-    } else if (Z_TYPE_P(z_iter) == IS_STRING) {
-        cursor_value = Z_STRVAL_P(z_iter);
-
-    } else {
-        fprintf(stderr,
-                "[SCAN_DEBUG] execute_scan_command: Invalid cursor type %d\n",
-                Z_TYPE_P(z_iter));
-        return 0;
-    }
-
-    /* Create a copy of cursor for passing to functions */
-    char* cursor_ptr = estrdup(cursor_value);
-
-    /* Use empty pattern if not specified */
-    const char* scan_pattern     = has_pattern ? pattern : "";
-    size_t      scan_pattern_len = has_pattern ? pattern_len : 0;
-
-    /* Use default count if not specified */
-    long scan_count = has_count ? count : 10;
-
-    /* Check if this is cluster mode */
-    int is_cluster = (ce == get_valkey_glide_cluster_ce());
-
     if (is_cluster) {
+        /* For cluster mode, expect ClusterScanCursor object as first parameter */
+        if (zend_parse_method_parameters(argc,
+                                         object,
+                                         "Oo|sls",
+                                         &object,
+                                         ce,
+                                         &z_iter,
+                                         get_cluster_scan_cursor_ce(),
+                                         &pattern,
+                                         &pattern_len,
+                                         &count,
+                                         &type,
+                                         &type_len) == FAILURE) {
+            return 0;
+        }
+
+        /* Determine what was actually provided based on argc */
+        has_pattern = (argc >= 2 && pattern != NULL && pattern_len > 0);
+        has_count   = (argc >= 3);
+        has_type    = (argc >= 4 && type != NULL && type_len > 0);
+
+        /* Get cursor string from ClusterScanCursor object */
+        zval cursor_method_name;
+        ZVAL_STRING(&cursor_method_name, "getCursor");
+
+        zval cursor_result;
+        if (call_user_function(NULL, z_iter, &cursor_method_name, &cursor_result, 0, NULL) !=
+            SUCCESS) {
+            zval_dtor(&cursor_method_name);
+            return 0;
+        }
+        zval_dtor(&cursor_method_name);
+
+        if (Z_TYPE(cursor_result) != IS_STRING) {
+            zval_dtor(&cursor_result);
+            return 0;
+        }
+
+        /* Create a copy of cursor for passing to functions */
+        char* cursor_ptr = estrdup(Z_STRVAL(cursor_result));
+        zval_dtor(&cursor_result);
+
+        /* Use empty pattern if not specified */
+        const char* scan_pattern     = has_pattern ? pattern : "";
+        size_t      scan_pattern_len = has_pattern ? pattern_len : 0;
+
+        /* Use default count if not specified */
+        long scan_count = has_count ? count : 10;
+
         /* Use cluster scan implementation */
         if (execute_cluster_scan_command(valkey_glide->glide_client,
                                          &cursor_ptr,
@@ -2348,12 +2343,82 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
                                          has_type ? type_len : 0,
                                          has_type,
                                          return_value)) {
-            /* Update iterator value */
-            ZVAL_STRING(z_iter, cursor_ptr);
+            /* Update ClusterScanCursor object with new cursor value */
+            zval new_cursor_zval;
+            ZVAL_STRING(&new_cursor_zval, cursor_ptr);
+
+            /* Call the internal cursor update method or create new cursor */
+            zval update_method_name;
+            ZVAL_STRING(&update_method_name, "__construct");
+
+            zval  update_result;
+            zval* update_args[1] = {&new_cursor_zval};
+
+            if (call_user_function(
+                    NULL, z_iter, &update_method_name, &update_result, 1, update_args) == SUCCESS) {
+                zval_dtor(&update_result);
+            }
+
+            zval_dtor(&update_method_name);
+            zval_dtor(&new_cursor_zval);
             efree(cursor_ptr);
             return 1;
         }
+
+        efree(cursor_ptr);
+        return 0;
+
     } else {
+        /* For non-cluster mode, use string reference as before */
+        if (zend_parse_method_parameters(argc,
+                                         object,
+                                         "Oz|sls",
+                                         &object,
+                                         ce,
+                                         &z_iter,
+                                         &pattern,
+                                         &pattern_len,
+                                         &count,
+                                         &type,
+                                         &type_len) == FAILURE) {
+            return 0;
+        }
+
+        /* Determine what was actually provided based on argc */
+        has_pattern = (argc >= 2 && pattern != NULL && pattern_len > 0);
+        has_count   = (argc >= 3);
+        has_type    = (argc >= 4 && type != NULL && type_len > 0);
+
+        /* Dereference if it's a reference */
+        ZVAL_DEREF(z_iter);
+
+        /* Make sure we have a valid cursor - accept NULL or string */
+        if (Z_TYPE_P(z_iter) != IS_STRING && Z_TYPE_P(z_iter) != IS_NULL) {
+            php_error_docref(NULL, E_WARNING, "Cursor must be string");
+            return 0;
+        }
+
+        /* Get cursor string */
+        char* cursor_value;
+        if (Z_TYPE_P(z_iter) == IS_NULL) {
+            /* NULL cursor means start from the beginning (0) */
+            cursor_value = "0";
+        } else if (Z_TYPE_P(z_iter) == IS_STRING) {
+            cursor_value = Z_STRVAL_P(z_iter);
+        } else {
+            return 0;
+        }
+
+        /* Create a copy of cursor for passing to functions */
+        char* cursor_ptr = estrdup(cursor_value);
+
+        /* Use empty pattern if not specified */
+        const char* scan_pattern     = has_pattern ? pattern : "";
+        size_t      scan_pattern_len = has_pattern ? pattern_len : 0;
+
+        /* Use default count if not specified */
+        long scan_count = has_count ? count : 10;
+
         /* Use existing non-cluster implementation */
         s_command_args_t args;
         INIT_S_COMMAND_ARGS(args);
@@ -2380,12 +2445,11 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
             efree(cursor_ptr);
             return 1;
         }
+
+        /* Clean up on failure */
+        efree(cursor_ptr);
+        return 0;
     }
-
-    /* Clean up on failure */
-    efree(cursor_ptr);
-
-    return 0;
 }
 
 /**

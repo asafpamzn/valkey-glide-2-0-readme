@@ -148,3 +148,8 @@ void register_cluster_scan_cursor_class(void) {
     cluster_scan_cursor_ce                = register_class_ClusterScanCursor();
     cluster_scan_cursor_ce->create_object = create_cluster_scan_cursor_object;
 }
+
+/* Getter function for the class entry */
+zend_class_entry* get_cluster_scan_cursor_ce(void) {
+    return cluster_scan_cursor_ce;
+}

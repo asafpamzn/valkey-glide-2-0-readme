@@ -37,4 +37,7 @@ extern void remove_cluster_scan_cursor(const char* cursor_id);
 /* Class registration function */
 void register_cluster_scan_cursor_class(void);
 
+/* Getter function for class entry */
+zend_class_entry* get_cluster_scan_cursor_ce(void);
+
 #endif /* CLUSTER_SCAN_CURSOR_H */

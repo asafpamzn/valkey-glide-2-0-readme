@@ -290,14 +290,13 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         /* Iterate over our masters, scanning each one */
         $key_count = $this->valkey_glide->dbsize("allPrimaries");
        
-        /* Scan the keys here */
-        $it = NULL;
+        /* Scan the keys here using ClusterScanCursor */
+        $cursor = new ClusterScanCursor();
         while (true) {
-            
-            $keys = $this->valkey_glide->scan($it);
+            $keys = $this->valkey_glide->scan($cursor);
             if ($keys)
                 $scan_count += count($keys);
-            if ($it == "0") break;
+            if ($cursor->isFinished()) break;
         }
         
 
