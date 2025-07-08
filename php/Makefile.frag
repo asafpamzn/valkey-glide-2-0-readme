@@ -216,35 +216,61 @@ test-asan: build-asan
 	@echo ""
 	@echo "=== Finding ASAN Library ==="
 	@ASAN_LIB=""; \
-	for lib_path in \
-		"$$(gcc -print-file-name=libasan.so)" \
-		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
-		"/usr/lib/x86_64-linux-gnu/libasan.so" \
-		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
-		"/usr/lib64/libasan.so" \
-		"/usr/local/lib/libasan.so"; do \
-		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
-			echo "Found ASAN library: $$lib_path"; \
-			if [ -L "$$lib_path" ]; then \
-				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
-				if [ -f "$$RESOLVED_PATH" ]; then \
-					ASAN_LIB="$$RESOLVED_PATH"; \
-					echo "✓ Using resolved ASAN library: $$ASAN_LIB"; \
-				else \
-					ASAN_LIB="$$lib_path"; \
-					echo "✓ Using original ASAN library: $$ASAN_LIB"; \
-				fi; \
-			else \
+	UNAME_S=$$(uname -s); \
+	if [ "$$UNAME_S" = "Darwin" ]; then \
+		echo "macOS detected - searching for ASAN library..."; \
+		for lib_path in \
+			"$$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib 2>/dev/null || echo '')" \
+			"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/opt/homebrew/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/usr/local/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/Library/Developer/CommandLineTools/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"; do \
+			if [ -f "$$lib_path" ]; then \
+				echo "Found ASAN library: $$lib_path"; \
 				ASAN_LIB="$$lib_path"; \
 				echo "✓ Using ASAN library: $$ASAN_LIB"; \
+				break; \
 			fi; \
-			break; \
-		fi; \
-	done; \
+		done; \
+	else \
+		echo "Linux detected - searching for ASAN library..."; \
+		for lib_path in \
+			"$$(gcc -print-file-name=libasan.so)" \
+			"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+			"/usr/lib/x86_64-linux-gnu/libasan.so" \
+			"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+			"/usr/lib64/libasan.so" \
+			"/usr/local/lib/libasan.so"; do \
+			if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+				echo "Found ASAN library: $$lib_path"; \
+				if [ -L "$$lib_path" ]; then \
+					RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+					if [ -f "$$RESOLVED_PATH" ]; then \
+						ASAN_LIB="$$RESOLVED_PATH"; \
+						echo "✓ Using resolved ASAN library: $$ASAN_LIB"; \
+					else \
+						ASAN_LIB="$$lib_path"; \
+						echo "✓ Using original ASAN library: $$ASAN_LIB"; \
+					fi; \
+				else \
+					ASAN_LIB="$$lib_path"; \
+					echo "✓ Using ASAN library: $$ASAN_LIB"; \
+				fi; \
+				break; \
+			fi; \
+		done; \
+	fi; \
 	if [ -z "$$ASAN_LIB" ]; then \
 		echo "❌ ERROR: No ASAN library found"; \
-		echo "Please install ASAN development packages:"; \
-		echo "  Ubuntu/Debian: apt-get install gcc libc6-dev"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "Please ensure Xcode or Command Line Tools are installed:"; \
+			echo "  xcode-select --install"; \
+			echo "Or install via Homebrew:"; \
+			echo "  brew install llvm"; \
+		else \
+			echo "Please install ASAN development packages:"; \
+			echo "  Ubuntu/Debian: apt-get install gcc libc6-dev"; \
+		fi; \
 		exit 1; \
 	fi; \
 	echo ""
@@ -261,105 +287,167 @@ test-asan: build-asan
 	@echo ""
 	@echo "=== Testing Extension Loading (with ASAN) ==="
 	@ASAN_LIB=""; \
-	for lib_path in \
-		"$$(gcc -print-file-name=libasan.so)" \
-		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
-		"/usr/lib/x86_64-linux-gnu/libasan.so" \
-		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
-		"/usr/lib64/libasan.so" \
-		"/usr/local/lib/libasan.so"; do \
-		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
-			if [ -L "$$lib_path" ]; then \
-				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
-				if [ -f "$$RESOLVED_PATH" ]; then \
-					ASAN_LIB="$$RESOLVED_PATH"; \
+	UNAME_S=$$(uname -s); \
+	if [ "$$UNAME_S" = "Darwin" ]; then \
+		for lib_path in \
+			"$$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib 2>/dev/null || echo '')" \
+			"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/opt/homebrew/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/usr/local/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/Library/Developer/CommandLineTools/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"; do \
+			if [ -f "$$lib_path" ]; then \
+				ASAN_LIB="$$lib_path"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		for lib_path in \
+			"$$(gcc -print-file-name=libasan.so)" \
+			"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+			"/usr/lib/x86_64-linux-gnu/libasan.so" \
+			"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+			"/usr/lib64/libasan.so" \
+			"/usr/local/lib/libasan.so"; do \
+			if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+				if [ -L "$$lib_path" ]; then \
+					RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+					if [ -f "$$RESOLVED_PATH" ]; then \
+						ASAN_LIB="$$RESOLVED_PATH"; \
+					else \
+						ASAN_LIB="$$lib_path"; \
+					fi; \
 				else \
 					ASAN_LIB="$$lib_path"; \
 				fi; \
-			else \
-				ASAN_LIB="$$lib_path"; \
+				break; \
 			fi; \
-			break; \
-		fi; \
-	done; \
+		done; \
+	fi; \
 	ASAN_SUCCESS=0; \
 	if [ -n "$$ASAN_LIB" ]; then \
-		echo "Testing with LD_PRELOAD=$$ASAN_LIB"; \
-		if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
-			echo "✓ Extension loads successfully with ASAN"; \
-			ASAN_SUCCESS=1; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "Testing with DYLD_INSERT_LIBRARIES=$$ASAN_LIB"; \
+			if env DYLD_INSERT_LIBRARIES="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
+				echo "✓ Extension loads successfully with ASAN"; \
+				ASAN_SUCCESS=1; \
+			fi; \
 		else \
-			echo "❌ Extension failed to load with ASAN LD_PRELOAD"; \
-			echo "Trying alternative ASAN libraries..."; \
-			for alt_lib in "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
-				if [ -f "$$alt_lib" ]; then \
-					echo "Testing alternative: $$alt_lib"; \
-					if env LD_PRELOAD="$$alt_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
-						echo "✓ Extension loads successfully with $$alt_lib"; \
-						ASAN_LIB="$$alt_lib"; \
-						ASAN_SUCCESS=1; \
-						break; \
+			echo "Testing with LD_PRELOAD=$$ASAN_LIB"; \
+			if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
+				echo "✓ Extension loads successfully with ASAN"; \
+				ASAN_SUCCESS=1; \
+			else \
+				echo "❌ Extension failed to load with ASAN LD_PRELOAD"; \
+				echo "Trying alternative ASAN libraries..."; \
+				for alt_lib in "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
+					if [ -f "$$alt_lib" ]; then \
+						echo "Testing alternative: $$alt_lib"; \
+						if env LD_PRELOAD="$$alt_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
+							echo "✓ Extension loads successfully with $$alt_lib"; \
+							ASAN_LIB="$$alt_lib"; \
+							ASAN_SUCCESS=1; \
+							break; \
+						fi; \
 					fi; \
-				fi; \
-			done; \
+				done; \
+			fi; \
 		fi; \
 	fi; \
 	if [ $$ASAN_SUCCESS -eq 0 ]; then \
 		echo "❌ CRITICAL ERROR: Cannot load extension with any ASAN library"; \
 		echo "Available ASAN libraries:"; \
-		find /usr/lib* -name "*asan*" -type f 2>/dev/null | head -5 || echo "  None found"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			find /Applications/Xcode.app /opt/homebrew /usr/local /Library/Developer -name "*asan*" -type f 2>/dev/null | head -5 || echo "  None found"; \
+		else \
+			find /usr/lib* -name "*asan*" -type f 2>/dev/null | head -5 || echo "  None found"; \
+		fi; \
 		echo ""; \
 		echo "Extension dependencies:"; \
-		ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "  ldd failed"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			otool -L $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "  otool failed"; \
+		else \
+			ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "  ldd failed"; \
+		fi; \
 		echo ""; \
-		echo "Attempting to run without LD_PRELOAD (may show runtime errors):"; \
+		echo "Attempting to run without preload (may show runtime errors):"; \
 		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension test' . PHP_EOL;" || true; \
 		exit 1; \
 	fi; \
 	echo ""
 	@echo "=== Running ASAN Tests ==="
-	@echo "Command: env LD_PRELOAD=\"$$ASAN_LIB\" ASAN_OPTIONS=\"$(ASAN_OPTIONS_ENV)\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php"
 	@ASAN_LIB=""; \
-	for lib_path in \
-		"$$(gcc -print-file-name=libasan.so)" \
-		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
-		"/usr/lib/x86_64-linux-gnu/libasan.so" \
-		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
-		"/usr/lib64/libasan.so" \
-		"/usr/local/lib/libasan.so"; do \
-		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
-			if [ -L "$$lib_path" ]; then \
-				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
-				if [ -f "$$RESOLVED_PATH" ]; then \
-					ASAN_LIB="$$RESOLVED_PATH"; \
+	UNAME_S=$$(uname -s); \
+	if [ "$$UNAME_S" = "Darwin" ]; then \
+		echo "Command: env DYLD_INSERT_LIBRARIES=\"$$ASAN_LIB\" ASAN_OPTIONS=\"$(ASAN_OPTIONS_ENV)\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php"; \
+		for lib_path in \
+			"$$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib 2>/dev/null || echo '')" \
+			"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/opt/homebrew/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/usr/local/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" \
+			"/Library/Developer/CommandLineTools/usr/lib/clang/*/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"; do \
+			if [ -f "$$lib_path" ]; then \
+				ASAN_LIB="$$lib_path"; \
+				break; \
+			fi; \
+		done; \
+		FOUND_WORKING_LIB=0; \
+		if [ -n "$$ASAN_LIB" ]; then \
+			if env DYLD_INSERT_LIBRARIES="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Test lib works' . PHP_EOL;" >/dev/null 2>&1; then \
+				FOUND_WORKING_LIB=1; \
+			fi; \
+		fi; \
+		if [ $$FOUND_WORKING_LIB -eq 0 ]; then \
+			echo "❌ No working ASAN library found for main test execution"; \
+			exit 1; \
+		fi; \
+		echo "Using ASAN library: $$ASAN_LIB"; \
+		echo "Starting test execution..."; \
+		echo ""; \
+		env DYLD_INSERT_LIBRARIES="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+		TEST_RESULT=$$?; \
+	else \
+		echo "Command: env LD_PRELOAD=\"$$ASAN_LIB\" ASAN_OPTIONS=\"$(ASAN_OPTIONS_ENV)\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php"; \
+		for lib_path in \
+			"$$(gcc -print-file-name=libasan.so)" \
+			"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+			"/usr/lib/x86_64-linux-gnu/libasan.so" \
+			"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+			"/usr/lib64/libasan.so" \
+			"/usr/local/lib/libasan.so"; do \
+			if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+				if [ -L "$$lib_path" ]; then \
+					RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+					if [ -f "$$RESOLVED_PATH" ]; then \
+						ASAN_LIB="$$RESOLVED_PATH"; \
+					else \
+						ASAN_LIB="$$lib_path"; \
+					fi; \
 				else \
 					ASAN_LIB="$$lib_path"; \
 				fi; \
-			else \
-				ASAN_LIB="$$lib_path"; \
-			fi; \
-			break; \
-		fi; \
-	done; \
-	FOUND_WORKING_LIB=0; \
-	for test_lib in "$$ASAN_LIB" "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
-		if [ -f "$$test_lib" ]; then \
-			if env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Test lib works' . PHP_EOL;" >/dev/null 2>&1; then \
-				ASAN_LIB="$$test_lib"; \
-				FOUND_WORKING_LIB=1; \
 				break; \
 			fi; \
+		done; \
+		FOUND_WORKING_LIB=0; \
+		for test_lib in "$$ASAN_LIB" "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
+			if [ -f "$$test_lib" ]; then \
+				if env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Test lib works' . PHP_EOL;" >/dev/null 2>&1; then \
+					ASAN_LIB="$$test_lib"; \
+					FOUND_WORKING_LIB=1; \
+					break; \
+				fi; \
+			fi; \
+		done; \
+		if [ $$FOUND_WORKING_LIB -eq 0 ]; then \
+			echo "❌ No working ASAN library found for main test execution"; \
+			exit 1; \
 		fi; \
-	done; \
-	if [ $$FOUND_WORKING_LIB -eq 0 ]; then \
-		echo "❌ No working ASAN library found for main test execution"; \
-		exit 1; \
+		echo "Using ASAN library: $$ASAN_LIB"; \
+		echo "Starting test execution..."; \
+		echo ""; \
+		env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+		TEST_RESULT=$$?; \
 	fi; \
-	echo "Using ASAN library: $$ASAN_LIB"; \
-	echo "Starting test execution..."; \
-	echo ""; \
-	env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
-	TEST_RESULT=$$?; \
 	echo ""; \
 	echo "=== Test Results ==="
 	@if [ $$TEST_RESULT -eq 0 ]; then \
