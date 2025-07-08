@@ -1,7 +1,7 @@
 # Platform-specific configuration
 ifeq ($(shell uname),Darwin)
     INCLUDES += -I/opt/homebrew/include
-    VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lSystem
+    VALKEY_GLIDE_SHARED_LIBADD = ../ffi/target/release/libglide_ffi.a -lresolv -lSystem -Wl,-rpath,/opt/homebrew/lib
 else
     # Linux - check for target-specific build first, fallback to release
     ifneq ($(wildcard ../ffi/target/x86_64-unknown-linux-gnu/release/libglide_ffi.a),)
