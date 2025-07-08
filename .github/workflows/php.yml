@@ -528,8 +528,9 @@ jobs:
                   
                   # Step 5: Build extension with debug symbols
                   echo "=== Step 5: Building extension with debug symbols ==="
+                  CFLAGS="-g -O0" make build-modules-pre
                   CFLAGS="-g -O0" make
-                  
+
                   # Step 6: Create valgrind logs directory
                   mkdir -p ./valgrind_logs
                   
