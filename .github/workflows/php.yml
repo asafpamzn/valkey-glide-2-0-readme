@@ -541,17 +541,7 @@ jobs:
                   echo "Test file exists: $(ls -la tests/TestValkeyGlide.php 2>/dev/null || echo 'NOT FOUND')"
                   echo "Suppressions file exists: $(ls -la valgrind.supp 2>/dev/null || echo 'NOT FOUND')"
                   echo "Valgrind version: $(valgrind --version)"
-                  
-                  # Update the ext.ini file to use absolute path for extension
-                  if [ -f ext.ini ]; then
-                      sed -i "s|extension=valkey_glide.so|extension=$(pwd)/modules/valkey_glide.so|" ext.ini
-                      echo "Updated ext.ini contents:"
-                      cat ext.ini
-                  else
-                      echo "WARNING: ext.ini not found, creating basic one"
-                      echo "extension=$(pwd)/modules/valkey_glide.so" > ext.ini
-                  fi
-                  
+                                   
                   # Step 7: Run Valgrind tests
                   echo ""
                   echo "=== Step 7: Running Valgrind memory analysis ==="
@@ -565,8 +555,7 @@ jobs:
                       --leak-check=full \
                       --show-leak-kinds=all \
                       --track-origins=yes \
-                      --verbose \
-                      --suppressions=valgrind.supp \
+                      --verbose \                      
                       php -n -c ext.ini tests/TestValkeyGlide.php 2>&1 | tee ./valgrind_logs/valgrind_output.log
                   
                   VALGRIND_EXIT_CODE=$?
