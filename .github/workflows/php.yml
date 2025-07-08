@@ -295,6 +295,12 @@ jobs:
                   # Ensure Xcode Command Line Tools are installed (required for ASAN)
                   xcode-select --install || echo "Xcode Command Line Tools already installed"
 
+            - name: Install protobuf-c
+              run: brew install protobuf-c
+
+            - name: Export DYLD_LIBRARY_PATH
+              run: echo "DYLD_LIBRARY_PATH=$(brew --prefix protobuf-c)/lib" >> $GITHUB_ENV              
+
             - name: Start Valkey servers
               working-directory: php/tests
               run: |
@@ -352,9 +358,11 @@ jobs:
                   
                   # Create clean log directory
                   mkdir -p ./asan_logs
-                  
+                  otool -L php/modules/valkey_glide.so
+                  nm -g modules/valkey_glide.so | grep protobuf_c_empty_string
                   # Run ASAN tests with visible error output
                   echo "=== Running make test-asan ==="
+
                   make test-asan
 
             - name: Display ASAN logs if found
