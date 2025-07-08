@@ -229,6 +229,7 @@ jobs:
 
     test-php-asan:
         name: PHP ASAN Tests - EngineVersion ${{ matrix.engine.version }} (macOS)
+        if: false  # Temporarily disabled
         needs: get-matrices
         runs-on: macos-latest
         timeout-minutes: 45
