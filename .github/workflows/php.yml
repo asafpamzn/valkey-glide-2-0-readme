@@ -532,61 +532,108 @@ jobs:
                   CFLAGS="-g -O0" make build-modules-pre
                   CFLAGS="-g -O0" make
 
-                  # Step 6: Create valgrind logs directory
+                  # Step 6: Create valgrind logs directory and verify setup
                   mkdir -p ./valgrind_logs
-                  
-                  # Step 7: Run Valgrind tests
-                  echo "=== Step 7: Running Valgrind memory analysis ==="
-                  echo "Extension path: $(pwd)/modules/valkey_glide.so"
-                  echo "Config file: $(pwd)/ext.ini"
-                  echo "Test file: tests/TestValkeyGlide.php"
-                  echo ""
+                  echo "=== Step 6: Verifying Valgrind setup ==="
+                  echo "Working directory: $(pwd)"
+                  echo "Extension exists: $(ls -la modules/valkey_glide.so 2>/dev/null || echo 'NOT FOUND')"
+                  echo "Config file exists: $(ls -la ext.ini 2>/dev/null || echo 'NOT FOUND')"
+                  echo "Test file exists: $(ls -la tests/TestValkeyGlide.php 2>/dev/null || echo 'NOT FOUND')"
+                  echo "Suppressions file exists: $(ls -la valgrind.supp 2>/dev/null || echo 'NOT FOUND')"
+                  echo "Valgrind version: $(valgrind --version)"
                   
                   # Update the ext.ini file to use absolute path for extension
-                  sed -i "s|extension=valkey_glide.so|extension=$(pwd)/modules/valkey_glide.so|" ext.ini
+                  if [ -f ext.ini ]; then
+                      sed -i "s|extension=valkey_glide.so|extension=$(pwd)/modules/valkey_glide.so|" ext.ini
+                      echo "Updated ext.ini contents:"
+                      cat ext.ini
+                  else
+                      echo "WARNING: ext.ini not found, creating basic one"
+                      echo "extension=$(pwd)/modules/valkey_glide.so" > ext.ini
+                  fi
                   
-                  # Run Valgrind with comprehensive memory checking
+                  # Step 7: Run Valgrind tests
+                  echo ""
+                  echo "=== Step 7: Running Valgrind memory analysis ==="
+                  echo "Command: valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --suppressions=valgrind.supp php -n -c ext.ini tests/TestValkeyGlide.php"
+                  echo ""
+                  
+                  # Run Valgrind with output to both terminal and log file
+                  set -o pipefail
                   valgrind \
                       --tool=memcheck \
                       --leak-check=full \
                       --show-leak-kinds=all \
                       --track-origins=yes \
                       --verbose \
-                      --log-file=./valgrind_logs/valgrind_output.log \
                       --suppressions=valgrind.supp \
-                      php -n -c ext.ini tests/TestValkeyGlide.php || true
+                      php -n -c ext.ini tests/TestValkeyGlide.php 2>&1 | tee ./valgrind_logs/valgrind_output.log
                   
+                  VALGRIND_EXIT_CODE=$?
                   echo ""
-                  echo "=== Valgrind analysis completed ==="
+                  echo "=== Valgrind analysis completed with exit code: $VALGRIND_EXIT_CODE ==="
 
             - name: Display Valgrind results
               working-directory: php
               if: always()
               run: |
-                  echo "=== Valgrind Analysis Results ==="
+                  echo "=== Valgrind Analysis Results Summary ==="
+                  echo "Log directory contents:"
+                  ls -la ./valgrind_logs/ 2>/dev/null || echo "No valgrind_logs directory found"
+                  echo ""
+                  
                   if [ -f "./valgrind_logs/valgrind_output.log" ]; then
-                      echo "=== Valgrind Output ==="
-                      cat ./valgrind_logs/valgrind_output.log
-                      echo ""
+                      LOG_SIZE=$(wc -c < ./valgrind_logs/valgrind_output.log)
+                      echo "=== Valgrind log file found (${LOG_SIZE} bytes) ==="
                       
-                      # Check for memory leaks in the output
+                      # Since we used tee, the output should already be visible above
+                      # But let's extract key information for summary
+                      echo ""
+                      echo "=== Extracting Key Results ==="
+                      
+                      # Show test completion status
+                      if grep -q "All tests passed" ./valgrind_logs/valgrind_output.log; then
+                          echo "✅ All tests passed"
+                      elif grep -q "FAILED" ./valgrind_logs/valgrind_output.log; then
+                          echo "❌ Some tests failed"
+                      fi
+                      
+                      # Check for memory leaks
                       if grep -q "definitely lost:" ./valgrind_logs/valgrind_output.log; then
-                          echo "⚠️  Memory leaks detected by Valgrind"
-                          grep -A 5 -B 5 "definitely lost:" ./valgrind_logs/valgrind_output.log || true
+                          echo "⚠️  CRITICAL: Definite memory leaks detected"
+                          grep -A 3 -B 1 "definitely lost:" ./valgrind_logs/valgrind_output.log || true
                       else
                           echo "✅ No definite memory leaks detected"
                       fi
                       
-                      # Show leak summary
+                      # Check for possible leaks
+                      if grep -q "possibly lost:" ./valgrind_logs/valgrind_output.log; then
+                          POSSIBLY_LOST=$(grep "possibly lost:" ./valgrind_logs/valgrind_output.log | head -1)
+                          echo "⚠️  Possible leaks: $POSSIBLY_LOST"
+                      fi
+                      
+                      # Show leak summary if present
                       if grep -q "LEAK SUMMARY:" ./valgrind_logs/valgrind_output.log; then
                           echo ""
-                          echo "=== Leak Summary ==="
-                          grep -A 10 "LEAK SUMMARY:" ./valgrind_logs/valgrind_output.log || true
+                          echo "=== Memory Leak Summary ==="
+                          grep -A 6 "LEAK SUMMARY:" ./valgrind_logs/valgrind_output.log | head -7 || true
                       fi
+                      
+                      # Show error summary
+                      if grep -q "ERROR SUMMARY:" ./valgrind_logs/valgrind_output.log; then
+                          echo ""
+                          echo "=== Error Summary ==="
+                          grep "ERROR SUMMARY:" ./valgrind_logs/valgrind_output.log || true
+                      fi
+                      
+                      echo ""
+                      echo "📝 Full Valgrind output was displayed above during test execution"
+                      echo "📎 Complete log is also saved as artifact for detailed analysis"
+                      
                   else
                       echo "❌ No Valgrind output file found"
-                      echo "Checking for any log files:"
-                      ls -la ./valgrind_logs/ || echo "No valgrind_logs directory"
+                      echo "This indicates the Valgrind command may have failed to execute properly"
+                      echo "Check the previous step output for any error messages"
                   fi
 
             - name: Stop Valkey servers
