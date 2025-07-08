@@ -512,6 +512,9 @@ jobs:
                   echo "=== Final server status check ==="
                   ps aux | grep -E "(valkey|redis)-server" | grep -v grep || echo "No valkey/redis-server processes found"
                   echo "=== Valkey servers startup completed ==="
+                  
+            - name: Check Valgrind PATH
+              run: which valgrind && valgrind --version
 
             - name: Setup and run Valgrind tests
               working-directory: php
