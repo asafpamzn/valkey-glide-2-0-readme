@@ -374,7 +374,7 @@ test-asan: build-asan
 				nm -D $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || objdump -tT $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || echo "    Symbol analysis not available"; \
 				echo "  • Extension Strings (first 10 relevant):"; \
 				strings $(CURDIR)/modules/valkey_glide.so 2>/dev/null | grep -E "(php|valkey|glide|version)" | head -10 || echo "    String analysis not available"; \
-			fi; \2>
+			fi; \2> \
 			echo ""; \
 			echo "📄 TEST FILE ANALYSIS:"; \
 			echo "  • Test File Path: tests/TestValkeyGlide.php"; \
