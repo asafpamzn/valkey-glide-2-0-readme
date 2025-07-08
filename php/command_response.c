@@ -1136,7 +1136,7 @@ char* zval_to_string_safe(zval* z, size_t* len, int* need_free) {
             *need_free = 1;
             break;
 
-        default:
+        default: {
             /* Convert other types to string */
             zval copy;
             ZVAL_COPY(&copy, z);
@@ -1145,7 +1145,7 @@ char* zval_to_string_safe(zval* z, size_t* len, int* need_free) {
             *len = Z_STRLEN(copy);
             zval_dtor(&copy);
             *need_free = 1;
-            break;
+        } break;
     }
 
     return str;
