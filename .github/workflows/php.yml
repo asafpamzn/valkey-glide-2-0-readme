@@ -290,7 +290,8 @@ jobs:
               run: |
                   # Install required tools via Homebrew
                   brew install autoconf automake libtool pkg-config protobuf-c
-                  
+                  export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH"
+                  export PATH="/opt/homebrew/bin:$PATH"
                   # Ensure Xcode Command Line Tools are installed (required for ASAN)
                   xcode-select --install || echo "Xcode Command Line Tools already installed"
 
