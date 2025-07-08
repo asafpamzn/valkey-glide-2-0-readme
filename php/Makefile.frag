@@ -197,7 +197,24 @@ build-asan:
 test-asan: build-asan
 	@echo "Running tests with AddressSanitizer..."
 	@mkdir -p asan_logs
-	@echo "Detecting AddressSanitizer library..."
+	@echo "=== ASAN Test Configuration ==="
+	@echo "Extension: $(CURDIR)/modules/valkey_glide.so"
+	@echo "Test file: tests/TestValkeyGlide.php"
+	@echo "ASAN options: $(ASAN_OPTIONS_ENV)"
+	@echo ""
+	@echo "=== Checking Prerequisites ==="
+	@if [ ! -f "$(CURDIR)/modules/valkey_glide.so" ]; then \
+		echo "❌ ERROR: Extension not found at $(CURDIR)/modules/valkey_glide.so"; \
+		exit 1; \
+	fi
+	@if [ ! -f "tests/TestValkeyGlide.php" ]; then \
+		echo "❌ ERROR: Test file not found at tests/TestValkeyGlide.php"; \
+		exit 1; \
+	fi
+	@echo "✓ Extension file exists: $(CURDIR)/modules/valkey_glide.so"
+	@echo "✓ Test file exists: tests/TestValkeyGlide.php"
+	@echo ""
+	@echo "=== Finding ASAN Library ==="
 	@ASAN_LIB=""; \
 	for lib_path in \
 		"$$(gcc -print-file-name=libasan.so)" \
@@ -207,384 +224,169 @@ test-asan: build-asan
 		"/usr/lib64/libasan.so" \
 		"/usr/local/lib/libasan.so"; do \
 		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
-			echo "Found ASAN candidate: $$lib_path"; \
+			echo "Found ASAN library: $$lib_path"; \
 			if [ -L "$$lib_path" ]; then \
 				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
-				echo "  -> Symbolic link detected, resolving: $$lib_path -> $$RESOLVED_PATH"; \
 				if [ -f "$$RESOLVED_PATH" ]; then \
 					ASAN_LIB="$$RESOLVED_PATH"; \
 					echo "✓ Using resolved ASAN library: $$ASAN_LIB"; \
 				else \
-					echo "⚠ Resolved path not found, using original: $$lib_path"; \
 					ASAN_LIB="$$lib_path"; \
+					echo "✓ Using original ASAN library: $$ASAN_LIB"; \
 				fi; \
 			else \
 				ASAN_LIB="$$lib_path"; \
-				echo "✓ Using direct ASAN library: $$ASAN_LIB"; \
+				echo "✓ Using ASAN library: $$ASAN_LIB"; \
 			fi; \
 			break; \
 		fi; \
 	done; \
-	echo "=== Pre-test diagnostics ==="; \
-	echo "Extension file: $(CURDIR)/modules/valkey_glide.so"; \
-	ls -la $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "Extension file not found!"; \
-	echo "Test file: tests/TestValkeyGlide.php"; \
-	ls -la tests/TestValkeyGlide.php 2>/dev/null || echo "Test file not found!"; \
-	echo "Checking if extension is ASAN-compiled..."; \
-	if ldd $(CURDIR)/modules/valkey_glide.so | grep -q libasan; then \
-		echo "✓ Extension is ASAN-compiled (libasan.so detected in dependencies)"; \
-		if [ -n "$$ASAN_LIB" ]; then \
-			echo "✓ ASAN library found: $$ASAN_LIB"; \
-			echo "ASAN-compiled extensions MUST use LD_PRELOAD. Running tests with LD_PRELOAD..."; \
-			echo ""; \
-			echo "████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████"; \
-			echo "██                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ██"; \
-			echo "██                                     🔥🔥🔥 ULTRA-VERBOSE ASAN TEST DEBUGGING 🔥🔥🔥                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ██"; \
-			echo "██                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ██"; \
-			echo "████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████"; \
-			echo ""; \
-			echo "🌟 COMPREHENSIVE SYSTEM ANALYSIS 🌟"; \
-			echo "====================================="; \
-			echo ""; \
-			echo "📍 LOCATION & USER INFORMATION:"; \
-			echo "  • Working Directory: $$(pwd)"; \
-			echo "  • User Account: $$(whoami) (UID: $$(id -u), GID: $$(id -g))"; \
-			echo "  • Home Directory: $$HOME"; \
-			echo "  • Shell: $$SHELL"; \
-			echo "  • Terminal: $$TERM"; \
-			echo "  • Language: $$LANG"; \
-			echo ""; \
-			echo "🔧 ENVIRONMENT VARIABLES (Full Analysis):"; \
-			echo "  • PATH ($$PATH | wc -c characters):"; \
-			echo "    $$PATH" | sed 's/:/\n    /g'; \
-			echo "  • LD_LIBRARY_PATH: $${LD_LIBRARY_PATH:-'<NOT SET>'}"; \
-			echo "  • LD_RUN_PATH: $${LD_RUN_PATH:-'<NOT SET>'}"; \
-			echo "  • ASAN_OPTIONS: $(ASAN_OPTIONS_ENV)"; \
-			echo "  • LD_PRELOAD: $$ASAN_LIB"; \
-			echo "  • PKG_CONFIG_PATH: $${PKG_CONFIG_PATH:-'<NOT SET>'}"; \
-			echo "  • C_INCLUDE_PATH: $${C_INCLUDE_PATH:-'<NOT SET>'}"; \
-			echo "  • CPLUS_INCLUDE_PATH: $${CPLUS_INCLUDE_PATH:-'<NOT SET>'}"; \
-			echo "  • LIBRARY_PATH: $${LIBRARY_PATH:-'<NOT SET>'}"; \
-			echo ""; \
-			echo "🖥️  SYSTEM HARDWARE & OS INFORMATION:"; \
-			echo "  • Full OS Details: $$(uname -a)"; \
-			echo "  • Kernel Version: $$(uname -r)"; \
-			echo "  • Architecture: $$(uname -m)"; \
-			echo "  • Platform: $$(uname -p)"; \
-			echo "  • Hardware: $$(uname -i 2>/dev/null || echo 'N/A')"; \
-			echo "  • CPU Information:"; \
-			lscpu 2>/dev/null | head -10 || echo "    lscpu not available"; \
-			echo "  • CPU Count: $$(nproc) cores"; \
-			echo "  • Memory Information:"; \
-			free -h || echo "    free command not available"; \
-			echo "  • Load Average: $$(uptime | awk -F'load average:' '{print $$2}')"; \
-			echo "  • System Uptime: $$(uptime -p 2>/dev/null || uptime)"; \
-			echo ""; \
-			echo "💾 STORAGE & FILESYSTEM ANALYSIS:"; \
-			echo "  • Current Directory Disk Usage:"; \
-			df -h . || echo "    df command failed"; \
-			echo "  • Available Space in /tmp:"; \
-			df -h /tmp 2>/dev/null || echo "    /tmp not accessible"; \
-			echo "  • Inode Usage:"; \
-			df -i . 2>/dev/null || echo "    inode info not available"; \
-			echo "  • Directory Contents (.):"; \
-			ls -laht . | head -20; \
-			echo "  • Extension Directory Contents:"; \
-			ls -laht modules/ 2>/dev/null || echo "    modules/ directory not found"; \
-			echo "  • Test Directory Contents:"; \
-			ls -laht tests/ 2>/dev/null || echo "    tests/ directory not found"; \
-			echo ""; \
-			echo "🔐 PERMISSIONS & SECURITY:"; \
-			echo "  • User Groups: $$(groups)"; \
-			echo "  • File Permissions Summary:"; \
-			echo "    Extension: $$(ls -la $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo 'NOT FOUND')"; \
-			echo "    Test File: $$(ls -la tests/TestValkeyGlide.php 2>/dev/null || echo 'NOT FOUND')"; \
-			echo "    Current Dir: $$(ls -lad .)"; \
-			echo "  • SELinux Status: $$(getenforce 2>/dev/null || echo 'Not available')"; \
-			echo "  • AppArmor Status: $$(aa-status 2>/dev/null | head -1 || echo 'Not available')"; \
-			echo ""; \
-			echo "🔄 RUNNING PROCESSES (Detailed Analysis):"; \
-			echo "  • Total Processes: $$(ps aux | wc -l)"; \
-			echo "  • PHP Processes:"; \
-			ps aux | grep -i php | grep -v grep || echo "    No PHP processes found"; \
-			echo "  • Valkey/Redis Processes:"; \
-			ps aux | grep -E "(valkey|redis)" | grep -v grep || echo "    No Valkey/Redis processes found"; \
-			echo "  • Process Tree (last 20):"; \
-			ps aux | tail -20; \
-			echo "  • Memory Usage by Process (top 10):"; \
-			ps aux --sort=-%mem | head -10; \
-			echo ""; \
-			echo "🌐 NETWORK CONFIGURATION & CONNECTIVITY:"; \
-			echo "  • Network Interfaces:"; \
-			ip addr 2>/dev/null | grep -E '(inet |inet6 )' | head -10 || ifconfig 2>/dev/null | grep -E '(inet |inet6 )' | head -10 || echo "    Network info not available"; \
-			echo "  • Listening Ports:"; \
-			netstat -tuln 2>/dev/null | grep LISTEN | head -10 || ss -tuln 2>/dev/null | head -10 || echo "    Port info not available"; \
-			echo "  • Testing Valkey Standalone Ports (6379-6381):"; \
-			for port in 6379 6380 6381; do \
-				echo -n "    Port $$port: "; \
-				if timeout 2 bash -c "</dev/tcp/localhost/$$port" 2>/dev/null; then \
-					echo "🟢 OPEN (TCP connection successful)"; \
-				elif nc -z localhost $$port 2>/dev/null; then \
-					echo "🟡 DETECTED (nc reports open)"; \
+	if [ -z "$$ASAN_LIB" ]; then \
+		echo "❌ ERROR: No ASAN library found"; \
+		echo "Please install ASAN development packages:"; \
+		echo "  Ubuntu/Debian: apt-get install gcc libc6-dev"; \
+		exit 1; \
+	fi; \
+	echo ""
+	@echo "=== Testing Basic PHP Execution ==="
+	@php -r "echo 'PHP version: ' . PHP_VERSION . PHP_EOL;" || { echo "❌ PHP execution failed"; exit 1; }
+	@echo ""
+	@echo "=== Testing Extension Loading (without ASAN) ==="
+	@if php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded successfully' . PHP_EOL;" 2>/dev/null; then \
+		echo "✓ Extension loads without ASAN"; \
+	else \
+		echo "⚠ Extension failed to load without ASAN - may need ASAN runtime"; \
+		echo "This is normal for ASAN-compiled extensions"; \
+	fi
+	@echo ""
+	@echo "=== Testing Extension Loading (with ASAN) ==="
+	@ASAN_LIB=""; \
+	for lib_path in \
+		"$$(gcc -print-file-name=libasan.so)" \
+		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+		"/usr/lib/x86_64-linux-gnu/libasan.so" \
+		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+		"/usr/lib64/libasan.so" \
+		"/usr/local/lib/libasan.so"; do \
+		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+			if [ -L "$$lib_path" ]; then \
+				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+				if [ -f "$$RESOLVED_PATH" ]; then \
+					ASAN_LIB="$$RESOLVED_PATH"; \
 				else \
-					echo "🔴 CLOSED/FILTERED"; \
+					ASAN_LIB="$$lib_path"; \
 				fi; \
-			done; \
-			echo "  • Testing Valkey Cluster Ports (7001-7006):"; \
-			for port in 7001 7002 7003 7004 7005 7006; do \
-				echo -n "    Port $$port: "; \
-				if timeout 2 bash -c "</dev/tcp/localhost/$$port" 2>/dev/null; then \
-					echo "🟢 OPEN (TCP connection successful)"; \
-				elif nc -z localhost $$port 2>/dev/null; then \
-					echo "🟡 DETECTED (nc reports open)"; \
-				else \
-					echo "🔴 CLOSED/FILTERED"; \
-				fi; \
-			done; \
-			echo "  • DNS Resolution Test:"; \
-			nslookup localhost 2>/dev/null | head -5 || echo "    DNS lookup failed"; \
-			echo ""; \
-			echo "🐘 PHP RUNTIME ENVIRONMENT (Comprehensive):"; \
-			echo "  • PHP Executable: $$(which php)"; \
-			echo "  • PHP Version (Full):"; \
-			php --version || echo "    PHP not found in PATH"; \
-			echo "  • PHP Configuration:"; \
-			echo "    • SAPI: $$(php -r 'echo php_sapi_name();' 2>/dev/null || echo 'unknown')"; \
-			echo "    • PHP Binary: $$(php -r 'echo PHP_BINARY;' 2>/dev/null || echo 'unknown')"; \
-			echo "    • Extensions Count: $$(php -m 2>/dev/null | wc -l || echo '0') modules loaded"; \
-			echo "    • Memory Limit: $$(php -r 'echo ini_get(\"memory_limit\");' 2>/dev/null || echo 'unknown')"; \
-			echo "    • Max Execution Time: $$(php -r 'echo ini_get(\"max_execution_time\");' 2>/dev/null || echo 'unknown')"; \
-			echo "    • Error Reporting: $$(php -r 'echo ini_get(\"error_reporting\");' 2>/dev/null || echo 'unknown')"; \
-			echo "    • Include Path: $$(php -r 'echo get_include_path();' 2>/dev/null || echo 'unknown')"; \
-			echo "  • PHP Extensions (first 20):"; \
-			php -m 2>/dev/null | head -20 || echo "    Cannot list PHP extensions"; \
-			echo "  • PHP Configuration File:"; \
-			php --ini 2>/dev/null || echo "    Cannot show PHP ini files"; \
-			echo ""; \
-			echo "📦 EXTENSION DETAILED ANALYSIS:"; \
-			echo "  • Extension Path: $(CURDIR)/modules/valkey_glide.so"; \
-			echo "  • Extension Existence: $$(test -f '$(CURDIR)/modules/valkey_glide.so' && echo '✅ EXISTS' || echo '❌ NOT FOUND')"; \
-			if [ -f "$(CURDIR)/modules/valkey_glide.so" ]; then \
-				echo "  • Extension Size: $$(du -h $(CURDIR)/modules/valkey_glide.so | cut -f1) ($$(stat -f%z $(CURDIR)/modules/valkey_glide.so 2>/dev/null || stat -c%s $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo 'unknown') bytes)"; \
-				echo "  • Extension Permissions: $$(ls -la $(CURDIR)/modules/valkey_glide.so)"; \
-				echo "  • Extension File Type: $$(file $(CURDIR)/modules/valkey_glide.so)"; \
-				echo "  • Extension Dependencies (ldd):"; \
-				ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "    ldd failed or not available"; \
-				echo "  • Extension Symbols (first 20):"; \
-				nm -D $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || objdump -tT $(CURDIR)/modules/valkey_glide.so 2>/dev/null | head -20 || echo "    Symbol analysis not available"; \
-				echo "  • Extension Strings (first 10 relevant):"; \
-				strings $(CURDIR)/modules/valkey_glide.so 2>/dev/null | grep -E "(php|valkey|glide|version)" | head -10 || echo "    String analysis not available"; \
-			fi; \2> \
-			echo ""; \
-			echo "📄 TEST FILE ANALYSIS:"; \
-			echo "  • Test File Path: tests/TestValkeyGlide.php"; \
-			echo "  • Test File Existence: $$(test -f 'tests/TestValkeyGlide.php' && echo '✅ EXISTS' || echo '❌ NOT FOUND')"; \
-			if [ -f "tests/TestValkeyGlide.php" ]; then \
-				echo "  • Test File Size: $$(du -h tests/TestValkeyGlide.php | cut -f1) ($$(wc -c < tests/TestValkeyGlide.php) bytes, $$(wc -l < tests/TestValkeyGlide.php) lines)"; \
-				echo "  • Test File Permissions: $$(ls -la tests/TestValkeyGlide.php)"; \
-				echo "  • Test File Content Preview (first 10 lines):"; \
-				head -10 tests/TestValkeyGlide.php; \
-				echo "  • Test File Content Preview (last 10 lines):"; \
-				tail -10 tests/TestValkeyGlide.php; \
-				echo "  • PHP Syntax Check:"; \
-				php -l tests/TestValkeyGlide.php 2>&1 || echo "    Syntax check failed"; \
+			else \
+				ASAN_LIB="$$lib_path"; \
 			fi; \
-			echo ""; \
-			echo "🔧 DEVELOPMENT TOOLS & LIBRARIES:"; \
-			echo "  • GCC Version: $$(gcc --version 2>/dev/null | head -1 || echo 'GCC not found')"; \
-			echo "  • Clang Version: $$(clang --version 2>/dev/null | head -1 || echo 'Clang not found')"; \
-			echo "  • Make Version: $$(make --version 2>/dev/null | head -1 || echo 'Make not found')"; \
-			echo "  • Autotools:"; \
-			echo "    • Autoconf: $$(autoconf --version 2>/dev/null | head -1 || echo 'Not found')"; \
-			echo "    • Automake: $$(automake --version 2>/dev/null | head -1 || echo 'Not found')"; \
-			echo "    • Libtool: $$(libtool --version 2>/dev/null | head -1 || echo 'Not found')"; \
-			echo "  • pkg-config: $$(pkg-config --version 2>/dev/null || echo 'Not found')"; \
-			echo "  • Protocol Buffers: $$(protoc --version 2>/dev/null || echo 'Not found')"; \
-			echo ""; \
-			echo "🛡️  ASAN LIBRARY COMPREHENSIVE ANALYSIS:"; \
-			echo "  • ASAN Library Path: $$ASAN_LIB"; \
-			echo "  • ASAN Library Existence: $$(test -f "$$ASAN_LIB" && echo '✅ EXISTS' || echo '❌ NOT FOUND')"; \
-			if [ -f "$$ASAN_LIB" ]; then \
-				echo "  • ASAN Library Size: $$(du -h $$ASAN_LIB | cut -f1)"; \
-				echo "  • ASAN Library Permissions: $$(ls -la $$ASAN_LIB)"; \
-				echo "  • ASAN Library File Type: $$(file $$ASAN_LIB)"; \
-				echo "  • ASAN Library Version Info:"; \
-				strings "$$ASAN_LIB" 2>/dev/null | grep -i version | head -5 || echo "    Version info not found"; \
-			fi; \
-			echo "  • Alternative ASAN Libraries:"; \
-			find /usr/lib* -name "*asan*" -type f 2>/dev/null | head -10 || echo "    No alternative ASAN libraries found"; \
-			echo ""; \
-			echo "🧪 PRE-TEST VALIDATION SUITE:"; \
-			echo "  • Testing Basic PHP Execution:"; \
-			echo "    Command: php -r \"echo 'PHP is working: ' . PHP_VERSION . PHP_EOL;\""; \
-			php -r "echo 'PHP is working: ' . PHP_VERSION . PHP_EOL;" 2>&1 || echo "    ❌ Basic PHP execution failed"; \
-			echo "  • Testing PHP Extension Loading (WITHOUT ASAN):"; \
-			echo "    Command: php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded without ASAN: OK';\""; \
-			php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded without ASAN: OK';" 2>&1 || echo "    ❌ Extension loading failed without ASAN"; \
-			echo "  • Testing PHP Extension Loading (WITH ASAN LD_PRELOAD):"; \
-			echo "    🔍 Analyzing extension dependencies to find exact ASAN library path..."; \
-			EXTENSION_ASAN_PATH=$$(ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null | grep libasan | awk '{print $$3}' | head -1); \
-			echo "    Extension expects ASAN library at: $$EXTENSION_ASAN_PATH"; \
-			echo "    Our resolved ASAN library path: $$ASAN_LIB"; \
-			echo ""; \
-			echo "    🧪 Testing different ASAN library paths:"; \
-			ASAN_SUCCESS=0; \
-			for test_lib in "$$EXTENSION_ASAN_PATH" "$$ASAN_LIB" "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
-				if [ -n "$$test_lib" ] && [ -f "$$test_lib" ]; then \
-					echo "      Trying: $$test_lib"; \
-					echo "      Command: env LD_PRELOAD=\"$$test_lib\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r \"echo 'Extension loaded with ASAN: OK';\""; \
-					set +e; \
-					TEST_OUTPUT=$$(env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN: OK';" 2>&1); \
-					TEST_RESULT=$$?; \
-					set -e; \
-					if [ $$TEST_RESULT -eq 0 ]; then \
-						echo "      ✅ SUCCESS with $$test_lib"; \
-						echo "      Output: $$TEST_OUTPUT"; \
-						ASAN_LIB="$$test_lib"; \
+			break; \
+		fi; \
+	done; \
+	ASAN_SUCCESS=0; \
+	if [ -n "$$ASAN_LIB" ]; then \
+		echo "Testing with LD_PRELOAD=$$ASAN_LIB"; \
+		if env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
+			echo "✓ Extension loads successfully with ASAN"; \
+			ASAN_SUCCESS=1; \
+		else \
+			echo "❌ Extension failed to load with ASAN LD_PRELOAD"; \
+			echo "Trying alternative ASAN libraries..."; \
+			for alt_lib in "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
+				if [ -f "$$alt_lib" ]; then \
+					echo "Testing alternative: $$alt_lib"; \
+					if env LD_PRELOAD="$$alt_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension loaded with ASAN' . PHP_EOL;" 2>/dev/null; then \
+						echo "✓ Extension loads successfully with $$alt_lib"; \
+						ASAN_LIB="$$alt_lib"; \
 						ASAN_SUCCESS=1; \
 						break; \
-					else \
-						echo "      ❌ Failed with $$test_lib (exit code: $$TEST_RESULT)"; \
-						echo "      Full error output:"; \
-						echo "$$TEST_OUTPUT" | sed 's/^/        /'; \
 					fi; \
+				fi; \
+			done; \
+		fi; \
+	fi; \
+	if [ $$ASAN_SUCCESS -eq 0 ]; then \
+		echo "❌ CRITICAL ERROR: Cannot load extension with any ASAN library"; \
+		echo "Available ASAN libraries:"; \
+		find /usr/lib* -name "*asan*" -type f 2>/dev/null | head -5 || echo "  None found"; \
+		echo ""; \
+		echo "Extension dependencies:"; \
+		ldd $(CURDIR)/modules/valkey_glide.so 2>/dev/null || echo "  ldd failed"; \
+		echo ""; \
+		echo "Attempting to run without LD_PRELOAD (may show runtime errors):"; \
+		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Extension test' . PHP_EOL;" || true; \
+		exit 1; \
+	fi; \
+	echo ""
+	@echo "=== Running ASAN Tests ==="
+	@echo "Command: env LD_PRELOAD=\"$$ASAN_LIB\" ASAN_OPTIONS=\"$(ASAN_OPTIONS_ENV)\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php"
+	@ASAN_LIB=""; \
+	for lib_path in \
+		"$$(gcc -print-file-name=libasan.so)" \
+		"$$(clang -print-file-name=libasan.so 2>/dev/null || echo '')" \
+		"/usr/lib/x86_64-linux-gnu/libasan.so" \
+		"/usr/lib/gcc/x86_64-linux-gnu/*/libasan.so" \
+		"/usr/lib64/libasan.so" \
+		"/usr/local/lib/libasan.so"; do \
+		if [ -f "$$lib_path" ] && [ "$$lib_path" != "libasan.so" ]; then \
+			if [ -L "$$lib_path" ]; then \
+				RESOLVED_PATH=$$(readlink -f "$$lib_path" 2>/dev/null || realpath "$$lib_path" 2>/dev/null || echo "$$lib_path"); \
+				if [ -f "$$RESOLVED_PATH" ]; then \
+					ASAN_LIB="$$RESOLVED_PATH"; \
+				else \
+					ASAN_LIB="$$lib_path"; \
+				fi; \
+			else \
+				ASAN_LIB="$$lib_path"; \
+			fi; \
+			break; \
+		fi; \
+	done; \
+	FOUND_WORKING_LIB=0; \
+	for test_lib in "$$ASAN_LIB" "/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8" "/usr/lib/x86_64-linux-gnu/libasan.so.8.0.0"; do \
+		if [ -f "$$test_lib" ]; then \
+			if env LD_PRELOAD="$$test_lib" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so -r "echo 'Test lib works' . PHP_EOL;" >/dev/null 2>&1; then \
+				ASAN_LIB="$$test_lib"; \
+				FOUND_WORKING_LIB=1; \
+				break; \
+			fi; \
+		fi; \
+	done; \
+	if [ $$FOUND_WORKING_LIB -eq 0 ]; then \
+		echo "❌ No working ASAN library found for main test execution"; \
+		exit 1; \
+	fi; \
+	echo "Using ASAN library: $$ASAN_LIB"; \
+	echo "Starting test execution..."; \
+	echo ""; \
+	env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+	TEST_RESULT=$$?; \
+	echo ""; \
+	echo "=== Test Results ==="
+	@if [ $$TEST_RESULT -eq 0 ]; then \
+		echo "✅ ASAN tests completed successfully (exit code: $$TEST_RESULT)"; \
+	else \
+		echo "❌ ASAN tests failed (exit code: $$TEST_RESULT)"; \
+		echo ""; \
+		echo "=== Error Analysis ==="
+		if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
+			echo "📄 ASAN reports found:"; \
+			for log_file in ./asan_logs/*; do \
+				if [ -f "$$log_file" ]; then \
+					echo "--- $$log_file ---"; \
+					cat "$$log_file"; \
 					echo ""; \
 				fi; \
 			done; \
-			if [ $$ASAN_SUCCESS -eq 0 ]; then \
-				echo "    ❌ All ASAN library paths failed!"; \
-				echo "    This will cause the main test to fail."; \
-				exit 1; \
-			else \
-				echo "    ✅ Found working ASAN library: $$ASAN_LIB"; \
-			fi; \
-			echo ""; \
-			echo "🚀 LAUNCHING MAIN TEST EXECUTION"; \
-			echo "=================================="; \
-			echo "Start time: $$(date '+%Y-%m-%d %H:%M:%S %Z')"; \
-			echo "Timestamp: $$(date +%s)"; \
-			echo "Command to execute:"; \
-			echo "  env LD_PRELOAD=\"$$ASAN_LIB\" ASAN_OPTIONS=\"$(ASAN_OPTIONS_ENV)\" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php"; \
-			echo ""; \
-			echo "📡 REAL-TIME TEST OUTPUT:"; \
-			echo "========================"; \
-			set +e; \
-			env LD_PRELOAD="$$ASAN_LIB" ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php 2>&1; \
-			TEST_EXIT_CODE=$$?; \
-			set -e; \
-			echo ""; \
-			echo "🏁 TEST EXECUTION COMPLETED"; \
-			echo "==========================="; \
-			echo "End time: $$(date '+%Y-%m-%d %H:%M:%S %Z')"; \
-			echo "End timestamp: $$(date +%s)"; \
-			echo "Exit code: $$TEST_EXIT_CODE"; \
-			if [ $$TEST_EXIT_CODE -eq 0 ]; then \
-				echo "Result: ✅ SUCCESS"; \
-			else \
-				echo "Result: ❌ FAILED"; \
-			fi; \
-			echo ""; \
-			if [ $$TEST_EXIT_CODE -ne 0 ]; then \
-				echo "💥 POST-FAILURE COMPREHENSIVE ANALYSIS"; \
-				echo "======================================"; \
-				echo ""; \
-				echo "🔍 ERROR INVESTIGATION:"; \
-				echo "  • Exit Code Analysis: $$TEST_EXIT_CODE"; \
-				case $$TEST_EXIT_CODE in \
-					1) echo "    Standard error (general failure)";; \
-					2) echo "    Shell builtin misuse or command not executable";; \
-					126) echo "    Command not executable";; \
-					127) echo "    Command not found";; \
-					128) echo "    Invalid exit argument";; \
-					130) echo "    Process terminated by Ctrl+C";; \
-					*) echo "    Custom or unknown exit code";; \
-				esac; \
-				echo ""; \
-				echo "🗂️  SYSTEM STATE ANALYSIS:"; \
-				echo "  • Core Dumps:"; \
-				ls -la core* 2>/dev/null | head -5 || echo "    No core files found"; \
-				echo "  • Crash Reports:"; \
-				ls -la crash* 2>/dev/null | head -5 || echo "    No crash files found"; \
-				echo "  • Temporary Files:"; \
-				ls -la /tmp/*php* 2>/dev/null | head -5 || echo "    No PHP temp files found"; \
-				echo ""; \
-				echo "📊 RESOURCE USAGE ANALYSIS:"; \
-				echo "  • Current Memory Usage:"; \
-				free -h | head -2 || echo "    Memory info not available"; \
-				echo "  • Current Disk Usage:"; \
-				df -h . | tail -1 || echo "    Disk info not available"; \
-				echo "  • Current Load:"; \
-				uptime || echo "    Load info not available"; \
-				echo ""; \
-				echo "🔄 PROCESS STATE ANALYSIS:"; \
-				echo "  • Running PHP Processes:"; \
-				ps aux | grep -i php | grep -v grep || echo "    No PHP processes found"; \
-				echo "  • Running Valkey/Redis Processes:"; \
-				ps aux | grep -E "(valkey|redis)" | grep -v grep || echo "    No Valkey/Redis processes found"; \
-				echo "  • Zombie Processes:"; \
-				ps aux | awk '$$8 ~ /^Z/ { print }' || echo "    No zombie processes found"; \
-				echo ""; \
-				echo "📋 SYSTEM LOGS ANALYSIS:"; \
-				echo "  • Recent Kernel Messages:"; \
-				dmesg | tail -10 2>/dev/null || echo "    Cannot access dmesg"; \
-				echo "  • Recent System Log:"; \
-				tail -10 /var/log/syslog 2>/dev/null || tail -10 /var/log/messages 2>/dev/null || echo "    Cannot access system logs"; \
-				echo ""; \
-				echo "🧪 ASAN SPECIFIC ANALYSIS:"; \
-				echo "  • ASAN Log Directory:"; \
-				if [ -d "./asan_logs" ]; then \
-					echo "    Directory exists: ✅"; \
-					echo "    Contents:"; \
-					ls -la ./asan_logs/ || echo "    Cannot list ASAN logs"; \
-					for asan_file in ./asan_logs/*; do \
-						if [ -f "$$asan_file" ]; then \
-							echo "    📄 ASAN Report: $$asan_file"; \
-							cat "$$asan_file"; \
-							echo "    --- End of $$asan_file ---"; \
-						fi; \
-					done; \
-				else \
-					echo "    Directory missing: ❌"; \
-				fi; \
-				echo ""; \
-				echo "🔧 ENVIRONMENT RECHECK:"; \
-				echo "  • LD_PRELOAD at failure: $${LD_PRELOAD:-'<NOT SET>'}"; \
-				echo "  • ASAN_OPTIONS at failure: $${ASAN_OPTIONS:-'<NOT SET>'}"; \
-				echo "  • Working directory: $$(pwd)"; \
-				echo "  • Extension still exists: $$(test -f '$(CURDIR)/modules/valkey_glide.so' && echo 'YES' || echo 'NO')"; \
-				echo "  • Test file still exists: $$(test -f 'tests/TestValkeyGlide.php' && echo 'YES' || echo 'NO')"; \
-				echo ""; \
-				echo "🎯 FAILURE SUMMARY:"; \
-				echo "================"; \
-				echo "❌ TEST EXECUTION FAILED WITH EXIT CODE: $$TEST_EXIT_CODE"; \
-				echo "🔍 Check the detailed output above for the root cause"; \
-				echo "💡 Common causes:"; \
-				echo "   • Valkey servers not running (check port status above)"; \
-				echo "   • PHP extension loading issues"; \
-				echo "   • Memory/ASAN related problems"; \
-				echo "   • Network connectivity issues"; \
-				echo "   • Test environment problems"; \
-				echo ""; \
-				exit $$TEST_EXIT_CODE; \
-			else \
-				echo "🎉 SUCCESS SUMMARY:"; \
-				echo "=================="; \
-				echo "✅ ALL TESTS PASSED SUCCESSFULLY!"; \
-				echo "🛡️  ASAN protection was active throughout the test"; \
-				echo "🔧 Extension loaded and functioned correctly"; \
-				echo "🌐 Network connectivity was sufficient"; \
-				echo "💾 No memory issues detected"; \
-				echo ""; \
-			fi; \
 		else \
-			echo "✗ Extension is ASAN-compiled but no ASAN library found for LD_PRELOAD"; \
-			echo "ASAN-compiled extensions require LD_PRELOAD with ASAN runtime library"; \
-			echo "Please install ASAN development packages or use non-ASAN build"; \
-			exit 1; \
+			echo "📄 No ASAN log files generated"; \
 		fi; \
-	else \
-		echo "Extension is not ASAN-compiled, running without LD_PRELOAD..."; \
-		env ASAN_OPTIONS="$(ASAN_OPTIONS_ENV)" php -n -d extension=$(CURDIR)/modules/valkey_glide.so tests/TestValkeyGlide.php; \
+		echo "=== System State ==="
+		echo "Working directory: $$(pwd)"; \
+		echo "Extension exists: $$(test -f '$(CURDIR)/modules/valkey_glide.so' && echo 'YES' || echo 'NO')"; \
+		echo "Test file exists: $$(test -f 'tests/TestValkeyGlide.php' && echo 'YES' || echo 'NO')"; \
+		echo "ASAN library: $$ASAN_LIB"; \
+		echo ""; \
+		exit $$TEST_RESULT; \
 	fi
 	@if [ -d "./asan_logs" ] && [ "$$(ls -A ./asan_logs 2>/dev/null)" ]; then \
 		echo "=== ASAN Reports Found ==="; \
@@ -596,7 +398,7 @@ test-asan: build-asan
 			fi; \
 		done; \
 	else \
-		echo "✓ No ASAN issues detected in log files"; \
+		echo "✓ No ASAN issues detected"; \
 	fi
 
 clean-asan:

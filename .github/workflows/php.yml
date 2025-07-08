@@ -336,9 +336,10 @@ jobs:
               run: |
                   echo "=== Setting up PHP extension build system and running ASAN tests ==="
                   
-                  # Step 1: Clean previous builds
+                  # Step 1: Clean any existing files (manual cleanup since Makefile may not exist)
                   echo "=== Step 1: Cleaning previous builds ==="
-                  make clean || true
+                  rm -rf ./modules/ ./libs/ ./.libs/ ./tmp-php.ini ./asan_logs/
+                  find . -name "*.lo" -o -name "*.o" -o -name "*.la" | xargs rm -f 2>/dev/null || true
                   
                   # Step 2: Initialize PHP extension build system
                   echo "=== Step 2: Initializing PHP extension build system ==="
@@ -348,15 +349,18 @@ jobs:
                   echo "=== Step 3: Configuring with ASAN flags ==="
                   ./configure --enable-valkey-glide --enable-valkey-glide-asan
                   
-                  # Step 4: Build and test with enhanced AddressSanitizer
-                  echo "=== Step 4: Building and testing with enhanced AddressSanitizer ==="
+                  # Step 4: Now we can use make clean safely
+                  echo "=== Step 4: Clean using make (now that Makefile exists) ==="
+                  make clean || true
+                  
+                  # Step 5: Build and test with AddressSanitizer
+                  echo "=== Step 5: Building and testing with AddressSanitizer ==="
                   
                   # Create clean log directory
-                  rm -rf ./asan_logs
                   mkdir -p ./asan_logs
                   
-                  # Run ASAN tests - let make target handle LD_PRELOAD internally
-                  echo "=== Running make test-asan with enhanced debugging ==="
+                  # Run ASAN tests with visible error output
+                  echo "=== Running make test-asan ==="
                   make test-asan
 
             - name: Display ASAN logs if found
