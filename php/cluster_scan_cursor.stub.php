@@ -19,7 +19,7 @@ final class ClusterScanCursor {
      *
      * @param string|null $cursorId The cursor ID string. Defaults to "0" for initial cursor.
      */
-    public function __construct(?string $cursorId = "0") {}
+    public function __construct(?string $cursorId = null) {}
 
     /**
      * Get the cursor ID string.

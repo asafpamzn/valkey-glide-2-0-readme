@@ -305,58 +305,6 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         set_time_limit(0);  // Reset to unlimited (or default) at the end
     }
 
-    public function testScanPrefix() {
-        $this->markTestSkipped();
-
-        $prefixes = ['prefix-a:', 'prefix-b:'];
-        $id = uniqid();
-
-        $arr_keys = [];
-        foreach ($prefixes as $prefix) {
-            $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, $prefix);
-            $this->valkey_glide->set($id, "LOLWUT");
-            $arr_keys[$prefix] = $id;
-        }
-
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_RETRY);
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_PREFIX);
-
-        foreach ($prefixes as $prefix) {
-            $prefix_keys = [];
-            $this->valkey_glide->setOption(ValkeyGlide::OPT_PREFIX, $prefix);
-
-            foreach ($this->valkey_glide->_masters() as $master) {
-                $it = NULL;
-                while ($keys = $this->valkey_glide->scan($it, $master, "*$id*")) {
-                    foreach ($keys as $key) {
-                        $prefix_keys[$prefix] = $key;
-                    }
-                }
-            }
-
-            $this->assertIsArray($prefix_keys, 1);
-            $this->assertArrayKey($prefix_keys, $prefix);
-        }
-
-        $this->valkey_glide->setOption(ValkeyGlide::OPT_SCAN, ValkeyGlide::SCAN_NOPREFIX);
-
-        $scan_keys = [];
-
-        foreach ($this->valkey_glide->_masters() as $master) {
-            $it = NULL;
-            while ($keys = $this->valkey_glide->scan($it, $master, "*$id*")) {
-                foreach ($keys as $key) {
-                    $scan_keys[] = $key;
-                }
-            }
-        }
-
-        /* We should now have both prefixs' keys */
-        foreach ($arr_keys as $prefix => $id) {
-            $this->assertInArray("{$prefix}{$id}", $scan_keys);
-        }
-    }
-
     // Run some simple tests against the PUBSUB command.  This is problematic, as we
     // can't be sure what's going on in the instance, but we can do some things.
     public function testPubSub() {

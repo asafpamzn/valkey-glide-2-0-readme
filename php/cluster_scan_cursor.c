@@ -78,15 +78,15 @@ PHP_METHOD(ClusterScanCursor, __construct) {
     size_t                      cursor_id_len = 0;
     cluster_scan_cursor_object* cursor_obj;
 
-    /* Parse optional cursor ID parameter */
+    /* Parse optional cursor ID parameter - allow NULL */
     ZEND_PARSE_PARAMETERS_START(0, 1)
     Z_PARAM_OPTIONAL
-    Z_PARAM_STRING(cursor_id, cursor_id_len)
+    Z_PARAM_STRING_OR_NULL(cursor_id, cursor_id_len)
     ZEND_PARSE_PARAMETERS_END();
 
     cursor_obj = CLUSTER_SCAN_CURSOR_ZVAL_GET_OBJECT(getThis());
 
-    /* Set cursor ID - default to "0" if not provided */
+    /* Set cursor ID - default to "0" if not provided or NULL */
     if (cursor_id && cursor_id_len > 0) {
         cursor_obj->cursor_id = estrndup(cursor_id, cursor_id_len);
         /* Only mark for cleanup if it's not a default cursor */
@@ -124,7 +124,7 @@ PHP_METHOD(ClusterScanCursor, getCursor) {
 }
 
 /**
- * isFinished(): Checks if cursor equals "finished"
+ * isFinished(): Checks if cursor equals "finished" or "0"
  */
 PHP_METHOD(ClusterScanCursor, isFinished) {
     cluster_scan_cursor_object* cursor_obj;
@@ -135,7 +135,8 @@ PHP_METHOD(ClusterScanCursor, isFinished) {
 
     cursor_obj = CLUSTER_SCAN_CURSOR_ZVAL_GET_OBJECT(getThis());
 
-    if (cursor_obj->cursor_id && strcmp(cursor_obj->cursor_id, FINISHED_SCAN_CURSOR) == 0) {
+    if (cursor_obj->cursor_id && (strcmp(cursor_obj->cursor_id, FINISHED_SCAN_CURSOR) == 0 ||
+                                  strcmp(cursor_obj->cursor_id, "0") == 0)) {
         RETURN_TRUE;
     }
 

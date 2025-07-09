@@ -2343,24 +2343,19 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
                                          has_type ? type_len : 0,
                                          has_type,
                                          return_value)) {
-            /* Update ClusterScanCursor object with new cursor value */
-            zval new_cursor_zval;
-            ZVAL_STRING(&new_cursor_zval, cursor_ptr);
+            /* Update ClusterScanCursor object with new cursor value directly */
+            cluster_scan_cursor_object* cursor_obj = CLUSTER_SCAN_CURSOR_ZVAL_GET_OBJECT(z_iter);
 
-            /* Call the internal cursor update method or create new cursor */
-            zval update_method_name;
-            ZVAL_STRING(&update_method_name, "__construct");
-
-            zval  update_result;
-            zval* update_args[1] = {&new_cursor_zval};
-
-            if (call_user_function(
-                    NULL, z_iter, &update_method_name, &update_result, 1, update_args) == SUCCESS) {
-                zval_dtor(&update_result);
+            /* Free old cursor and set new one */
+            if (cursor_obj->cursor_id) {
+                efree(cursor_obj->cursor_id);
             }
+            cursor_obj->cursor_id = estrdup(cursor_ptr);
 
-            zval_dtor(&update_method_name);
-            zval_dtor(&new_cursor_zval);
+            /* Update cleanup flag based on cursor value */
+            cursor_obj->needs_cleanup =
+                (strcmp(cursor_ptr, "0") != 0 && strcmp(cursor_ptr, "finished") != 0);
+
             efree(cursor_ptr);
             return 1;
         }
