@@ -51,9 +51,7 @@ void free_cluster_scan_cursor_object(zend_object* object) {
     cluster_scan_cursor_object* cursor_obj = CLUSTER_SCAN_CURSOR_GET_OBJECT(object);
 
     /* Clean up cursor if needed */
-    if (cursor_obj->needs_cleanup && cursor_obj->cursor_id &&
-        strcmp(cursor_obj->cursor_id, "0") != 0 &&
-        strcmp(cursor_obj->cursor_id, FINISHED_SCAN_CURSOR) != 0) {
+    if (cursor_obj->needs_cleanup) {
         /* Call FFI function to clean up Rust-side cursor */
         remove_cluster_scan_cursor(cursor_obj->cursor_id);
     }
@@ -89,12 +87,12 @@ PHP_METHOD(ClusterScanCursor, __construct) {
     /* Set cursor ID - default to "0" if not provided or NULL */
     if (cursor_id && cursor_id_len > 0) {
         cursor_obj->cursor_id = estrndup(cursor_id, cursor_id_len);
-        /* Only mark for cleanup if it's not a default cursor */
-        cursor_obj->needs_cleanup = (strcmp(cursor_id, "0") != 0);
     } else {
-        cursor_obj->cursor_id     = estrdup("0");
-        cursor_obj->needs_cleanup = false;
+        cursor_obj->cursor_id = estrdup("0");
     }
+
+    /* Always initialize needs_cleanup to false - no server-side resources created yet */
+    cursor_obj->needs_cleanup = false;
 }
 
 /**

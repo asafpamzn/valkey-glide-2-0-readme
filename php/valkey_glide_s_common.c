@@ -2352,7 +2352,9 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
             }
             cursor_obj->cursor_id = estrdup(cursor_ptr);
 
-            /* Update cleanup flag based on cursor value */
+            /* Set needs_cleanup to true only if request_cluster_scan created server-side resources
+             * This happens when the cursor is not "0" (meaning scan is in progress and server-side
+             * hash objects were created that need cleanup) */
             cursor_obj->needs_cleanup =
                 (strcmp(cursor_ptr, "0") != 0 && strcmp(cursor_ptr, "finished") != 0);
 
