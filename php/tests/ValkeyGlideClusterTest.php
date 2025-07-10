@@ -23,9 +23,6 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
     private static array  $seed_messages = [];
     private static string $seed_source = '';
 
-    public function testServerInfo() { $this->markTestSkipped(); }
-    public function testServerInfoOldValkeyGlide() { $this->markTestSkipped(); }
-
     /* Tests we'll skip all together in the context of ValkeyGlideCluster.  The
      * ValkeyGlideCluster class doesn't implement specialized (non-redis) commands
      * such as sortAsc, or sortDesc and other commands such as SELECT are
