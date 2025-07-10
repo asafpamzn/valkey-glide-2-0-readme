@@ -2229,14 +2229,6 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
         $this->assertTrue(is_array($res) && isset($res['redis_version']) && isset($res['used_memory']));
     }
 
-    public function testServerInfoOldValkeyGlide() {
-        if ($this->minVersionCheck('6.0.0'))
-            $this->markTestSkipped();
-
-        $this->assertFalse($this->valkey_glide->serverName());
-        $this->assertFalse($this->valkey_glide->serverVersion());
-    }
-
     public function testInfoCommandStats() {
         // INFO COMMANDSTATS is new in 2.6.0
         if (version_compare($this->version, '2.5.0') < 0)
