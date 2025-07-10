@@ -8,7 +8,6 @@
 typedef struct {
     char*       cursor_id;      /* The cursor ID string */
     char*       next_cursor_id; /* The cursor ID string */
-    bool        needs_cleanup;  /* Whether to call FFI cleanup */
     zend_object std;            /* Standard PHP object */
 } cluster_scan_cursor_object;
 

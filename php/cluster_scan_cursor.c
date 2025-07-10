@@ -34,8 +34,7 @@ zend_object* create_cluster_scan_cursor_object(zend_class_entry* ce) {
     zend_object_std_init(&cursor_obj->std, ce);
     object_properties_init(&cursor_obj->std, ce);
 
-    cursor_obj->cursor_id     = NULL;
-    cursor_obj->needs_cleanup = false;
+    cursor_obj->cursor_id = NULL;
 
     memcpy(&cluster_scan_cursor_object_handlers,
            zend_get_std_object_handlers(),
@@ -50,11 +49,9 @@ zend_object* create_cluster_scan_cursor_object(zend_class_entry* ce) {
 void free_cluster_scan_cursor_object(zend_object* object) {
     cluster_scan_cursor_object* cursor_obj = CLUSTER_SCAN_CURSOR_GET_OBJECT(object);
 
-    /* Clean up cursor if needed */
-    if (cursor_obj->needs_cleanup) {
-        /* Call FFI function to clean up Rust-side cursor */
-        remove_cluster_scan_cursor(cursor_obj->cursor_id);
-    }
+
+    /* Call FFI function to clean up Rust-side cursor */
+    remove_cluster_scan_cursor(cursor_obj->cursor_id);
 
     /* Free cursor string */
     if (cursor_obj->cursor_id) {
@@ -97,8 +94,6 @@ PHP_METHOD(ClusterScanCursor, __construct) {
         cursor_obj->cursor_id = estrdup("0");
     }
     cursor_obj->next_cursor_id = NULL; /* Initialize next_cursor_id to NULL */
-    /* Always initialize needs_cleanup to false - no server-side resources created yet */
-    cursor_obj->needs_cleanup = false;
 }
 
 /**
