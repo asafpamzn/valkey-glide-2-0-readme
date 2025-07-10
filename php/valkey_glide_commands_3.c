@@ -32,7 +32,7 @@ static int  buffer_command_for_batch(valkey_glide_object* valkey_glide,
                                      const char*          key,
                                      size_t               key_len);
 static void expand_command_buffer(valkey_glide_object* valkey_glide);
-static int  buffer_current_command_generic(valkey_glide_object* valkey_glide,
+int         buffer_current_command_generic(valkey_glide_object* valkey_glide,
                                            enum RequestType     request_type,
                                            int                  argc,
                                            zval*                this_ptr);
@@ -234,10 +234,10 @@ static int buffer_command_for_batch(valkey_glide_object* valkey_glide,
 }
 
 /* Generic command buffering function for batch execution */
-static int buffer_current_command_generic(valkey_glide_object* valkey_glide,
-                                          enum RequestType     request_type,
-                                          int                  argc,
-                                          zval*                this_ptr) {
+int buffer_current_command_generic(valkey_glide_object* valkey_glide,
+                                   enum RequestType     request_type,
+                                   int                  argc,
+                                   zval*                this_ptr) {
     (void)this_ptr; /* Unused parameter */
 
     if (!valkey_glide || !valkey_glide->is_in_batch_mode) {
@@ -276,9 +276,16 @@ static int buffer_current_command_generic(valkey_glide_object* valkey_glide,
             ZVAL_COPY(&temp_zval, &args[i]);
             convert_to_string(&temp_zval);
 
-            /* Store the string data */
-            cmd_args[i]    = (uint8_t*)Z_STRVAL(temp_zval);
-            arg_lengths[i] = Z_STRLEN(temp_zval);
+            /* Allocate and copy the string data immediately */
+            size_t str_len = Z_STRLEN(temp_zval);
+            cmd_args[i]    = (uint8_t*)emalloc(str_len + 1);
+            if (cmd_args[i]) {
+                memcpy(cmd_args[i], Z_STRVAL(temp_zval), str_len);
+                cmd_args[i][str_len] = '\0';
+                arg_lengths[i]       = str_len;
+            } else {
+                arg_lengths[i] = 0;
+            }
 
             zval_dtor(&temp_zval);
         }
