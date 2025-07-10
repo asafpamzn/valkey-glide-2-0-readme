@@ -22,6 +22,17 @@
 #include "valkey_glide_commands_common.h"
 #include "valkey_glide_core_common.h"
 
+/* Helper functions for batch state management */
+static void clear_batch_state(valkey_glide_object* valkey_glide);
+static int  buffer_command_for_batch(valkey_glide_object* valkey_glide,
+                                     enum RequestType     cmd_type,
+                                     uint8_t**            args,
+                                     uintptr_t*           arg_lengths,
+                                     uintptr_t            arg_count,
+                                     const char*          key,
+                                     size_t               key_len);
+static void expand_command_buffer(valkey_glide_object* valkey_glide);
+
 /* Execute a WAIT command using the Valkey Glide client - MIGRATED TO CORE FRAMEWORK */
 int execute_wait_command(zval* object, int argc, zval* return_value, zend_class_entry* ce) {
     valkey_glide_object* valkey_glide;
@@ -62,6 +73,160 @@ int execute_wait_command(zval* object, int argc, zval* return_value, zend_class_
     }
 
     return 0;
+}
+
+/* Helper function implementations */
+
+/* Clear batch state and free buffered commands */
+static void clear_batch_state(valkey_glide_object* valkey_glide) {
+    if (!valkey_glide) {
+        return;
+    }
+
+    valkey_glide->is_in_batch_mode = false;
+    valkey_glide->batch_type       = MULTI;
+    valkey_glide->command_count    = 0;
+
+    if (valkey_glide->buffered_commands) {
+        /* Free each buffered command */
+        size_t i, j;
+        for (i = 0; i < valkey_glide->command_count; i++) {
+            struct batch_command* cmd = &valkey_glide->buffered_commands[i];
+
+            /* Free argument arrays */
+            if (cmd->args) {
+                for (j = 0; j < cmd->arg_count; j++) {
+                    if (cmd->args[j]) {
+                        efree(cmd->args[j]);
+                    }
+                }
+                efree(cmd->args);
+            }
+
+            if (cmd->arg_lengths) {
+                efree(cmd->arg_lengths);
+            }
+
+            if (cmd->key) {
+                efree(cmd->key);
+            }
+
+            if (cmd->route_info) {
+                efree(cmd->route_info);
+            }
+        }
+
+        efree(valkey_glide->buffered_commands);
+        valkey_glide->buffered_commands = NULL;
+        valkey_glide->command_capacity  = 0;
+    }
+}
+
+/* Expand command buffer capacity */
+static void expand_command_buffer(valkey_glide_object* valkey_glide) {
+    if (!valkey_glide) {
+        return;
+    }
+
+    size_t new_capacity = valkey_glide->command_capacity * 2;
+    if (new_capacity == 0) {
+        new_capacity = 16;
+    }
+
+    struct batch_command* new_buffer = (struct batch_command*)erealloc(
+        valkey_glide->buffered_commands, new_capacity * sizeof(struct batch_command));
+
+    if (new_buffer) {
+        valkey_glide->buffered_commands = new_buffer;
+        valkey_glide->command_capacity  = new_capacity;
+
+        /* Initialize new slots */
+        size_t i;
+        for (i = valkey_glide->command_count; i < new_capacity; i++) {
+            memset(&valkey_glide->buffered_commands[i], 0, sizeof(struct batch_command));
+        }
+    }
+}
+
+/* Buffer a command for batch execution */
+static int buffer_command_for_batch(valkey_glide_object* valkey_glide,
+                                    enum RequestType     cmd_type,
+                                    uint8_t**            args,
+                                    uintptr_t*           arg_lengths,
+                                    uintptr_t            arg_count,
+                                    const char*          key,
+                                    size_t               key_len) {
+    if (!valkey_glide || !valkey_glide->is_in_batch_mode) {
+        return 0;
+    }
+
+    /* Expand buffer if needed */
+    if (valkey_glide->command_count >= valkey_glide->command_capacity) {
+        expand_command_buffer(valkey_glide);
+        if (valkey_glide->command_count >= valkey_glide->command_capacity) {
+            return 0; /* Failed to expand */
+        }
+    }
+
+    struct batch_command* cmd = &valkey_glide->buffered_commands[valkey_glide->command_count];
+
+    /* Store command details */
+    cmd->request_type = cmd_type;
+    cmd->arg_count    = arg_count;
+
+    /* Copy arguments */
+    if (arg_count > 0 && args && arg_lengths) {
+        cmd->args        = (uint8_t**)emalloc(arg_count * sizeof(uint8_t*));
+        cmd->arg_lengths = (uintptr_t*)emalloc(arg_count * sizeof(uintptr_t));
+
+        if (!cmd->args || !cmd->arg_lengths) {
+            if (cmd->args)
+                efree(cmd->args);
+            if (cmd->arg_lengths)
+                efree(cmd->arg_lengths);
+            return 0;
+        }
+
+        uintptr_t i;
+        for (i = 0; i < arg_count; i++) {
+            if (args[i] && arg_lengths[i] > 0) {
+                cmd->args[i] = (uint8_t*)emalloc(arg_lengths[i] + 1);
+                if (cmd->args[i]) {
+                    memcpy(cmd->args[i], args[i], arg_lengths[i]);
+                    cmd->args[i][arg_lengths[i]] = '\0';
+                    cmd->arg_lengths[i]          = arg_lengths[i];
+                } else {
+                    cmd->arg_lengths[i] = 0;
+                }
+            } else {
+                cmd->args[i]        = NULL;
+                cmd->arg_lengths[i] = 0;
+            }
+        }
+    } else {
+        cmd->args        = NULL;
+        cmd->arg_lengths = NULL;
+    }
+
+    /* Copy key if provided */
+    if (key && key_len > 0) {
+        cmd->key = (char*)emalloc(key_len + 1);
+        if (cmd->key) {
+            memcpy(cmd->key, key, key_len);
+            cmd->key[key_len] = '\0';
+            cmd->key_len      = key_len;
+        } else {
+            cmd->key_len = 0;
+        }
+    } else {
+        cmd->key     = NULL;
+        cmd->key_len = 0;
+    }
+
+    cmd->route_info = NULL; /* TODO: Handle routing info if needed */
+
+    valkey_glide->command_count++;
+    return 1;
 }
 
 /* Execute a FUNCTION command using the Valkey Glide client */
@@ -183,35 +348,47 @@ int execute_function_command(zval* object, int argc, zval* return_value, zend_cl
     return 0;
 }
 
-/* Execute a MULTI command using the Valkey Glide client - MIGRATED TO CORE FRAMEWORK */
+/* Execute a MULTI command using the Valkey Glide client - UPDATED FOR BUFFERING */
 int execute_multi_command(zval* object, int argc, zval* return_value, zend_class_entry* ce) {
     valkey_glide_object* valkey_glide;
+    long                 batch_type = MULTI; /* Default to MULTI */
 
-    /* Parse parameters */
-    if (zend_parse_method_parameters(argc, object, "O", &object, ce) == FAILURE) {
+    /* Parse optional batch type parameter */
+    if (zend_parse_method_parameters(argc, object, "O|l", &object, ce, &batch_type) == FAILURE) {
+        return 0;
+    }
+
+    /* Validate batch type using existing constants */
+    if (batch_type != MULTI && batch_type != PIPELINE && batch_type != ATOMIC) {
+        php_error_docref(NULL, E_WARNING, "Invalid batch type. Use MULTI, PIPELINE, or ATOMIC");
         return 0;
     }
 
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
 
-    /* If we have a Glide client, use it */
-    if (valkey_glide->glide_client) {
-        core_command_args_t args = {0};
-        args.glide_client        = valkey_glide->glide_client;
-        args.cmd_type            = Multi;
-
-        if (execute_core_command(&args, NULL, process_core_bool_result)) {
-            /* Return $this */
-            ZVAL_COPY(return_value, object);
-            return 1;
-        }
+    if (!valkey_glide || !valkey_glide->glide_client) {
+        return 0;
     }
 
-    return 0;
+    /* Initialize batch mode */
+    valkey_glide->is_in_batch_mode = true;
+    valkey_glide->batch_type       = (int)batch_type;
+    valkey_glide->command_count    = 0;
+
+    /* Initialize buffer if needed */
+    if (!valkey_glide->buffered_commands) {
+        valkey_glide->command_capacity  = 16; /* Initial capacity */
+        valkey_glide->buffered_commands = (struct batch_command*)ecalloc(
+            valkey_glide->command_capacity, sizeof(struct batch_command));
+    }
+
+    /* Return $this for method chaining */
+    ZVAL_COPY(return_value, object);
+    return 1;
 }
 
-/* Execute a DISCARD command using the Valkey Glide client - MIGRATED TO CORE FRAMEWORK */
+/* Execute a DISCARD command using the Valkey Glide client - UPDATED FOR BUFFERING */
 int execute_discard_command(zval* object, int argc, zval* return_value, zend_class_entry* ce) {
     valkey_glide_object* valkey_glide;
 
@@ -223,22 +400,31 @@ int execute_discard_command(zval* object, int argc, zval* return_value, zend_cla
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
 
-    /* If we have a Glide client, use it */
-    if (valkey_glide->glide_client) {
-        core_command_args_t args = {0};
-        args.glide_client        = valkey_glide->glide_client;
-        args.cmd_type            = Discard;
+    if (!valkey_glide || !valkey_glide->glide_client) {
+        return 0;
+    }
 
-        if (execute_core_command(&args, NULL, process_core_bool_result)) {
-            ZVAL_TRUE(return_value);
-            return 1;
-        }
+    /* Clear batch state if we're in batch mode */
+    if (valkey_glide->is_in_batch_mode) {
+        clear_batch_state(valkey_glide);
+        ZVAL_TRUE(return_value);
+        return 1;
+    }
+
+    /* If not in batch mode, execute normal DISCARD command */
+    core_command_args_t args = {0};
+    args.glide_client        = valkey_glide->glide_client;
+    args.cmd_type            = Discard;
+
+    if (execute_core_command(&args, NULL, process_core_bool_result)) {
+        ZVAL_TRUE(return_value);
+        return 1;
     }
 
     return 0;
 }
 
-/* Execute an EXEC command using the Valkey Glide client - MIGRATED TO CORE FRAMEWORK */
+/* Execute an EXEC command using the Valkey Glide client - UPDATED FOR BUFFERING */
 int execute_exec_command(zval* object, int argc, zval* return_value, zend_class_entry* ce) {
     valkey_glide_object* valkey_glide;
 
@@ -250,17 +436,94 @@ int execute_exec_command(zval* object, int argc, zval* return_value, zend_class_
     /* Get ValkeyGlide object */
     valkey_glide = VALKEY_GLIDE_PHP_ZVAL_GET_OBJECT(valkey_glide_object, object);
 
-    /* If we have a Glide client, use it */
-    if (valkey_glide->glide_client) {
-        core_command_args_t args = {0};
-        args.glide_client        = valkey_glide->glide_client;
-        args.cmd_type            = Exec;
-
-        if (execute_core_command(&args, return_value, process_core_array_result)) {
-            return 1;
-        }
+    if (!valkey_glide || !valkey_glide->glide_client) {
+        return 0;
     }
 
+    /* Check if we're in batch mode and have buffered commands */
+    if (!valkey_glide->is_in_batch_mode || valkey_glide->command_count == 0) {
+        ZVAL_FALSE(return_value);
+        return 0;
+    }
+
+    /* Convert buffered commands to FFI BatchInfo structure */
+    struct CmdInfo** cmd_infos =
+        (struct CmdInfo**)emalloc(valkey_glide->command_count * sizeof(struct CmdInfo*));
+    if (!cmd_infos) {
+        clear_batch_state(valkey_glide);
+        ZVAL_FALSE(return_value);
+        return 0;
+    }
+
+    /* Create CmdInfo structures for each buffered command */
+    size_t i;
+    for (i = 0; i < valkey_glide->command_count; i++) {
+        struct batch_command* buffered = &valkey_glide->buffered_commands[i];
+        struct CmdInfo*       cmd_info = (struct CmdInfo*)emalloc(sizeof(struct CmdInfo));
+
+        if (!cmd_info) {
+            /* Cleanup on error */
+            for (size_t j = 0; j < i; j++) {
+                efree(cmd_infos[j]);
+            }
+            efree(cmd_infos);
+            clear_batch_state(valkey_glide);
+            ZVAL_FALSE(return_value);
+            return 0;
+        }
+
+        cmd_info->request_type = buffered->request_type;
+        cmd_info->args         = (const uint8_t* const*)buffered->args;
+        cmd_info->arg_count    = buffered->arg_count;
+        cmd_info->args_len     = (const uintptr_t*)buffered->arg_lengths;
+
+        cmd_infos[i] = cmd_info;
+    }
+
+    /* Create BatchInfo structure */
+    struct BatchInfo batch_info = {
+        .cmd_count = valkey_glide->command_count,
+        .cmds      = (const struct CmdInfo* const*)cmd_infos,
+        .is_atomic = (valkey_glide->batch_type == MULTI || valkey_glide->batch_type == ATOMIC)};
+
+    /* Execute via FFI batch() function */
+    struct CommandResult* result = batch(valkey_glide->glide_client,
+                                         0, /* callback_index (not used for sync) */
+                                         &batch_info,
+                                         false, /* raise_on_error */
+                                         NULL,  /* options */
+                                         0      /* span_ptr */
+    );
+
+    /* Free CmdInfo structures */
+    for (i = 0; i < valkey_glide->command_count; i++) {
+        efree(cmd_infos[i]);
+    }
+    efree(cmd_infos);
+
+    /* Process results and clear batch state */
+    int status = 0;
+    if (result) {
+        if (result->command_error) {
+            /* Command failed */
+            free_command_result(result);
+            clear_batch_state(valkey_glide);
+            ZVAL_FALSE(return_value);
+            return 0;
+        }
+
+        if (result->response) {
+            status = command_response_to_zval(
+                result->response, return_value, COMMAND_RESPONSE_NOT_ASSOSIATIVE, false);
+            free_command_result(result);
+            clear_batch_state(valkey_glide);
+            return status ? 1 : 0;
+        }
+        free_command_result(result);
+    }
+
+    clear_batch_state(valkey_glide);
+    ZVAL_FALSE(return_value);
     return 0;
 }
 

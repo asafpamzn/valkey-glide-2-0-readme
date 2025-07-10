@@ -3185,7 +3185,6 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
 
     public function testMultiExec() {
         
-        $this->markTestSkipped();//TODO
         $this->sequence(ValkeyGlide::MULTI);
         $this->differentType(ValkeyGlide::MULTI);
 
@@ -3322,7 +3321,6 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     protected function sequence($mode) {
-         $this->markTestSkipped();//TODO
         $ret = $this->valkey_glide->multi($mode)
             ->set('x', 42)
             ->type('x')

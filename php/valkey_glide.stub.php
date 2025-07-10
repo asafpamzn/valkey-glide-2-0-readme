@@ -122,8 +122,28 @@ class ValkeyGlide {
      */
     public const RIGHT = "right";
 
+    /**
+     *
+     * @var int
+     * @cvalue ATOMIC
+     *
+     */
+    public const ATOMIC = UNKNOWN;
+    /**
+     *
+     * @var int
+     * @cvalue MULTI
+     *
+     */
+    public const MULTI = UNKNOWN;
 
-
+    /**
+     *
+     * @var int
+     * @cvalue PIPELINE
+     *
+     */
+    public const PIPELINE = UNKNOWN;
    
     /**
      * Create a new ValkeyGlide instance with the provided configuration.

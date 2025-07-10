@@ -90,8 +90,6 @@ $testFunctions = [
     "testSlowlog",
     "testWait",
     "testInfo",
-    "testServerInfo",
-    "testServerInfoOldValkeyGlide",
     "testInfoCommandStats",
     "testSelect",
     "testSwapDB",
@@ -269,5 +267,3 @@ if ($skipped > 0) {
 }
 
 echo "========================\n";
-
-

@@ -9,6 +9,8 @@
 
 #include <ext/standard/php_smart_string.h>
 
+#include "include/glide_bindings.h"
+
 /* ValkeyGlidePHP version */
 #define VALKEY_GLIDE_PHP_VERSION "0.1"
 
@@ -35,6 +37,11 @@
 #define VALKEY_GLIDE_ZSET 4
 #define VALKEY_GLIDE_HASH 5
 #define VALKEY_GLIDE_STREAM 6
+
+/* Transaction modes */
+#define ATOMIC 0
+#define MULTI 1
+#define PIPELINE 2
 
 /* ValkeyGlide Configuration Enums */
 typedef enum {
@@ -123,8 +130,29 @@ void free_valkey_glide_cluster_client_configuration(
 #define Z_PARAM_BOOL_OR_NULL(dest, is_null) Z_PARAM_BOOL_EX(dest, is_null, 1, 0)
 #endif
 
+/* Batch command structure for buffering commands - FFI aligned */
+struct batch_command {
+    enum RequestType request_type;
+    uint8_t**        args;        /* FFI expects uint8_t** */
+    uintptr_t*       arg_lengths; /* FFI expects uintptr_t* */
+    uintptr_t        arg_count;   /* FFI expects uintptr_t */
+    char*            key;         /* Optional key for the command */
+    size_t           key_len;
+    void*            route_info; /* Optional routing info for cluster mode */
+};
+
 typedef struct {
     const void* glide_client; /* Valkey Glide client pointer */
+
+    /* Batch mode tracking */
+    bool is_in_batch_mode;
+    int  batch_type; /* ATOMIC, MULTI, or PIPELINE */
+
+    /* Command buffering */
+    struct batch_command* buffered_commands;
+    size_t                command_count;
+    size_t                command_capacity;
+
     zend_object std;
 } valkey_glide_object;
 
