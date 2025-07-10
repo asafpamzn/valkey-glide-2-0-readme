@@ -6,9 +6,10 @@
 
 /* ClusterScanCursor object structure */
 typedef struct {
-    char*       cursor_id;     /* The cursor ID string */
-    bool        needs_cleanup; /* Whether to call FFI cleanup */
-    zend_object std;           /* Standard PHP object */
+    char*       cursor_id;      /* The cursor ID string */
+    char*       next_cursor_id; /* The cursor ID string */
+    bool        needs_cleanup;  /* Whether to call FFI cleanup */
+    zend_object std;            /* Standard PHP object */
 } cluster_scan_cursor_object;
 
 /* Class entry and handlers */
@@ -23,6 +24,7 @@ void         free_cluster_scan_cursor_object(zend_object* object);
 PHP_METHOD(ClusterScanCursor, __construct);
 PHP_METHOD(ClusterScanCursor, __destruct);
 PHP_METHOD(ClusterScanCursor, getCursor);
+PHP_METHOD(ClusterScanCursor, getNextCursor);
 PHP_METHOD(ClusterScanCursor, isFinished);
 
 /* Helper macros */

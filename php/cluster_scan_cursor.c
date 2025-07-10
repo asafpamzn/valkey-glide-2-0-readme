@@ -62,6 +62,12 @@ void free_cluster_scan_cursor_object(zend_object* object) {
         cursor_obj->cursor_id = NULL;
     }
 
+    /* Free cursor string */
+    if (cursor_obj->next_cursor_id) {
+        efree(cursor_obj->next_cursor_id);
+        cursor_obj->next_cursor_id = NULL;
+    }
+
     /* Clean up the standard object */
     zend_object_std_dtor(&cursor_obj->std);
 }
@@ -90,7 +96,7 @@ PHP_METHOD(ClusterScanCursor, __construct) {
     } else {
         cursor_obj->cursor_id = estrdup("0");
     }
-
+    cursor_obj->next_cursor_id = NULL; /* Initialize next_cursor_id to NULL */
     /* Always initialize needs_cleanup to false - no server-side resources created yet */
     cursor_obj->needs_cleanup = false;
 }
@@ -121,6 +127,21 @@ PHP_METHOD(ClusterScanCursor, getCursor) {
     RETURN_STRING("0");
 }
 
+PHP_METHOD(ClusterScanCursor, getNextCursor) {
+    cluster_scan_cursor_object* cursor_obj;
+
+    if (zend_parse_parameters_none() == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    cursor_obj = CLUSTER_SCAN_CURSOR_ZVAL_GET_OBJECT(getThis());
+
+    if (cursor_obj->next_cursor_id) {
+        RETURN_STRING(cursor_obj->next_cursor_id);
+    }
+
+    RETURN_STRING("0");
+}
 /**
  * isFinished(): Checks if cursor equals "finished" or "0"
  */

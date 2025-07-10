@@ -29,6 +29,13 @@ final class ClusterScanCursor {
     public function getCursor(): string {}
 
     /**
+     * Get the cursor ID string.
+     *
+     * @return string The next cursor ID, avaliable after a scan operation
+     */
+    public function getNextCursor(): string {}
+
+    /**
      * Check if the cursor indicates scan completion.
      *
      * @return bool True if cursor equals "finished", false otherwise

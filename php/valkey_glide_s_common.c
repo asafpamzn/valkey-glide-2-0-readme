@@ -2346,11 +2346,8 @@ int execute_scan_command(zval* object, int argc, zval* return_value, zend_class_
             /* Update ClusterScanCursor object with new cursor value directly */
             cluster_scan_cursor_object* cursor_obj = CLUSTER_SCAN_CURSOR_ZVAL_GET_OBJECT(z_iter);
 
-            /* Free old cursor and set new one */
-            if (cursor_obj->cursor_id) {
-                efree(cursor_obj->cursor_id);
-            }
-            cursor_obj->cursor_id = estrdup(cursor_ptr);
+
+            cursor_obj->next_cursor_id = estrdup(cursor_ptr);
 
             /* Set needs_cleanup to true only if request_cluster_scan created server-side resources
              * This happens when the cursor is not "0" (meaning scan is in progress and server-side

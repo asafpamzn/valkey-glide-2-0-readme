@@ -282,7 +282,7 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         $this->assertEquals(strval(intval($usec)), strval($usec));
     }
 
-    public function testScan() {   
+    public function testScan11() {   
         set_time_limit(10); // Enforce a 10-second limit on this test 
         $key_count = 0;
         $scan_count = 0;
@@ -290,13 +290,17 @@ class ValkeyGlide_Cluster_Test extends ValkeyGlide_Test {
         /* Iterate over our masters, scanning each one */
         $key_count = $this->valkey_glide->dbsize("allPrimaries");
        
-        /* Scan the keys here using ClusterScanCursor */
-        $cursor = new ClusterScanCursor();
+        /* Scan the keys here using ClusterScanCursor - create new cursor each iteration */
+        $cursor = new ClusterScanCursor(); // Create fresh cursor each time
         while (true) {
-            $keys = $this->valkey_glide->scan($cursor);
+            
+            $keys = $this->valkey_glide->scan($cursor);            
             if ($keys)
                 $scan_count += count($keys);
+            $new_cursor = new ClusterScanCursor($cursor->getNextCursor()); // Create a new cursor with the updated cursor ID
+            $cursor = $new_cursor; // Update the cursor reference
             if ($cursor->isFinished()) break;
+            // Cursor goes out of scope here, destructor should be called
         }
         
 
