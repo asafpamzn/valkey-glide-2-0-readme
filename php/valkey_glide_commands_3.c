@@ -32,6 +32,10 @@ static int  buffer_command_for_batch(valkey_glide_object* valkey_glide,
                                      const char*          key,
                                      size_t               key_len);
 static void expand_command_buffer(valkey_glide_object* valkey_glide);
+static int  buffer_current_command_generic(valkey_glide_object* valkey_glide,
+                                           enum RequestType     request_type,
+                                           int                  argc,
+                                           zval*                this_ptr);
 
 /* Execute a WAIT command using the Valkey Glide client - MIGRATED TO CORE FRAMEWORK */
 int execute_wait_command(zval* object, int argc, zval* return_value, zend_class_entry* ce) {
@@ -227,6 +231,70 @@ static int buffer_command_for_batch(valkey_glide_object* valkey_glide,
 
     valkey_glide->command_count++;
     return 1;
+}
+
+/* Generic command buffering function for batch execution */
+static int buffer_current_command_generic(valkey_glide_object* valkey_glide,
+                                          enum RequestType     request_type,
+                                          int                  argc,
+                                          zval*                this_ptr) {
+    (void)this_ptr; /* Unused parameter */
+
+    if (!valkey_glide || !valkey_glide->is_in_batch_mode) {
+        return 0;
+    }
+
+    /* Use modern parameter parsing API */
+    zval* args      = NULL;
+    int   arg_count = 0;
+
+    /* Parse all arguments using variadic syntax */
+    if (zend_parse_parameters(argc, "*", &args, &arg_count) == FAILURE) {
+        return 0;
+    }
+
+    /* Convert PHP zvals to FFI-compatible format */
+    uint8_t**  cmd_args    = NULL;
+    uintptr_t* arg_lengths = NULL;
+
+    if (arg_count > 0 && args) {
+        cmd_args    = (uint8_t**)emalloc(arg_count * sizeof(uint8_t*));
+        arg_lengths = (uintptr_t*)emalloc(arg_count * sizeof(uintptr_t));
+
+        if (!cmd_args || !arg_lengths) {
+            if (cmd_args)
+                efree(cmd_args);
+            if (arg_lengths)
+                efree(arg_lengths);
+            return 0;
+        }
+
+        int i;
+        for (i = 0; i < arg_count; i++) {
+            /* Convert each argument to string */
+            zval temp_zval;
+            ZVAL_COPY(&temp_zval, &args[i]);
+            convert_to_string(&temp_zval);
+
+            /* Store the string data */
+            cmd_args[i]    = (uint8_t*)Z_STRVAL(temp_zval);
+            arg_lengths[i] = Z_STRLEN(temp_zval);
+
+            zval_dtor(&temp_zval);
+        }
+    }
+
+    /* Buffer the command */
+    int result = buffer_command_for_batch(
+        valkey_glide, request_type, cmd_args, arg_lengths, arg_count, NULL, 0);
+
+    /* Cleanup */
+    if (cmd_args)
+        efree(cmd_args);
+    if (arg_lengths)
+        efree(arg_lengths);
+
+    return result;
 }
 
 /* Execute a FUNCTION command using the Valkey Glide client */
