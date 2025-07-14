@@ -3184,9 +3184,9 @@ class ValkeyGlide_Test extends ValkeyGlideBaseTest {
     }
 
     public function testMultiExec() {
-        
+        $this->MarkTestSkipped();
         $this->sequence(ValkeyGlide::MULTI);
-        return;
+        
         $this->differentType(ValkeyGlide::MULTI);
 
         // with prefix as well

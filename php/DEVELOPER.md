@@ -194,7 +194,9 @@ The Valkey GLIDE PHP wrapper has several categories of tests:
 To run unit tests, use:
 
 ```bash
-make test
+make install
+cd tests
+php -n -d extension=../modules/valkey_glide.so TestValkeyGlide.php
 ```
 
 To run tests with Valkey server:

@@ -279,8 +279,10 @@ make lint
 # Fix formatting issues
 make lint-fix
 
-# Run tests
-make test
+#Run tests
+make install
+cd tests
+php -n -d extension=../modules/valkey_glide.so TestValkeyGlide.php
 ```
 
 ### Contributing
