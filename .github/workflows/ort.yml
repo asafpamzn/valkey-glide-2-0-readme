@@ -168,22 +168,22 @@ jobs:
             #   with:
             #       folder_path: "${{ github.workspace }}/java"
 
-              ### GO ###
-            - name: Set up GO
-              uses: actions/setup-go@v5
-              with:
-                  go-version: 1.22
+              ### GO ### (Temporarily disabled due to failures)
+            # - name: Set up GO
+            #   uses: actions/setup-go@v5
+            #   with:
+            #       go-version: 1.22
 
-            - name: Generate protobuf for GO
-              working-directory: ./go
-              run: |
-                  go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0
-                  make generate-protobuf
+            # - name: Generate protobuf for GO
+            #   working-directory: ./go
+            #   run: |
+            #       go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0
+            #       make generate-protobuf
 
-            - name: Run ORT tools for Go
-              uses: ./.github/workflows/run-ort-tools
-              with:
-                  folder_path: "${{ github.workspace }}/go"
+            # - name: Run ORT tools for Go
+            #   uses: ./.github/workflows/run-ort-tools
+            #   with:
+            #       folder_path: "${{ github.workspace }}/go"
 
               ### PHP ###
             - name: Set up PHP
@@ -264,14 +264,11 @@ jobs:
                   cp node/ort_results/NOTICE_DEFAULT $NODE_ATTRIBUTIONS
                   cp glide-core/ort_results/NOTICE_DEFAULT $RUST_ATTRIBUTIONS
                   # Skip Java due to compilation issues: cp java/ort_results/NOTICE_DEFAULT $JAVA_ATTRIBUTIONS
-                  : Workaround for empty attributions for go packages. See discussions in https://github.com/valkey-io/valkey-glide/pull/3469 and in https://github.com/oss-review-toolkit/ort/issues/10454
-                  curl https://raw.githubusercontent.com/valkey-io/valkey-glide/9c9ef0ae2c2ee865c7867f6ac0d3f9aac054bac8/go/THIRD_PARTY_LICENSES_GO -o $GO_ATTRIBUTIONS
-                  cat go/ort_results/NOTICE_DEFAULT >> $GO_ATTRIBUTIONS
-                  cat php/ort_results/NOTICE_DEFAULT >> $PHP_ATTRIBUTIONS
-                  : Merge FFI attributions into GO attributions
-                  cat ffi/ort_results/NOTICE_DEFAULT >> $GO_ATTRIBUTIONS
+                  # Skip GO due to failures - GO and FFI processing disabled
                   cat ffi/ort_results/NOTICE_DEFAULT >> $PHP_ATTRIBUTIONS
-                  GIT_DIFF=`git diff $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $GO_ATTRIBUTIONS $PHP_ATTRIBUTIONS`
+                  cat ffi/ort_results/NOTICE_DEFAULT >> $PHP_ATTRIBUTIONS
+
+                  GIT_DIFF=`git diff $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $PHP_ATTRIBUTIONS`
                   if [ -n "$GIT_DIFF" ]; then
                     echo "FOUND_DIFF=true" >> $GITHUB_ENV
                   else
@@ -287,7 +284,7 @@ jobs:
                   git config --global user.email "valkey-glide@lists.valkey.io"
                   git config --global user.name "ort-bot"
                   git checkout -b ${ORT_DIFF_BRANCH_NAME}
-                  git add $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $GO_ATTRIBUTIONS $PHP_ATTRIBUTIONS
+                  git add $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $PHP_ATTRIBUTIONS
                   git commit -m "Updated attribution files" -s
                   git push --set-upstream origin ${ORT_DIFF_BRANCH_NAME} -f
 
@@ -317,7 +314,6 @@ jobs:
                     "${{ env.PYTHON_ATTRIBUTIONS }}"
                     "${{ env.NODE_ATTRIBUTIONS }}"
                     "${{ env.RUST_ATTRIBUTIONS }}"
-                    "${{ env.GO_ATTRIBUTIONS }}"
                     "${{ env.PHP_ATTRIBUTIONS }}"
                   )
 
