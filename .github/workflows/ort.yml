@@ -34,6 +34,7 @@ jobs:
             RUST_ATTRIBUTIONS: "glide-core/THIRD_PARTY_LICENSES_RUST"
             JAVA_ATTRIBUTIONS: "java/THIRD_PARTY_LICENSES_JAVA"
             GO_ATTRIBUTIONS: "go/THIRD_PARTY_LICENSES_GO"
+            PHP_ATTRIBUTIONS: "php/THIRD_PARTY_LICENSES_PHP"
             INPUT_TARGET_BRANCH: ${{ github.event.inputs.branch_name }}
             EVENT_NAME: ${{ github.event_name }}
             HEAD_REF: ${{ github.head_ref }}
@@ -102,7 +103,7 @@ jobs:
                     analyzer:
                       skip_excluded: true
                       allowDynamicVersions: true
-                      enabledPackageManagers: [Cargo, GoMod, NPM, PIP, GradleInspector]
+                      enabledPackageManagers: [Cargo, Composer, GoMod, NPM, PIP, GradleInspector]
                   EOF
                   cat ~/.ort/config/config.yml
 
@@ -184,6 +185,24 @@ jobs:
               with:
                   folder_path: "${{ github.workspace }}/go"
 
+              ### PHP ###
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.1'
+                  tools: composer
+                  coverage: none
+
+            - name: Install PHP dependencies
+              working-directory: ./php
+              run: |
+                  composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            - name: Run ORT tools for PHP
+              uses: ./.github/workflows/run-ort-tools
+              with:
+                  folder_path: "${{ github.workspace }}/php"
+
               ### Get licenses ###
             - name: Retrieve licenses list
               working-directory: ./utils
@@ -244,13 +263,15 @@ jobs:
                   cp python/ort_results/NOTICE_DEFAULT $PYTHON_ATTRIBUTIONS
                   cp node/ort_results/NOTICE_DEFAULT $NODE_ATTRIBUTIONS
                   cp glide-core/ort_results/NOTICE_DEFAULT $RUST_ATTRIBUTIONS
-                  cp java/ort_results/NOTICE_DEFAULT $JAVA_ATTRIBUTIONS
+                  cp java/ort_results/NOTICE_DEFAULT $JAVA_ATTRIBUTIONS                  
                   : Workaround for empty attributions for go packages. See discussions in https://github.com/valkey-io/valkey-glide/pull/3469 and in https://github.com/oss-review-toolkit/ort/issues/10454
                   curl https://raw.githubusercontent.com/valkey-io/valkey-glide/9c9ef0ae2c2ee865c7867f6ac0d3f9aac054bac8/go/THIRD_PARTY_LICENSES_GO -o $GO_ATTRIBUTIONS
                   cat go/ort_results/NOTICE_DEFAULT >> $GO_ATTRIBUTIONS
+                  cat php/ort_results/NOTICE_DEFAULT >> $PHP_ATTRIBUTIONS
                   : Merge FFI attributions into GO attributions
                   cat ffi/ort_results/NOTICE_DEFAULT >> $GO_ATTRIBUTIONS
-                  GIT_DIFF=`git diff $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $JAVA_ATTRIBUTIONS $GO_ATTRIBUTIONS`
+                  cat ffi/ort_results/NOTICE_DEFAULT >> $PHP_ATTRIBUTIONS
+                  GIT_DIFF=`git diff $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $JAVA_ATTRIBUTIONS $GO_ATTRIBUTIONS $PHP_ATTRIBUTIONS`
                   if [ -n "$GIT_DIFF" ]; then
                     echo "FOUND_DIFF=true" >> $GITHUB_ENV
                   else
@@ -266,7 +287,7 @@ jobs:
                   git config --global user.email "valkey-glide@lists.valkey.io"
                   git config --global user.name "ort-bot"
                   git checkout -b ${ORT_DIFF_BRANCH_NAME}
-                  git add $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $JAVA_ATTRIBUTIONS $GO_ATTRIBUTIONS
+                  git add $PYTHON_ATTRIBUTIONS $NODE_ATTRIBUTIONS $RUST_ATTRIBUTIONS $JAVA_ATTRIBUTIONS $GO_ATTRIBUTIONS $PHP_ATTRIBUTIONS
                   git commit -m "Updated attribution files" -s
                   git push --set-upstream origin ${ORT_DIFF_BRANCH_NAME} -f
 
@@ -298,6 +319,7 @@ jobs:
                     "${{ env.RUST_ATTRIBUTIONS }}"
                     "${{ env.JAVA_ATTRIBUTIONS }}"
                     "${{ env.GO_ATTRIBUTIONS }}"
+                    "${{ env.PHP_ATTRIBUTIONS }}"
                   )
 
                   MESSAGE="WARNING! The attribution files differ in this PR. Please ensure an updating PR is issued using a scheduled or manual run of this workflow!"
